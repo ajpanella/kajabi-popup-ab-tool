@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Popup Local Test Article</title>
+    <link rel="stylesheet" href="../popup/popup.css">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: #172026;
+        background: #f6f7f9;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      header,
+      article,
+      .test-tools {
+        width: min(760px, calc(100vw - 32px));
+        margin: 0 auto;
+      }
+
+      header {
+        padding: 48px 0 20px;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: 42px;
+        line-height: 1.08;
+        letter-spacing: 0;
+      }
+
+      p {
+        font-size: 18px;
+        line-height: 1.65;
+      }
+
+      .test-tools {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 0;
+        background: #f6f7f9;
+      }
+
+      .test-tools a,
+      .test-tools button {
+        border: 1px solid #cfd6df;
+        border-radius: 6px;
+        padding: 10px 12px;
+        color: #172026;
+        background: #ffffff;
+        font: inherit;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .test-tools button:first-child {
+        color: #ffffff;
+        border-color: #2563eb;
+        background: #2563eb;
+      }
+
+      .spacer {
+        height: 900px;
+        border-left: 4px solid #d9dee7;
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <p>Local Kajabi-style article test page</p>
+      <h1>Test the live popup without touching Kajabi</h1>
+      <p>This page loads the same popup files a Kajabi blog article would load. Use the buttons below to reset cooldowns or force the popup open.</p>
+    </header>
+
+    <div class="test-tools">
+      <button id="force-popup" type="button">Show Popup Now</button>
+      <button id="reset-storage" type="button">Reset Assignment/Cooldowns</button>
+      <a href="../dashboard/">Open Dashboard</a>
+    </div>
+
+    <article>
+      <p>Scroll down the page to trigger the 50% scroll-depth rule, or wait for the configured delay. This local page is intentionally plain so you can focus on popup behavior.</p>
+      <div class="spacer">
+        <p>Halfway down this article, the popup should appear if no cooldown is active.</p>
+      </div>
+      <p>End of test article.</p>
+    </article>
+
+    <script src="../popup/variants.js"></script>
+    <script>
+      window.LL_POPUP_CONFIG = Object.assign({}, window.LL_POPUP_CONFIG, {
+        webhookUrl: window.LL_POPUP_CONFIG.webhookUrl || "",
+        triggers: {
+          delayMs: 3000,
+          scrollDepth: 0.5
+        },
+        kajabiFormEmbed: [
+          "<form class=\"ll-test-form\">",
+          "<input name=\"name\" placeholder=\"Name\" style=\"width:100%;padding:12px;margin-bottom:10px;border:1px solid #cfd6df;border-radius:6px;\">",
+          "<input name=\"email\" type=\"email\" placeholder=\"Email\" style=\"width:100%;padding:12px;margin-bottom:10px;border:1px solid #cfd6df;border-radius:6px;\">",
+          "<button type=\"submit\" style=\"width:100%;padding:12px;border:0;border-radius:6px;color:white;background:var(--ll-popup-accent);font-weight:700;\">Submit test form</button>",
+          "</form>"
+        ].join("")
+      });
+    </script>
+    <script src="../popup/popup.js" defer></script>
+    <script>
+      document.getElementById("reset-storage").addEventListener("click", function () {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.reload();
+      });
+
+      document.getElementById("force-popup").addEventListener("click", function () {
+        localStorage.removeItem("ll_popup_blog-optin-v1_cooldown_until");
+        var articleHeight = document.documentElement.scrollHeight - window.innerHeight;
+        window.scrollTo(0, Math.max(1, articleHeight * 0.55));
+      });
+    </script>
+  </body>
+</html>

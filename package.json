@@ -1,0 +1,11 @@
+{
+  "name": "kajabi-popup-ab-tool",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Kajabi-compatible vanilla JavaScript popup A/B testing tool with a read-only CSV dashboard.",
+  "scripts": {
+    "serve": "python3 -m http.server 3101",
+    "check": "node --check popup/popup.js && node --check popup/variants.js && node --check dashboard/dashboard.js"
+  },
+  "devDependencies": {}
+}

@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Kajabi Popup A/B Dashboard</title>
+    <link rel="stylesheet" href="../popup/popup.css?v=11">
+    <link rel="stylesheet" href="./dashboard.css?v=11">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="../popup/variants.js"></script>
+  </head>
+  <body>
+    <header class="dash-header">
+      <div>
+        <p class="dash-eyebrow">Kajabi Popup A/B Test</p>
+        <h1>Performance Dashboard</h1>
+      </div>
+      <div class="dash-header-links">
+        <a class="dash-doc-link" id="tracking-sheet-link" href="#" target="_blank" rel="noreferrer">Tracking Sheet</a>
+        <a class="dash-doc-link" id="google-doc-link" href="#" target="_blank" rel="noreferrer">Google Doc</a>
+      </div>
+    </header>
+
+    <main class="dash-layout">
+      <section class="dash-panel dash-controls" aria-label="Dashboard controls">
+        <label>
+          Published CSV URL
+          <input id="csv-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
+        </label>
+        <button id="load-data" type="button">Load Data</button>
+
+        <label>
+          Test ID
+          <select id="filter-test-id"></select>
+        </label>
+        <label>
+          Variant
+          <select id="filter-variant"></select>
+        </label>
+        <label>
+          Version
+          <select id="filter-version"></select>
+        </label>
+        <label>
+          Start date
+          <input id="filter-start" type="date">
+        </label>
+        <label>
+          End date
+          <input id="filter-end" type="date">
+        </label>
+        <label>
+          Page URL
+          <input id="filter-page-url" type="search" placeholder="Contains...">
+        </label>
+        <label>
+          Device
+          <select id="filter-device">
+            <option value="">All devices</option>
+            <option value="desktop">Desktop</option>
+            <option value="tablet">Tablet</option>
+            <option value="mobile">Mobile</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="dash-content">
+        <section class="dash-panel">
+          <div class="dash-section-heading">
+            <div>
+              <p class="dash-eyebrow">Install</p>
+              <h2>Embed Code</h2>
+            </div>
+            <button id="copy-embed" class="dash-secondary-button" type="button">Copy Embed</button>
+          </div>
+          <label class="dash-wide-label">
+            Public asset base URL
+            <input id="asset-base-url" type="url" placeholder="https://YOUR-HOST/kajabi-popup-ab-tool">
+          </label>
+          <textarea id="embed-code" class="dash-code-box" readonly></textarea>
+        </section>
+
+        <section class="dash-panel">
+          <div class="dash-section-heading">
+            <div>
+              <p class="dash-eyebrow">Editor</p>
+              <h2>Popup Details</h2>
+            </div>
+            <div class="dash-action-row">
+              <button id="reset-config" class="dash-secondary-button" type="button">Reset Draft</button>
+              <button id="download-config" class="dash-secondary-button" type="button">Download variants.js</button>
+              <button id="copy-config" class="dash-secondary-button" type="button">Copy variants.js</button>
+            </div>
+          </div>
+          <div class="dash-editor-note">
+            Keep the Kajabi embed URL stable. When you publish a new design, update the version so historical results stay separated from the new test.
+          </div>
+          <div class="dash-global-editor">
+            <label>
+              Webhook URL
+              <input id="webhook-url" type="url" placeholder="Google Apps Script Web App URL">
+            </label>
+            <label>
+              Form mode
+              <select id="form-mode">
+                <option value="zapier">Name + Email to Zapier</option>
+                <option value="kajabi">Kajabi embed</option>
+              </select>
+            </label>
+            <label>
+              Lead webhook URL
+              <input id="lead-webhook-url" type="url" placeholder="Zapier Catch Hook URL">
+            </label>
+            <label class="dash-global-wide">
+              Kajabi form embed
+              <textarea id="kajabi-form-embed" placeholder="Paste Kajabi's one-line form script here"></textarea>
+            </label>
+            <label>
+              Kajabi embed mode
+              <select id="kajabi-embed-mode">
+                <option value="auto">Auto fallback</option>
+                <option value="script">Direct script</option>
+                <option value="iframe">Iframe</option>
+              </select>
+            </label>
+            <label>
+              Config version
+              <input id="config-version" type="text" placeholder="v1">
+            </label>
+            <label>
+              Change note
+              <input id="change-note" type="text" placeholder="What changed in this version?">
+            </label>
+          </div>
+          <div class="dash-palette">
+            <div class="dash-palette-head">
+              <strong>Saved Colors</strong>
+              <span>Select a color field, then click a saved color to apply it.</span>
+            </div>
+            <div id="saved-colors" class="dash-palette-grid"></div>
+          </div>
+          <div id="variant-editors" class="dash-editor-grid"></div>
+        </section>
+
+        <section class="dash-panel">
+          <div class="dash-section-heading">
+            <div>
+              <p class="dash-eyebrow">Insights</p>
+              <h2>Recommendation Helper</h2>
+            </div>
+          </div>
+          <div id="recommendation-list" class="dash-recommendations"></div>
+        </section>
+
+        <section class="dash-panel">
+          <div class="dash-section-heading">
+            <div>
+              <p class="dash-eyebrow">History</p>
+              <h2>Historical Variations</h2>
+            </div>
+          </div>
+          <div id="variation-history" class="dash-history-grid"></div>
+        </section>
+
+        <section class="dash-panel">
+          <div class="dash-section-heading">
+            <div>
+              <p class="dash-eyebrow">Variants</p>
+              <h2>Live Previews</h2>
+            </div>
+            <div class="dash-toggle" role="group" aria-label="Preview size">
+              <button id="desktop-preview" class="is-active" type="button">Desktop</button>
+              <button id="mobile-preview" type="button">Mobile</button>
+            </div>
+          </div>
+          <div id="variant-previews" class="dash-preview-grid"></div>
+        </section>
+
+        <section class="dash-metrics">
+          <article class="dash-stat">
+            <span>Popup views</span>
+            <strong id="stat-views">0</strong>
+          </article>
+          <article class="dash-stat">
+            <span>Form clicks</span>
+            <strong id="stat-clicks">0</strong>
+          </article>
+          <article class="dash-stat">
+            <span>Submit attempts</span>
+            <strong id="stat-submits">0</strong>
+          </article>
+          <article class="dash-stat">
+            <span>Close rate</span>
+            <strong id="stat-close-rate">0%</strong>
+          </article>
+        </section>
+
+        <section class="dash-panel">
+          <div class="dash-section-heading">
+            <div>
+              <p class="dash-eyebrow">Results</p>
+              <h2>Performance Table</h2>
+            </div>
+            <p id="sample-warning" class="dash-warning" hidden>Sample size is below 100 popup views for at least one active variant.</p>
+          </div>
+          <div class="dash-table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Variant</th>
+                  <th>Version</th>
+                  <th>Sessions</th>
+                  <th>Views</th>
+                  <th>View Rate</th>
+                  <th>Clicks</th>
+                  <th>Click Rate</th>
+                  <th>Submits</th>
+                  <th>Submit Rate</th>
+                  <th>Closes</th>
+                  <th>Close Rate</th>
+                  <th>Lift vs A</th>
+                </tr>
+              </thead>
+              <tbody id="performance-body"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="dash-chart-grid">
+          <div class="dash-panel">
+            <h2>Conversion Rates</h2>
+            <canvas id="conversion-chart" height="220"></canvas>
+          </div>
+          <div class="dash-panel">
+            <h2>Event Counts</h2>
+            <canvas id="event-chart" height="220"></canvas>
+          </div>
+        </section>
+      </section>
+    </main>
+
+    <script src="./dashboard.js?v=15"></script>
+  </body>
+</html>
