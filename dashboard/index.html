@@ -111,6 +111,14 @@
               Lead webhook URL
               <input id="lead-webhook-url" type="url" placeholder="Zapier Catch Hook URL">
             </label>
+            <label>
+              Delay seconds
+              <input id="delay-seconds" type="number" min="0" step="1" placeholder="35">
+            </label>
+            <label>
+              Scroll trigger %
+              <input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="50">
+            </label>
             <label class="dash-global-wide">
               Kajabi form embed
               <textarea id="kajabi-form-embed" placeholder="Paste Kajabi's one-line form script here"></textarea>
@@ -239,6 +247,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=15"></script>
+    <script src="./dashboard.js?v=16"></script>
   </body>
 </html>

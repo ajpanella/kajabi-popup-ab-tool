@@ -10,6 +10,7 @@ Edit `popup/variants.js`:
 - If Kajabi's embed does not render reliably, use `formMode: "zapier"` and paste a Zapier Catch Hook URL into `leadWebhookUrl`. The popup will render its own Name and Email fields and send the lead data to Zapier.
 - Use the dashboard's saved color palette and text alignment controls to keep visual tests consistent.
 - If the Kajabi fields do not appear in local preview, set `kajabiEmbedMode` to `iframe` or use the dashboard's `Kajabi embed mode` control. Some third-party embeds behave differently when injected into an already-loaded page.
+- Set `Delay seconds` to control the time-based popup trigger. The popup also supports the `Scroll trigger %` setting.
 - Adjust the active variants and `trafficSplit` values. Traffic splits are weighted and do not need to total 100, though that is easier to read.
 
 Every variant uses the same `kajabiFormEmbed`, so Kajabi form automations still handle tags, email sequences, offers, and other follow-up actions.

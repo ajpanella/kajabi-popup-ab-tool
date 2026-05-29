@@ -36,6 +36,8 @@
     webhookUrl: document.getElementById("webhook-url"),
     formMode: document.getElementById("form-mode"),
     leadWebhookUrl: document.getElementById("lead-webhook-url"),
+    delaySeconds: document.getElementById("delay-seconds"),
+    scrollDepth: document.getElementById("scroll-depth"),
     kajabiFormEmbed: document.getElementById("kajabi-form-embed"),
     kajabiEmbedMode: document.getElementById("kajabi-embed-mode"),
     configVersion: document.getElementById("config-version"),
@@ -65,7 +67,7 @@
   [els.testId, els.variant, els.version, els.start, els.end, els.pageUrl, els.device].forEach(function (element) {
     element.addEventListener("input", updateDashboard);
   });
-  [els.webhookUrl, els.formMode, els.leadWebhookUrl, els.kajabiFormEmbed, els.kajabiEmbedMode, els.configVersion, els.changeNote].forEach(function (element) {
+  [els.webhookUrl, els.formMode, els.leadWebhookUrl, els.delaySeconds, els.scrollDepth, els.kajabiFormEmbed, els.kajabiEmbedMode, els.configVersion, els.changeNote].forEach(function (element) {
     element.addEventListener("input", onGlobalConfigInput);
   });
   els.editors.addEventListener("input", onEditorInput);
@@ -128,6 +130,8 @@
     els.webhookUrl.value = config.webhookUrl || "";
     els.formMode.value = config.formMode || "zapier";
     els.leadWebhookUrl.value = config.leadWebhookUrl || "";
+    els.delaySeconds.value = Math.round((Number(config.triggers && config.triggers.delayMs) || 35000) / 1000);
+    els.scrollDepth.value = Math.round((Number(config.triggers && config.triggers.scrollDepth) || 0.5) * 100);
     els.kajabiFormEmbed.value = config.kajabiFormEmbed || "";
     els.kajabiEmbedMode.value = config.kajabiEmbedMode || "auto";
     els.configVersion.value = config.configVersion || "v1";
@@ -166,6 +170,9 @@
     config.webhookUrl = els.webhookUrl.value.trim();
     config.formMode = els.formMode.value;
     config.leadWebhookUrl = els.leadWebhookUrl.value.trim();
+    config.triggers = config.triggers || {};
+    config.triggers.delayMs = Math.max(0, Number(els.delaySeconds.value || 0)) * 1000;
+    config.triggers.scrollDepth = Math.min(1, Math.max(0, Number(els.scrollDepth.value || 0) / 100));
     config.kajabiFormEmbed = els.kajabiFormEmbed.value.trim();
     config.kajabiEmbedMode = els.kajabiEmbedMode.value;
     config.configVersion = els.configVersion.value.trim() || "v1";
@@ -1257,6 +1264,11 @@
     value.kajabiEmbedMode = value.kajabiEmbedMode || originalConfig.kajabiEmbedMode || "auto";
     value.formMode = value.formMode || originalConfig.formMode || "zapier";
     value.leadWebhookUrl = value.leadWebhookUrl || originalConfig.leadWebhookUrl || "";
+    value.triggers = value.triggers || originalConfig.triggers || {};
+    value.triggers.delayMs = Number(value.triggers.delayMs);
+    if (!Number.isFinite(value.triggers.delayMs)) value.triggers.delayMs = 35000;
+    value.triggers.scrollDepth = Number(value.triggers.scrollDepth);
+    if (!Number.isFinite(value.triggers.scrollDepth)) value.triggers.scrollDepth = 0.5;
     value.savedColors = (value.savedColors || originalConfig.savedColors || defaultColors).slice(0, 10).concat(defaultColors).slice(0, 10);
     value.variants = value.variants || [];
     value.variants.forEach(function (variant) {
