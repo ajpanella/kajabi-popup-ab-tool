@@ -130,8 +130,10 @@
     els.webhookUrl.value = config.webhookUrl || "";
     els.formMode.value = config.formMode || "zapier";
     els.leadWebhookUrl.value = config.leadWebhookUrl || "";
-    els.delaySeconds.value = Math.round((Number(config.triggers && config.triggers.delayMs) || 35000) / 1000);
-    els.scrollDepth.value = Math.round((Number(config.triggers && config.triggers.scrollDepth) || 0.5) * 100);
+    var delayMs = Number(config.triggers && config.triggers.delayMs);
+    var scrollDepth = Number(config.triggers && config.triggers.scrollDepth);
+    els.delaySeconds.value = Math.round((Number.isFinite(delayMs) ? delayMs : 35000) / 1000);
+    els.scrollDepth.value = Math.round((Number.isFinite(scrollDepth) ? scrollDepth : 0.5) * 100);
     els.kajabiFormEmbed.value = config.kajabiFormEmbed || "";
     els.kajabiEmbedMode.value = config.kajabiEmbedMode || "auto";
     els.configVersion.value = config.configVersion || "v1";

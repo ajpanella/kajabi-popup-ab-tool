@@ -17,12 +17,16 @@
 
   function attachTriggerListeners() {
     var delayMs = Number(config.triggers && config.triggers.delayMs) || 35000;
+    var triggerDepth = Number(config.triggers && config.triggers.scrollDepth);
     window.setTimeout(showPopup, delayMs);
-    window.addEventListener("scroll", onScroll, { passive: true });
+    if (Number.isFinite(triggerDepth) && triggerDepth > 0) {
+      window.addEventListener("scroll", onScroll, { passive: true });
+    }
   }
 
   function onScroll() {
-    var triggerDepth = Number(config.triggers && config.triggers.scrollDepth) || 0.5;
+    var triggerDepth = Number(config.triggers && config.triggers.scrollDepth);
+    if (!Number.isFinite(triggerDepth) || triggerDepth <= 0) return;
     var doc = document.documentElement;
     var scrollable = Math.max(1, doc.scrollHeight - window.innerHeight);
     var depth = (window.scrollY || doc.scrollTop || 0) / scrollable;

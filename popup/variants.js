@@ -7,8 +7,8 @@
   "cooldownDaysAfterSubmitAttempt": 90,
   "assignmentDays": 30,
   "triggers": {
-    "delayMs": 25000,
-    "scrollDepth": 0.5
+    "delayMs": 15000,
+    "scrollDepth": 0
   },
   "variants": [
     {
