@@ -419,6 +419,11 @@
 
   function sendPayload(url, payload) {
     if (!url) return;
+    if (/^https:\/\/script\.google\.com\/macros\/s\//i.test(url)) {
+      sendFormPayload(url, payload);
+      return;
+    }
+
     var json = JSON.stringify(payload);
 
     if (navigator.sendBeacon) {
@@ -433,6 +438,37 @@
       body: json,
       keepalive: true
     }).catch(function () {});
+  }
+
+  function sendFormPayload(url, payload) {
+    var frameName = "ll_popup_webhook_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+    var iframe = document.createElement("iframe");
+    var form = document.createElement("form");
+
+    iframe.name = frameName;
+    iframe.style.display = "none";
+    form.method = "POST";
+    form.action = url;
+    form.target = frameName;
+    form.style.display = "none";
+    form.enctype = "application/x-www-form-urlencoded";
+
+    Object.keys(payload).forEach(function (key) {
+      var input = document.createElement("input");
+      input.type = "hidden";
+      input.name = key;
+      input.value = typeof payload[key] === "string" ? payload[key] : JSON.stringify(payload[key] || "");
+      form.appendChild(input);
+    });
+
+    document.body.appendChild(iframe);
+    document.body.appendChild(form);
+    form.submit();
+
+    window.setTimeout(function () {
+      if (form.parentNode) form.parentNode.removeChild(form);
+      if (iframe.parentNode) iframe.parentNode.removeChild(iframe);
+    }, 10000);
   }
 
   function sendLeadPayload(url, payload) {
