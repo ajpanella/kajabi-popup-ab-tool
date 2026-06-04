@@ -4,9 +4,10 @@
   var originalConfig = window.LL_POPUP_CONFIG || { variants: [] };
   var DRAFT_KEY = "ll_popup_dashboard_config_" + sanitizeKey(originalConfig.testId || "default");
   var ASSET_BASE_KEY = "ll_popup_dashboard_asset_base";
+  var CSV_URL_KEY = "ll_popup_dashboard_csv_url";
   var config = loadDraftConfig();
   var urlParams = new URLSearchParams(window.location.search);
-  var defaultCsvUrl = urlParams.get("csv") || "";
+  var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
   var googleDocUrl = urlParams.get("doc") || "";
   var trackingSheetUrl = urlParams.get("sheet") || "https://docs.google.com/spreadsheets/d/1qIp6VXteTDFmDH60CSkXhssxKZ3Iwb96C_ezVdREGHY";
   var rows = [];
@@ -109,6 +110,7 @@
   function loadCsv() {
     var csvUrl = els.csvUrl.value.trim();
     if (!csvUrl) return;
+    localStorage.setItem(CSV_URL_KEY, csvUrl);
 
     fetch(csvUrl)
       .then(function (response) {
