@@ -182,6 +182,11 @@
   }
 
   function renderZapierForm(container) {
+    if (config.leadMagnetMode === "protein_plan") {
+      renderProteinPlanForm(container);
+      return;
+    }
+
     container.innerHTML = [
       "<form class=\"ll-popup-zapier-form\">",
       "<label><input name=\"name\" autocomplete=\"given-name\" placeholder=\"First Name\" required></label>",
@@ -202,6 +207,147 @@
       showFormStatus(container, "Thanks. Check your inbox for the next step.");
       schedulePopupFit(container.closest(".ll-popup-root"));
     });
+  }
+
+  function renderProteinPlanForm(container) {
+    var quizData = {};
+    var proteinQuiz = getProteinQuizConfig(variant);
+    var root = container.closest(".ll-popup-root");
+    var headline = root && root.querySelector(".ll-popup-headline");
+    var subheadline = root && root.querySelector(".ll-popup-subheadline");
+    var initialHeadline = headline ? headline.textContent : "";
+    var initialSubheadline = subheadline ? subheadline.innerHTML : "";
+
+    renderQuizStep();
+
+    function renderQuizStep() {
+      if (headline) headline.textContent = variant.quizHeadline || initialHeadline || "Your Personalized Protein Plan";
+      if (subheadline) {
+        subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || initialSubheadline || "Answer 3 quick questions and get your daily protein target plus a 7-day high-protein week.");
+      }
+
+      container.innerHTML = [
+        "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"quiz\">",
+        "<label><span>" + escapeHtml(proteinQuiz.targetWeightLabel) + "</span><input name=\"targetWeight\" type=\"number\" inputmode=\"numeric\" min=\"80\" max=\"350\" step=\"1\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.targetWeightPlaceholder) + "\" required></label>",
+        "<label><span>" + escapeHtml(proteinQuiz.strengthDaysLabel) + "</span><select name=\"strengthDays\" required>",
+        "<option value=\"\">" + escapeHtml(proteinQuiz.strengthDaysPlaceholder) + "</option>",
+        "<option value=\"0\">0 days</option>",
+        "<option value=\"1\">1 day</option>",
+        "<option value=\"2\">2 days</option>",
+        "<option value=\"3\">3 days</option>",
+        "<option value=\"4\">4 days</option>",
+        "<option value=\"5\">5 days</option>",
+        "<option value=\"6\">6 days</option>",
+        "<option value=\"7\">7 days</option>",
+        "</select></label>",
+        "<label><span>" + escapeHtml(proteinQuiz.ageLabel) + "</span><input name=\"age\" type=\"number\" inputmode=\"numeric\" min=\"18\" max=\"100\" step=\"1\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.agePlaceholder) + "\" required></label>",
+        "<button type=\"submit\">" + escapeHtml(proteinQuiz.quizButtonText) + "</button>",
+        "</form>"
+      ].join("");
+
+      var form = container.querySelector("form");
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        quizData = {
+          targetWeight: form.elements.targetWeight.value,
+          strengthDays: form.elements.strengthDays.value,
+          age: form.elements.age.value
+        };
+        trackEvent("popup_quiz_submit", getProteinTrackingFields(quizData));
+        renderLeadStep();
+      });
+
+      schedulePopupFit(root);
+    }
+
+    function renderLeadStep() {
+      if (headline) headline.textContent = proteinQuiz.leadHeadline;
+      if (subheadline) subheadline.innerHTML = sanitizeRichHtml(proteinQuiz.leadSubheadline);
+
+      container.innerHTML = [
+        "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
+        "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"lead\">",
+        "<label><span>" + escapeHtml(proteinQuiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.firstNamePlaceholder) + "\" required></label>",
+        "<label><span>" + escapeHtml(proteinQuiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.emailPlaceholder) + "\" required></label>",
+        "<button type=\"submit\">" + escapeHtml(proteinQuiz.leadButtonText || variant.buttonText || "Show My Protein Plan") + "</button>",
+        "</form>"
+      ].join("");
+
+      var form = container.querySelector("form");
+      var backButton = container.querySelector(".ll-popup-step-back");
+      backButton.addEventListener("click", renderQuizStep);
+
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var payload = {
+          name: form.elements.name.value,
+          email: form.elements.email.value,
+          targetWeightLbs: quizData.targetWeight,
+          age: quizData.age,
+          strengthDays: quizData.strengthDays,
+          source: "protein_popup",
+          ctaVariant: "show_my_protein_plan",
+          popupVariant: variant.id
+        };
+
+        sendLeadPayload(config.leadWebhookUrl, payload);
+        trackEvent("popup_lead_submit", getProteinTrackingFields(payload));
+        setCooldown(config.cooldownDaysAfterSubmitAttempt || 90);
+        redirectToProteinPlan(payload);
+      });
+
+      schedulePopupFit(root);
+    }
+  }
+
+  function getProteinQuizConfig(activeVariant) {
+    return Object.assign({
+      targetWeightLabel: "Target weight in lbs",
+      targetWeightPlaceholder: "155",
+      strengthDaysLabel: "Strength training days",
+      strengthDaysPlaceholder: "Select days",
+      ageLabel: "Age",
+      agePlaceholder: "48",
+      quizButtonText: "Continue",
+      leadHeadline: "Get your free personalized protein goal + 7-day high-protein meal plan",
+      leadSubheadline: "Tell us where to send it, then your plan will open right away.",
+      firstNameLabel: "First name",
+      firstNamePlaceholder: "First Name",
+      emailLabel: "Email",
+      emailPlaceholder: "Email",
+      leadButtonText: "Show My Protein Plan",
+      backButtonText: "Back"
+    }, config.proteinQuiz || {}, activeVariant && activeVariant.proteinQuiz || {});
+  }
+
+  function redirectToProteinPlan(payload) {
+    var baseUrl = config.proteinPlanUrl || "/protein-plan";
+    var url;
+    try {
+      url = new URL(baseUrl, window.location.href);
+    } catch (error) {
+      url = new URL("/protein-plan", window.location.href);
+    }
+
+    url.searchParams.set("FirstName", payload.name || "");
+    url.searchParams.set("TargetWeight", payload.targetWeightLbs || "");
+    url.searchParams.set("Age", payload.age || "");
+    url.searchParams.set("StrengthDays", payload.strengthDays || "");
+
+    window.setTimeout(function () {
+      window.location.href = url.toString();
+    }, 250);
+  }
+
+  function getProteinTrackingFields(payload) {
+    return {
+      targetWeightLbs: payload.targetWeightLbs || payload.targetWeight || "",
+      age: payload.age || "",
+      strengthDays: payload.strengthDays || "",
+      source: payload.source || "protein_popup",
+      ctaVariant: payload.ctaVariant || "show_my_protein_plan",
+      popupVariant: payload.popupVariant || variant.id
+    };
   }
 
   function showFormStatus(container, message) {
@@ -352,19 +498,20 @@
       }
     });
 
-    container.addEventListener("submit", function () {
-      submitAttempt();
+    container.addEventListener("submit", function (event) {
+      submitAttempt(event.target);
     }, true);
 
     container.addEventListener("click", function (event) {
       var target = event.target;
       if (!target || !target.closest) return;
       if (target.closest("button[type='submit'], input[type='submit'], .form-btn")) {
-        submitAttempt();
+        submitAttempt(target.closest("form"));
       }
     }, true);
 
-    function submitAttempt() {
+    function submitAttempt(form) {
+      if (form && form.getAttribute("data-step") === "quiz") return;
       if (hasAttemptedSubmit) return;
       hasAttemptedSubmit = true;
       setCooldown(config.cooldownDaysAfterSubmitAttempt || 90);
@@ -414,10 +561,10 @@
     trackEvent(eventType);
   }
 
-  function trackEvent(eventType) {
+  function trackEvent(eventType, extraFields) {
     if (!config.webhookUrl) return;
 
-    var payload = buildPayload(eventType);
+    var payload = buildPayload(eventType, extraFields);
     sendPayload(config.webhookUrl, payload);
   }
 
@@ -478,8 +625,9 @@
   function sendLeadPayload(url, payload) {
     if (!url) return;
     var body = new URLSearchParams();
-    body.set("name", payload.name || "");
-    body.set("email", payload.email || "");
+    Object.keys(payload || {}).forEach(function (key) {
+      body.set(key, payload[key] == null ? "" : String(payload[key]));
+    });
 
     if (navigator.sendBeacon) {
       if (navigator.sendBeacon(url, body)) return;
@@ -493,9 +641,9 @@
     }).catch(function () {});
   }
 
-  function buildPayload(eventType) {
+  function buildPayload(eventType, extraFields) {
     var params = new URLSearchParams(window.location.search);
-    return {
+    return Object.assign({
       timestamp: new Date().toISOString(),
       testId: config.testId || "",
       configVersion: config.configVersion || "v1",
@@ -515,7 +663,7 @@
       utm_term: params.get("utm_term") || "",
       userAgent: navigator.userAgent,
       sessionId: getSessionId()
-    };
+    }, extraFields || {});
   }
 
   function getVariantSnapshot() {
@@ -538,8 +686,9 @@
   }
 
   function getVariantLabel() {
+    var quiz = getProteinQuizConfig(variant);
     return [
-      "CTA: " + (variant.buttonText || "Submit"),
+      "CTA: " + (config.leadMagnetMode === "protein_plan" ? quiz.leadButtonText : (variant.buttonText || "Submit")),
       "Button: " + (variant.accentColor || ""),
       "BG: " + (variant.backgroundColor || ""),
       "Width: " + (variant.width || ""),

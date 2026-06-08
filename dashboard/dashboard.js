@@ -13,6 +13,7 @@
   var rows = [];
   var charts = {};
   var previewMode = "desktop";
+  var previewStep = "quiz";
   var lastColorTarget = null;
 
   var els = {
@@ -32,15 +33,15 @@
     copyEmbed: document.getElementById("copy-embed"),
     editors: document.getElementById("variant-editors"),
     resetConfig: document.getElementById("reset-config"),
+    restoreWinner: document.getElementById("restore-winner"),
     downloadConfig: document.getElementById("download-config"),
     copyConfig: document.getElementById("copy-config"),
     webhookUrl: document.getElementById("webhook-url"),
-    formMode: document.getElementById("form-mode"),
+    leadMagnetMode: document.getElementById("lead-magnet-mode"),
     leadWebhookUrl: document.getElementById("lead-webhook-url"),
+    proteinPlanUrl: document.getElementById("protein-plan-url"),
     delaySeconds: document.getElementById("delay-seconds"),
     scrollDepth: document.getElementById("scroll-depth"),
-    kajabiFormEmbed: document.getElementById("kajabi-form-embed"),
-    kajabiEmbedMode: document.getElementById("kajabi-embed-mode"),
     configVersion: document.getElementById("config-version"),
     changeNote: document.getElementById("change-note"),
     savedColors: document.getElementById("saved-colors"),
@@ -48,7 +49,10 @@
     history: document.getElementById("variation-history"),
     previews: document.getElementById("variant-previews"),
     desktopPreview: document.getElementById("desktop-preview"),
+    comparePreview: document.getElementById("compare-preview"),
     mobilePreview: document.getElementById("mobile-preview"),
+    quizStepPreview: document.getElementById("quiz-step-preview"),
+    leadStepPreview: document.getElementById("lead-step-preview"),
     warning: document.getElementById("sample-warning"),
     body: document.getElementById("performance-body")
   };
@@ -68,7 +72,7 @@
   [els.testId, els.variant, els.version, els.start, els.end, els.pageUrl, els.device].forEach(function (element) {
     element.addEventListener("input", updateDashboard);
   });
-  [els.webhookUrl, els.formMode, els.leadWebhookUrl, els.delaySeconds, els.scrollDepth, els.kajabiFormEmbed, els.kajabiEmbedMode, els.configVersion, els.changeNote].forEach(function (element) {
+  [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
     element.addEventListener("input", onGlobalConfigInput);
   });
   els.editors.addEventListener("input", onEditorInput);
@@ -87,6 +91,7 @@
     copyText(generateVariantsJs());
   });
   els.downloadConfig.addEventListener("click", downloadConfig);
+  els.restoreWinner.addEventListener("click", restoreWinningVariant);
   els.resetConfig.addEventListener("click", function () {
     localStorage.removeItem(DRAFT_KEY);
     config = cloneConfig(originalConfig);
@@ -101,8 +106,20 @@
     setPreviewMode("desktop");
   });
 
+  els.comparePreview.addEventListener("click", function () {
+    setPreviewMode("compare");
+  });
+
   els.mobilePreview.addEventListener("click", function () {
     setPreviewMode("mobile");
+  });
+
+  els.quizStepPreview.addEventListener("click", function () {
+    setPreviewStep("quiz");
+  });
+
+  els.leadStepPreview.addEventListener("click", function () {
+    setPreviewStep("lead");
   });
 
   if (defaultCsvUrl) loadCsv();
@@ -130,14 +147,13 @@
   function renderEditors() {
     els.editors.innerHTML = "";
     els.webhookUrl.value = config.webhookUrl || "";
-    els.formMode.value = config.formMode || "zapier";
+    els.leadMagnetMode.value = config.leadMagnetMode || "";
     els.leadWebhookUrl.value = config.leadWebhookUrl || "";
+    els.proteinPlanUrl.value = config.proteinPlanUrl || "";
     var delayMs = Number(config.triggers && config.triggers.delayMs);
     var scrollDepth = Number(config.triggers && config.triggers.scrollDepth);
     els.delaySeconds.value = Math.round((Number.isFinite(delayMs) ? delayMs : 35000) / 1000);
     els.scrollDepth.value = Math.round((Number.isFinite(scrollDepth) ? scrollDepth : 0.5) * 100);
-    els.kajabiFormEmbed.value = config.kajabiFormEmbed || "";
-    els.kajabiEmbedMode.value = config.kajabiEmbedMode || "auto";
     els.configVersion.value = config.configVersion || "v1";
     els.changeNote.value = config.changeNote || "";
     renderPalette();
@@ -149,7 +165,7 @@
         "<div class=\"dash-editor-title\"><h3>Variant " + escapeHtml(variant.id) + "</h3><span>" + escapeHtml(label) + "</span></div>",
         editorInput("headline", index, "Headline", variant.headline || "", "text"),
         editorRichText("subheadlineHtml", index, "Subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || "")),
-        editorInput("buttonText", index, "CTA button text", variant.buttonText || "Submit", "text"),
+        config.leadMagnetMode === "protein_plan" ? "" : editorInput("buttonText", index, "CTA button text", variant.buttonText || "Submit", "text"),
         editorInput("imageUrl", index, "Image URL", variant.imageUrl || "", "url"),
         editorInput("imageAlt", index, "Image alt text", variant.imageAlt || "", "text"),
         "<div class=\"dash-color-row\">",
@@ -163,8 +179,9 @@
         editorInput("height", index, "Height px", String(variant.height || ""), "number"),
         editorCheckbox("sizeToImage", index, "Size to Image", Boolean(variant.sizeToImage)),
         editorInput("trafficSplit", index, "Traffic split", String(variant.trafficSplit || 0), "number"),
-        "<button class=\"dash-test-popup-button\" data-test-popup=\"" + index + "\" type=\"button\">Test Popup</button>",
-        "<button class=\"dash-save-test\" data-save-test=\"" + index + "\" type=\"button\">Save & Test</button>"
+        renderProteinFlowEditor(variant, index),
+        "<button class=\"dash-test-popup-button\" data-test-popup=\"" + index + "\" type=\"button\">Load Variant Preview (Dashboard Only)</button>",
+        "<button class=\"dash-save-test\" data-save-test=\"" + index + "\" type=\"button\">Save Draft + Log Version</button>"
       ].join("");
       els.editors.appendChild(card);
     });
@@ -172,19 +189,44 @@
 
   function onGlobalConfigInput() {
     config.webhookUrl = els.webhookUrl.value.trim();
-    config.formMode = els.formMode.value;
+    config.formMode = "zapier";
+    config.leadMagnetMode = els.leadMagnetMode.value;
     config.leadWebhookUrl = els.leadWebhookUrl.value.trim();
+    config.proteinPlanUrl = els.proteinPlanUrl.value.trim();
     config.triggers = config.triggers || {};
     config.triggers.delayMs = Math.max(0, Number(els.delaySeconds.value || 0)) * 1000;
     config.triggers.scrollDepth = Math.min(1, Math.max(0, Number(els.scrollDepth.value || 0) / 100));
-    config.kajabiFormEmbed = els.kajabiFormEmbed.value.trim();
-    config.kajabiEmbedMode = els.kajabiEmbedMode.value;
     config.configVersion = els.configVersion.value.trim() || "v1";
     config.changeNote = els.changeNote.value.trim();
     saveDraftConfig();
+    renderPreviews(previewMode);
     renderEmbedCode();
     populateFilters();
     updateDashboard();
+  }
+
+  function getProteinQuizConfig(variant) {
+    return Object.assign(getProteinQuizDefaults(), config.proteinQuiz || {}, variant && variant.proteinQuiz || {});
+  }
+
+  function getProteinQuizDefaults() {
+    return {
+      targetWeightLabel: "Target weight in lbs",
+      targetWeightPlaceholder: "155",
+      strengthDaysLabel: "Strength training days",
+      strengthDaysPlaceholder: "Select days",
+      ageLabel: "Age",
+      agePlaceholder: "48",
+      quizButtonText: "Continue",
+      leadHeadline: "Get your free personalized protein goal + 7-day high-protein meal plan",
+      leadSubheadline: "Tell us where to send it, then your plan will open right away.",
+      firstNameLabel: "First name",
+      firstNamePlaceholder: "First Name",
+      emailLabel: "Email",
+      emailPlaceholder: "Email",
+      leadButtonText: "Show My Protein Plan",
+      backButtonText: "Back"
+    };
   }
 
   function onEditorInput(event) {
@@ -197,7 +239,7 @@
     var key = target.dataset.field;
     var value = target.isContentEditable ? sanitizeRichHtml(target.innerHTML) : (target.type === "checkbox" ? target.checked : target.value);
     if (key === "width" || key === "height" || key === "trafficSplit") value = value === "" ? "" : Number(value);
-    variant[key] = value;
+    setNestedValue(variant, key, value);
     if (key === "subheadlineHtml") {
       variant.subheadline = target.textContent || "";
     }
@@ -209,6 +251,21 @@
     renderEmbedCode();
     populateFilters();
     updateDashboard();
+  }
+
+  function setNestedValue(target, path, value) {
+    var parts = String(path || "").split(".");
+    if (parts.length === 1) {
+      target[path] = value;
+      return;
+    }
+
+    var cursor = target;
+    parts.slice(0, -1).forEach(function (part) {
+      cursor[part] = cursor[part] || {};
+      cursor = cursor[part];
+    });
+    cursor[parts[parts.length - 1]] = value;
   }
 
   function onEditorClick(event) {
@@ -240,6 +297,32 @@
     if (event.target && event.target.type === "color") {
       lastColorTarget = event.target;
     }
+  }
+
+  function renderProteinFlowEditor(variant, index) {
+    var quiz = getProteinQuizConfig(variant);
+    return [
+      "<div class=\"dash-flow-editor dash-variant-flow-editor\">",
+      "<div class=\"dash-flow-head\"><strong>Protein Quiz Flow</strong><span>Variant-specific quiz labels, placeholders, and step-two copy.</span></div>",
+      "<div class=\"dash-global-editor\">",
+      editorInput("proteinQuiz.targetWeightLabel", index, "Target weight label", quiz.targetWeightLabel, "text"),
+      editorInput("proteinQuiz.targetWeightPlaceholder", index, "Target weight placeholder", quiz.targetWeightPlaceholder, "text"),
+      editorInput("proteinQuiz.strengthDaysLabel", index, "Strength days label", quiz.strengthDaysLabel, "text"),
+      editorInput("proteinQuiz.strengthDaysPlaceholder", index, "Strength dropdown placeholder", quiz.strengthDaysPlaceholder, "text"),
+      editorInput("proteinQuiz.ageLabel", index, "Age label", quiz.ageLabel, "text"),
+      editorInput("proteinQuiz.agePlaceholder", index, "Age placeholder", quiz.agePlaceholder, "text"),
+      editorInput("proteinQuiz.quizButtonText", index, "Quiz button text", quiz.quizButtonText, "text"),
+      "<div class=\"dash-flow-divider\"><span>After visitor clicks quiz submit</span></div>",
+      editorInput("proteinQuiz.leadHeadline", index, "Lead-step headline", quiz.leadHeadline, "text"),
+      editorTextarea("proteinQuiz.leadSubheadline", index, "Lead-step subheadline", quiz.leadSubheadline),
+      editorInput("proteinQuiz.firstNameLabel", index, "First name label", quiz.firstNameLabel, "text"),
+      editorInput("proteinQuiz.firstNamePlaceholder", index, "First name placeholder", quiz.firstNamePlaceholder, "text"),
+      editorInput("proteinQuiz.emailLabel", index, "Email label", quiz.emailLabel, "text"),
+      editorInput("proteinQuiz.emailPlaceholder", index, "Email placeholder", quiz.emailPlaceholder, "text"),
+      editorInput("proteinQuiz.leadButtonText", index, "Lead button text", quiz.leadButtonText, "text"),
+      "</div>",
+      "</div>"
+    ].join("");
   }
 
   function editorInput(field, index, label, value, type) {
@@ -418,6 +501,8 @@
         sessions: new Set(),
         views: 0,
         clicks: 0,
+        quizSubmits: 0,
+        leads: 0,
         submits: 0,
         closes: 0
       };
@@ -433,6 +518,8 @@
           sessions: new Set(),
           views: 0,
           clicks: 0,
+          quizSubmits: 0,
+          leads: 0,
           submits: 0,
           closes: 0
         };
@@ -444,7 +531,9 @@
         item.views += 1;
       }
       if (row.eventType === "popup_form_click") item.clicks += 1;
-      if (row.eventType === "popup_submit_attempt" || row.eventType === "kajabi_form_submitted") item.submits += 1;
+      if (row.eventType === "popup_quiz_submit") item.quizSubmits += 1;
+      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.leads += 1;
+      if (row.eventType === "popup_submit_attempt" || row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.submits += 1;
       if (row.eventType === "popup_close") item.closes += 1;
     });
 
@@ -460,6 +549,10 @@
         viewRate: rate(item.views, sessionCount),
         clicks: item.clicks,
         clickRate: rate(item.clicks, item.views),
+        quizSubmits: item.quizSubmits,
+        quizRate: rate(item.quizSubmits, item.views),
+        leads: item.leads,
+        leadRate: rate(item.leads, item.views),
         submits: item.submits,
         submitRate: conversionRate,
         closes: item.closes,
@@ -470,11 +563,12 @@
 
     var controlRates = {};
     result.forEach(function (item) {
-      if (item.variant === "A") controlRates[item.configVersion] = item.submitRate;
+      if (item.variant === "A") controlRates[item.configVersion] = item.leadRate || item.submitRate;
     });
     result.forEach(function (item) {
       var controlRate = controlRates[item.configVersion] || 0;
-      item.lift = controlRate > 0 ? (item.submitRate / controlRate) - 1 : 0;
+      var comparisonRate = item.leadRate || item.submitRate;
+      item.lift = controlRate > 0 ? (comparisonRate / controlRate) - 1 : 0;
     });
 
     return result;
@@ -484,14 +578,16 @@
     var totals = metrics.reduce(function (sum, item) {
       sum.views += item.views;
       sum.clicks += item.clicks;
+      sum.quizSubmits += item.quizSubmits;
+      sum.leads += item.leads;
       sum.submits += item.submits;
       sum.closes += item.closes;
       return sum;
-    }, { views: 0, clicks: 0, submits: 0, closes: 0 });
+    }, { views: 0, clicks: 0, quizSubmits: 0, leads: 0, submits: 0, closes: 0 });
 
     document.getElementById("stat-views").textContent = formatNumber(totals.views);
-    document.getElementById("stat-clicks").textContent = formatNumber(totals.clicks);
-    document.getElementById("stat-submits").textContent = formatNumber(totals.submits);
+    document.getElementById("stat-quiz-submits").textContent = formatNumber(totals.quizSubmits);
+    document.getElementById("stat-leads").textContent = formatNumber(totals.leads || totals.submits);
     document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.closes, totals.views));
   }
 
@@ -513,8 +609,10 @@
         formatPercent(item.viewRate),
         formatNumber(item.clicks),
         formatPercent(item.clickRate),
-        formatNumber(item.submits),
-        formatPercent(item.submitRate),
+        formatNumber(item.quizSubmits),
+        formatPercent(item.quizRate),
+        formatNumber(item.leads || item.submits),
+        formatPercent(item.leadRate || item.submitRate),
         formatNumber(item.closes),
         formatPercent(item.closeRate),
         item.variant === "A" ? "Control" : formatPercent(item.lift, true)
@@ -542,8 +640,8 @@
         messages.push("Variant " + item.variant + " / " + item.configVersion + " has " + item.views + " views. Wait for at least 100 views before making a decision.");
       } else if (item.closeRate > 0.65 && item.clickRate < 0.08) {
         messages.push("Variant " + item.variant + " / " + item.configVersion + " has a high close rate and low click rate. Test a stronger headline or a more specific image.");
-      } else if (item.clickRate > 0.12 && item.submitRate < 0.04) {
-        messages.push("Variant " + item.variant + " / " + item.configVersion + " gets clicks but few submit attempts. The form or offer may need less friction.");
+      } else if (item.clickRate > 0.12 && (item.leadRate || item.submitRate) < 0.04) {
+        messages.push("Variant " + item.variant + " / " + item.configVersion + " gets clicks but few leads. The form or offer may need less friction.");
       } else if (item.lift > 0.15) {
         messages.push("Variant " + item.variant + " / " + item.configVersion + " is showing positive lift. Consider shifting more traffic only after sample size is strong.");
       }
@@ -561,8 +659,13 @@
 
     drawChart("conversion-chart", "bar", labels, [
       {
-        label: "Submit attempt rate",
-        data: metrics.map(function (item) { return Math.round(item.submitRate * 1000) / 10; }),
+        label: "Lead rate",
+        data: metrics.map(function (item) { return Math.round((item.leadRate || item.submitRate) * 1000) / 10; }),
+        backgroundColor: "#06b00b"
+      },
+      {
+        label: "Quiz completion rate",
+        data: metrics.map(function (item) { return Math.round(item.quizRate * 1000) / 10; }),
         backgroundColor: "#2563eb"
       },
       {
@@ -579,9 +682,14 @@
         backgroundColor: "#475467"
       },
       {
-        label: "Submit attempts",
-        data: metrics.map(function (item) { return item.submits; }),
-        backgroundColor: "#c2410c"
+        label: "Quiz completions",
+        data: metrics.map(function (item) { return item.quizSubmits; }),
+        backgroundColor: "#2563eb"
+      },
+      {
+        label: "Leads",
+        data: metrics.map(function (item) { return item.leads || item.submits; }),
+        backgroundColor: "#06b00b"
       }
     ]);
   }
@@ -602,6 +710,8 @@
 
   function renderPreviews(mode) {
     els.previews.innerHTML = "";
+    els.previews.classList.toggle("is-compare", mode === "compare");
+    els.previews.classList.toggle("is-mobile", mode === "mobile");
     activeVariants().forEach(function (variant) {
       var card = document.createElement("article");
       card.className = "dash-preview-card";
@@ -611,8 +721,8 @@
       title.innerHTML = "<strong>Variant " + escapeHtml(variant.id) + "</strong><span>" + escapeHtml(variant.trafficSplit) + "% split</span>";
 
       var stage = document.createElement("div");
-      stage.className = "dash-preview-stage" + (mode === "mobile" ? " is-mobile" : "");
-      stage.appendChild(buildPreview(variant));
+      stage.className = "dash-preview-stage" + (mode === "mobile" ? " is-mobile" : "") + (mode === "compare" ? " is-compare" : "");
+      stage.appendChild(buildPreview(variant, previewStep));
 
       card.appendChild(title);
       card.appendChild(stage);
@@ -620,7 +730,9 @@
     });
   }
 
-  function buildPreview(variant) {
+  function buildPreview(variant, step) {
+    step = step || "quiz";
+    var quiz = getProteinQuizConfig(variant);
     var root = document.createElement("div");
     root.className = "ll-popup-root ll-popup-is-visible";
     if (Number(variant.height) > 0) root.classList.add("ll-popup-has-height");
@@ -664,13 +776,19 @@
     var copy = document.createElement("div");
     copy.className = "ll-popup-copy";
     copy.style.textAlign = variant.textAlign || "left";
-    copy.innerHTML = "<h2 class=\"ll-popup-headline\">" + escapeHtml(variant.headline || "") + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || "")) + "</p>";
+    copy.innerHTML = step === "lead" && config.leadMagnetMode === "protein_plan"
+      ? "<h2 class=\"ll-popup-headline\">" + escapeHtml(quiz.leadHeadline) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(quiz.leadSubheadline) + "</p>"
+      : "<h2 class=\"ll-popup-headline\">" + escapeHtml(variant.headline || "") + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || "")) + "</p>";
     copy.querySelector(".ll-popup-headline").style.textAlign = variant.textAlign || "left";
     copy.querySelector(".ll-popup-subheadline").style.textAlign = variant.textAlign || "left";
 
     var form = document.createElement("div");
     form.className = "ll-popup-form";
-    form.innerHTML = "<div class=\"dash-fake-field\">First Name</div><div class=\"dash-fake-field\">Email</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(variant.buttonText || "Submit") + "</button>";
+    form.innerHTML = config.leadMagnetMode === "protein_plan" && step === "lead"
+      ? "<button class=\"ll-popup-step-back\" type=\"button\" aria-label=\"Back\">&#8592;</button><div class=\"dash-fake-field\">" + escapeHtml(quiz.firstNameLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.emailLabel) + "</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.leadButtonText) + "</button>"
+      : config.leadMagnetMode === "protein_plan"
+      ? "<div class=\"dash-fake-field\">" + escapeHtml(quiz.targetWeightLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.strengthDaysLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.ageLabel) + "</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.quizButtonText) + "</button>"
+      : "<div class=\"dash-fake-field\">First Name</div><div class=\"dash-fake-field\">Email</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(variant.buttonText || "Submit") + "</button>";
 
     content.appendChild(copy);
     content.appendChild(form);
@@ -694,13 +812,13 @@
     var close = root.querySelector(".ll-popup-close");
     var form = root.querySelector(".ll-popup-form");
 
-    if (config.formMode === "zapier") {
-      renderZapierPreviewForm(form, variant);
+    if (config.leadMagnetMode === "protein_plan") {
+      renderProteinPlanPreviewForm(form, variant);
     } else if (config.kajabiFormEmbed && config.kajabiFormEmbed.indexOf("YOUR_FORM_ID") === -1) {
       form.innerHTML = "";
       injectKajabiForm(form);
     } else {
-      form.innerHTML = "<div class=\"ll-popup-form-status\">Paste your Kajabi form embed in the editor to preview live form fields here.</div>";
+      renderZapierPreviewForm(form, variant);
     }
 
     overlay.addEventListener("click", closeTestPopup);
@@ -774,6 +892,81 @@
       showFormStatus(container, config.leadWebhookUrl ? "Test sent to Zapier with name and email." : "Add your Zapier lead webhook URL before testing the lead submission.");
       schedulePopupFit(container.closest(".ll-popup-root"));
     });
+  }
+
+  function renderProteinPlanPreviewForm(container, variant) {
+    var quizData = {};
+    var root = container.closest(".ll-popup-root");
+    var headline = root && root.querySelector(".ll-popup-headline");
+    var subheadline = root && root.querySelector(".ll-popup-subheadline");
+    var quiz = getProteinQuizConfig(variant);
+    renderQuizStep();
+
+    function renderQuizStep() {
+      if (headline) headline.textContent = variant.quizHeadline || variant.headline || "";
+      if (subheadline) subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || escapeHtml(variant.subheadline || ""));
+      container.innerHTML = [
+        "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"quiz\">",
+        "<label><span>" + escapeHtml(quiz.targetWeightLabel) + "</span><input name=\"targetWeight\" type=\"number\" inputmode=\"numeric\" min=\"80\" max=\"350\" step=\"1\" placeholder=\"" + escapeHtmlAttr(quiz.targetWeightPlaceholder) + "\" required></label>",
+        "<label><span>" + escapeHtml(quiz.strengthDaysLabel) + "</span><select name=\"strengthDays\" required>",
+        "<option value=\"\">" + escapeHtml(quiz.strengthDaysPlaceholder) + "</option>",
+        "<option value=\"0\">0 days</option>",
+        "<option value=\"1\">1 day</option>",
+        "<option value=\"2\">2 days</option>",
+        "<option value=\"3\">3 days</option>",
+        "<option value=\"4\">4 days</option>",
+        "<option value=\"5\">5 days</option>",
+        "<option value=\"6\">6 days</option>",
+        "<option value=\"7\">7 days</option>",
+        "</select></label>",
+        "<label><span>" + escapeHtml(quiz.ageLabel) + "</span><input name=\"age\" type=\"number\" inputmode=\"numeric\" min=\"18\" max=\"100\" step=\"1\" placeholder=\"" + escapeHtmlAttr(quiz.agePlaceholder) + "\" required></label>",
+        "<button type=\"submit\">" + escapeHtml(quiz.quizButtonText) + "</button>",
+        "</form>"
+      ].join("");
+
+      container.querySelector("form").addEventListener("submit", function (event) {
+        event.preventDefault();
+        var form = event.currentTarget;
+        quizData = {
+          targetWeightLbs: form.elements.targetWeight.value,
+          age: form.elements.age.value,
+          strengthDays: form.elements.strengthDays.value
+        };
+        renderLeadStep();
+      });
+      schedulePopupFit(container.closest(".ll-popup-root"));
+    }
+
+    function renderLeadStep() {
+      if (headline) headline.textContent = quiz.leadHeadline;
+      if (subheadline) subheadline.innerHTML = sanitizeRichHtml(quiz.leadSubheadline);
+      container.innerHTML = [
+        "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
+        "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"lead\">",
+        "<label><span>" + escapeHtml(quiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(quiz.firstNamePlaceholder) + "\" required></label>",
+        "<label><span>" + escapeHtml(quiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(quiz.emailPlaceholder) + "\" required></label>",
+        "<button type=\"submit\">" + escapeHtml(quiz.leadButtonText || variant.buttonText || "Show My Protein Plan") + "</button>",
+        "</form>"
+      ].join("");
+
+      var form = container.querySelector("form");
+      container.querySelector(".ll-popup-step-back").addEventListener("click", renderQuizStep);
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        sendLeadPayload(config.leadWebhookUrl, {
+          name: form.elements.name.value,
+          email: form.elements.email.value,
+          targetWeightLbs: quizData.targetWeightLbs,
+          age: quizData.age,
+          strengthDays: quizData.strengthDays,
+          source: "protein_popup",
+          ctaVariant: "show_my_protein_plan",
+          popupVariant: variant.id
+        });
+        showFormStatus(container, config.leadWebhookUrl ? "Test sent to Zapier with protein quiz fields." : "Add your Zapier lead webhook URL before testing the lead submission.");
+      });
+      schedulePopupFit(container.closest(".ll-popup-root"));
+    }
   }
 
   function showFormStatus(container, message) {
@@ -908,8 +1101,16 @@
   function setPreviewMode(mode) {
     previewMode = mode;
     els.desktopPreview.classList.toggle("is-active", mode === "desktop");
+    els.comparePreview.classList.toggle("is-active", mode === "compare");
     els.mobilePreview.classList.toggle("is-active", mode === "mobile");
     renderPreviews(mode);
+  }
+
+  function setPreviewStep(step) {
+    previewStep = step;
+    els.quizStepPreview.classList.toggle("is-active", step === "quiz");
+    els.leadStepPreview.classList.toggle("is-active", step === "lead");
+    renderPreviews(previewMode);
   }
 
   function renderEmbedCode() {
@@ -927,7 +1128,14 @@
   }
 
   function defaultAssetBaseUrl() {
-    if (window.location.protocol.indexOf("http") === 0) return window.location.origin;
+    if (window.location.protocol.indexOf("http") === 0) {
+      var path = window.location.pathname
+        .replace(/\/dashboard\/?$/, "")
+        .replace(/\/dashboard\/index\.html$/, "")
+        .replace(/\/index\.html$/, "")
+        .replace(/\/+$/, "");
+      return window.location.origin + (path && path !== "/" ? path : "");
+    }
     return "https://YOUR-HOST/kajabi-popup-ab-tool";
   }
 
@@ -1044,11 +1252,124 @@
   }
 
   function setButtonStatus(button, text) {
-    var original = "Save & Test";
+    var original = "Save Draft + Log Version";
     button.textContent = text;
     window.setTimeout(function () {
       button.textContent = original;
     }, 2200);
+  }
+
+  function restoreWinningVariant() {
+    var winner = findWinningVariant(rows);
+    if (!winner) {
+      window.alert("No eligible winning variant yet. A winner needs at least 1,000 popup views.");
+      return;
+    }
+
+    var targetIndex = config.variants.findIndex(function (variant) {
+      return variant.id === winner.variant;
+    });
+    if (targetIndex < 0) {
+      targetIndex = config.variants.findIndex(function (variant) {
+        return variant.active !== false;
+      });
+    }
+    if (targetIndex < 0) {
+      window.alert("I found a winner, but there is no active variant slot to restore it into.");
+      return;
+    }
+
+    var current = config.variants[targetIndex] || {};
+    var restored = Object.assign({}, current, winner.snapshot, {
+      id: current.id || winner.variant,
+      active: current.active !== false,
+      trafficSplit: current.trafficSplit
+    });
+
+    config.variants[targetIndex] = restored;
+    config.configVersion = "restored-" + new Date().toISOString().slice(0, 10) + "-" + sanitizeKey(restored.id || "winner");
+    config.changeNote = [
+      "Restored winning variant ",
+      winner.variant,
+      " after ",
+      formatNumber(winner.views),
+      " views at ",
+      formatPercent(winner.leadRate),
+      " lead conversion."
+    ].join("");
+    config = ensureConfigDefaults(config);
+    saveDraftConfig();
+    renderEditors();
+    renderPreviews(previewMode);
+    renderEmbedCode();
+    populateFilters();
+    updateDashboard();
+    window.alert("Restored Variant " + restored.id + " from the best eligible test: " + formatPercent(winner.leadRate) + " lead conversion across " + formatNumber(winner.views) + " views.");
+  }
+
+  function findWinningVariant(data) {
+    var minimumViews = 1000;
+    var groups = {};
+
+    data.forEach(function (row) {
+      var snapshot = parseVariantSnapshot(row.variantSnapshot);
+      if (!snapshot) return;
+
+      var key = [
+        row.testId || "",
+        row.configVersion || "unversioned",
+        row.variant || "Unknown",
+        row.variantSnapshot || ""
+      ].join("::");
+
+      if (!groups[key]) {
+        groups[key] = {
+          variant: row.variant || "Unknown",
+          configVersion: row.configVersion || "unversioned",
+          snapshot: snapshot,
+          views: 0,
+          leads: 0,
+          firstSeen: null,
+          lastSeen: null
+        };
+      }
+
+      var item = groups[key];
+      var timestamp = parseTimestamp(row.timestamp);
+      if (timestamp) {
+        if (!item.firstSeen || timestamp < item.firstSeen) item.firstSeen = timestamp;
+        if (!item.lastSeen || timestamp > item.lastSeen) item.lastSeen = timestamp;
+      }
+      if (row.eventType === "popup_view") item.views += 1;
+      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.leads += 1;
+    });
+
+    return Object.keys(groups).map(function (key) {
+      var item = groups[key];
+      item.leadRate = rate(item.leads, item.views);
+      return item;
+    }).filter(function (item) {
+      return item.views >= minimumViews;
+    }).sort(function (a, b) {
+      if (b.leadRate !== a.leadRate) return b.leadRate - a.leadRate;
+      return b.views - a.views;
+    })[0] || null;
+  }
+
+  function parseVariantSnapshot(value) {
+    if (!value) return null;
+    try {
+      var snapshot = JSON.parse(value);
+      return snapshot && typeof snapshot === "object" ? snapshot : null;
+    } catch (error) {
+      return null;
+    }
+  }
+
+  function parseTimestamp(value) {
+    if (!value) return null;
+    var timestamp = new Date(value);
+    return Number.isNaN(timestamp.getTime()) ? null : timestamp;
   }
 
   function renderVariationHistory(data) {
@@ -1083,7 +1404,7 @@
         item.views += 1;
       }
       if (row.eventType === "popup_form_click") item.clicks += 1;
-      if (row.eventType === "popup_submit_attempt" || row.eventType === "kajabi_form_submitted") item.submits += 1;
+      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted" || row.eventType === "popup_submit_attempt") item.submits += 1;
       if (row.eventType === "variant_save_test") item.saves += 1;
       if (!item.changeNote && row.changeNote) item.changeNote = row.changeNote;
       if (!item.lastSeen || String(row.timestamp) > item.lastSeen) item.lastSeen = row.timestamp || "";
@@ -1096,7 +1417,7 @@
     });
 
     if (!history.length) {
-      els.history.innerHTML = "<p class=\"dash-empty-state\">No historical variation rows yet. Click Save & Test on a variant to record the first one.</p>";
+      els.history.innerHTML = "<p class=\"dash-empty-state\">No historical variation rows yet. Click Save Draft + Log Version on a variant to record the first one.</p>";
       return;
     }
 
@@ -1119,8 +1440,9 @@
   }
 
   function buildVariantLabel(variant) {
+    var quiz = getProteinQuizConfig(variant);
     var parts = [
-      "CTA: " + (variant.buttonText || "Submit"),
+      "CTA: " + (config.leadMagnetMode === "protein_plan" ? quiz.leadButtonText : (variant.buttonText || "Submit")),
       "Button: " + (variant.accentColor || ""),
       "BG: " + (variant.backgroundColor || ""),
       "Width: " + (variant.width || ""),
@@ -1149,7 +1471,8 @@
       accentColor: variant.accentColor || "",
       fontFamily: variant.fontFamily || "",
       textAlign: variant.textAlign || "",
-      trafficSplit: variant.trafficSplit || ""
+      trafficSplit: variant.trafficSplit || "",
+      proteinQuiz: cloneConfig(variant.proteinQuiz || {})
     };
   }
 
@@ -1254,7 +1577,15 @@
 
   function loadDraftConfig() {
     try {
-      return ensureConfigDefaults(JSON.parse(localStorage.getItem(DRAFT_KEY)) || cloneConfig(originalConfig));
+      var draft = JSON.parse(localStorage.getItem(DRAFT_KEY)) || null;
+      if (draft && originalConfig.leadMagnetMode === "protein_plan" && draft.leadMagnetMode !== "protein_plan") {
+        draft = Object.assign(cloneConfig(originalConfig), {
+          webhookUrl: draft.webhookUrl || originalConfig.webhookUrl || "",
+          leadWebhookUrl: draft.leadWebhookUrl || originalConfig.leadWebhookUrl || ""
+        });
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      }
+      return ensureConfigDefaults(draft || cloneConfig(originalConfig));
     } catch (error) {
       return ensureConfigDefaults(cloneConfig(originalConfig));
     }
@@ -1267,7 +1598,10 @@
     value.kajabiFormEmbed = value.kajabiFormEmbed || originalConfig.kajabiFormEmbed || "";
     value.kajabiEmbedMode = value.kajabiEmbedMode || originalConfig.kajabiEmbedMode || "auto";
     value.formMode = value.formMode || originalConfig.formMode || "zapier";
+    value.leadMagnetMode = value.leadMagnetMode || originalConfig.leadMagnetMode || "";
     value.leadWebhookUrl = value.leadWebhookUrl || originalConfig.leadWebhookUrl || "";
+    value.proteinPlanUrl = value.proteinPlanUrl || originalConfig.proteinPlanUrl || "";
+    value.proteinQuiz = Object.assign(getProteinQuizDefaults(), originalConfig.proteinQuiz || {}, value.proteinQuiz || {});
     value.triggers = value.triggers || originalConfig.triggers || {};
     value.triggers.delayMs = Number(value.triggers.delayMs);
     if (!Number.isFinite(value.triggers.delayMs)) value.triggers.delayMs = 35000;
@@ -1285,11 +1619,13 @@
       variant.sizeToImage = Boolean(variant.sizeToImage || originalVariant.sizeToImage);
       variant.subheadlineHtml = variant.subheadlineHtml || originalVariant.subheadlineHtml || escapeHtml(variant.subheadline || "");
       variant.imageAlt = variant.imageAlt || "";
+      variant.proteinQuiz = Object.assign(getProteinQuizDefaults(), value.proteinQuiz || {}, originalVariant.proteinQuiz || {}, variant.proteinQuiz || {});
     });
     return value;
   }
 
   function saveDraftConfig() {
+    config.draftSavedAt = new Date().toISOString();
     localStorage.setItem(DRAFT_KEY, JSON.stringify(config));
   }
 

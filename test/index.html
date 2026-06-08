@@ -101,6 +101,10 @@
     <script>
       window.LL_POPUP_CONFIG = Object.assign({}, window.LL_POPUP_CONFIG, {
         webhookUrl: window.LL_POPUP_CONFIG.webhookUrl || "",
+        leadWebhookUrl: "",
+        proteinPlanUrl: "../../protein-calculator/index.html",
+        cooldownDaysAfterClose: 0,
+        cooldownDaysAfterSubmitAttempt: 0,
         triggers: {
           delayMs: 3000,
           scrollDepth: 0.5

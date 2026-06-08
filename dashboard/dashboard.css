@@ -89,6 +89,10 @@ body {
   background: var(--dash-panel);
 }
 
+.dash-wide-panel {
+  grid-column: 1 / -1;
+}
+
 .dash-controls {
   position: sticky;
   top: 16px;
@@ -248,6 +252,49 @@ body {
 .dash-global-editor textarea {
   min-height: 76px;
   resize: vertical;
+}
+
+.dash-flow-editor {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px;
+  border: 1px solid var(--dash-line);
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.dash-flow-head {
+  display: grid;
+  gap: 4px;
+}
+
+.dash-flow-head strong {
+  font-size: 14px;
+}
+
+.dash-flow-head span {
+  color: var(--dash-muted);
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.dash-flow-divider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--dash-muted);
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.dash-flow-divider::before,
+.dash-flow-divider::after {
+  content: "";
+  flex: 1;
+  border-top: 2px dotted var(--dash-line);
 }
 
 .dash-palette {
@@ -581,8 +628,16 @@ body {
 
 .dash-preview-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 860px), 1fr));
   gap: 16px;
+}
+
+.dash-preview-grid.is-compare {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr));
+}
+
+.dash-preview-grid.is-mobile {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 390px), 1fr));
 }
 
 .dash-preview-card {
@@ -601,17 +656,44 @@ body {
 .dash-preview-stage {
   display: grid;
   place-items: center;
-  min-height: 360px;
-  padding: 16px;
-  overflow: hidden;
+  min-height: 620px;
+  padding: 24px;
+  overflow: auto;
   border: 1px dashed var(--dash-line);
   border-radius: 8px;
   background: #eef1f5;
 }
 
 .dash-preview-stage.is-mobile {
-  max-width: 390px;
+  width: min(430px, 100%);
+  min-height: 720px;
+  max-height: 720px;
   margin: 0 auto;
+  padding: 12px;
+  place-items: start center;
+  overflow: auto;
+}
+
+.dash-preview-stage.is-compare {
+  min-height: 520px;
+  padding: 12px;
+  place-items: start center;
+  overflow: auto;
+}
+
+.dash-preview-stage.is-compare .ll-popup-root {
+  width: var(--ll-popup-width, 560px);
+  max-width: none;
+  zoom: 0.52;
+}
+
+.dash-preview-stage.is-mobile .ll-popup-root {
+  align-items: flex-start;
+  justify-content: center;
+  width: 100%;
+  max-width: 360px;
+  transform: none;
+  --ll-popup-width: 360px;
 }
 
 .dash-preview-stage .ll-popup-root {
@@ -636,6 +718,32 @@ body {
   overflow: visible;
   box-shadow: 0 12px 32px rgba(16, 24, 40, 0.18);
   transform: none;
+}
+
+.dash-preview-stage.is-mobile .ll-popup-modal {
+  width: 100%;
+  max-width: 100%;
+  min-height: auto !important;
+  max-height: none;
+  overflow: visible;
+}
+
+.dash-preview-stage.is-mobile .ll-popup-content {
+  gap: 12px;
+  padding: 52px 20px 22px;
+}
+
+.dash-preview-stage.is-mobile .ll-popup-image,
+.dash-preview-stage.is-mobile .ll-popup-root.ll-popup-size-to-image .ll-popup-image {
+  max-height: min(26vh, 220px);
+}
+
+.dash-preview-stage.is-mobile .ll-popup-headline {
+  font-size: 25px;
+}
+
+.dash-preview-stage.is-mobile .ll-popup-subheadline {
+  font-size: 16px;
 }
 
 .dash-preview-stage .ll-popup-form {

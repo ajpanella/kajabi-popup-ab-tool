@@ -6,14 +6,13 @@ Edit `popup/variants.js`:
 
 - Set `testId` to a stable experiment name.
 - Set `webhookUrl` to your deployed Google Apps Script Web App URL.
-- Replace `kajabiFormEmbed` with the single JavaScript embed line from your Kajabi form.
-- If Kajabi's embed does not render reliably, use `formMode: "zapier"` and paste a Zapier Catch Hook URL into `leadWebhookUrl`. The popup will render its own Name and Email fields and send the lead data to Zapier.
+- Paste the Zapier Catch Hook URL into `leadWebhookUrl`. The popup renders the quiz and lead form itself, then sends the lead data to Zapier.
 - Use the dashboard's saved color palette and text alignment controls to keep visual tests consistent.
-- If the Kajabi fields do not appear in local preview, set `kajabiEmbedMode` to `iframe` or use the dashboard's `Kajabi embed mode` control. Some third-party embeds behave differently when injected into an already-loaded page.
+- For the protein-plan lead magnet, use `leadMagnetMode: "protein_plan"` and set `proteinPlanUrl` to the Kajabi page where the protein calculator is embedded. The popup collects target weight, strength-training days, and age first; then it asks for first name and email; then it redirects with `FirstName`, `TargetWeight`, `Age`, and `StrengthDays` in the URL.
 - Set `Delay seconds` to control the time-based popup trigger. The popup also supports the `Scroll trigger %` setting.
 - Adjust the active variants and `trafficSplit` values. Traffic splits are weighted and do not need to total 100, though that is easier to read.
 
-Every variant uses the same `kajabiFormEmbed`, so Kajabi form automations still handle tags, email sequences, offers, and other follow-up actions.
+Kajabi follow-up happens through Zapier, so the dashboard no longer exposes Kajabi form embed settings.
 
 ## 2. Create the Google Sheet
 
@@ -125,7 +124,7 @@ Before publishing a meaningful change, update `configVersion` in the dashboard, 
 
 Changing `configVersion` also starts a fresh 30-day variant assignment for that version, so the new version can run its own clean A/B split.
 
-The dashboard's `Save & Test` button records a `variant_save_test` row with a readable `variantLabel`, such as CTA text, colors, width, font, text alignment, and image status. Use it before publishing a new version so the Sheet has a marker for exactly what changed.
+The dashboard's `Save Draft + Log Version` button records a `variant_save_test` row with a readable `variantLabel`, such as CTA text, colors, width, font, text alignment, image status, and quiz-flow details. Use it before publishing a new version so the Sheet has a marker for exactly what changed.
 
 ## 6. Publish data for the dashboard
 
@@ -159,8 +158,21 @@ Webhooks by Zapier: Catch Hook
 -> Google Sheets: add row to Popup Events
 ```
 
-For the Zapier lead webhook, the popup sends only `name` and `email`. Keep analytics fields in the separate Google Sheets webhook.
+For the Zapier lead webhook, the popup sends `name`, `email`, `targetWeightLbs`, `age`, `strengthDays`, `source`, `ctaVariant`, and `popupVariant`. Keep analytics fields in the separate Google Sheets webhook too.
 
 Include `email`, `name`, `createdAt`, `formName`, and `tag` when available.
+
+For the protein-plan popup, the tracker also supports:
+
+```text
+targetWeightLbs
+age
+strengthDays
+source
+ctaVariant
+popupVariant
+```
+
+The popup sends these fields to the tracking webhook on `popup_quiz_submit` and `popup_lead_submit`. The Zapier lead webhook receives the same protein fields plus name and email.
 
 To attribute confirmed submissions to a popup variant later, add a hidden Kajabi field named `popup_variant` and have the popup write the assigned variant into it after the embedded form loads.

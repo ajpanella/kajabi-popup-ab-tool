@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
-    <link rel="stylesheet" href="../popup/popup.css?v=11">
-    <link rel="stylesheet" href="./dashboard.css?v=11">
+    <link rel="stylesheet" href="../popup/popup.css?v=17">
+    <link rel="stylesheet" href="./dashboard.css?v=17">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js"></script>
   </head>
@@ -88,6 +88,7 @@
             </div>
             <div class="dash-action-row">
               <button id="reset-config" class="dash-secondary-button" type="button">Reset Draft</button>
+              <button id="restore-winner" class="dash-secondary-button" type="button">Restore Winning Variant</button>
               <button id="download-config" class="dash-secondary-button" type="button">Download variants.js</button>
               <button id="copy-config" class="dash-secondary-button" type="button">Copy variants.js</button>
             </div>
@@ -101,15 +102,19 @@
               <input id="webhook-url" type="url" placeholder="Google Apps Script Web App URL">
             </label>
             <label>
-              Form mode
-              <select id="form-mode">
-                <option value="zapier">Name + Email to Zapier</option>
-                <option value="kajabi">Kajabi embed</option>
+              Lead magnet mode
+              <select id="lead-magnet-mode">
+                <option value="">Standard opt-in</option>
+                <option value="protein_plan">Protein plan quiz</option>
               </select>
             </label>
             <label>
               Lead webhook URL
               <input id="lead-webhook-url" type="url" placeholder="Zapier Catch Hook URL">
+            </label>
+            <label>
+              Protein plan URL
+              <input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/protein-plan">
             </label>
             <label>
               Delay seconds
@@ -118,18 +123,6 @@
             <label>
               Scroll trigger % (0 = off)
               <input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="0">
-            </label>
-            <label class="dash-global-wide">
-              Kajabi form embed
-              <textarea id="kajabi-form-embed" placeholder="Paste Kajabi's one-line form script here"></textarea>
-            </label>
-            <label>
-              Kajabi embed mode
-              <select id="kajabi-embed-mode">
-                <option value="auto">Auto fallback</option>
-                <option value="script">Direct script</option>
-                <option value="iframe">Iframe</option>
-              </select>
             </label>
             <label>
               Config version
@@ -170,7 +163,7 @@
           <div id="variation-history" class="dash-history-grid"></div>
         </section>
 
-        <section class="dash-panel">
+        <section class="dash-panel dash-wide-panel">
           <div class="dash-section-heading">
             <div>
               <p class="dash-eyebrow">Variants</p>
@@ -178,7 +171,12 @@
             </div>
             <div class="dash-toggle" role="group" aria-label="Preview size">
               <button id="desktop-preview" class="is-active" type="button">Desktop</button>
+              <button id="compare-preview" type="button">Side by Side</button>
               <button id="mobile-preview" type="button">Mobile</button>
+            </div>
+            <div class="dash-toggle" role="group" aria-label="Preview step">
+              <button id="quiz-step-preview" class="is-active" type="button">Step 1 Quiz</button>
+              <button id="lead-step-preview" type="button">Step 2 Form</button>
             </div>
           </div>
           <div id="variant-previews" class="dash-preview-grid"></div>
@@ -190,12 +188,12 @@
             <strong id="stat-views">0</strong>
           </article>
           <article class="dash-stat">
-            <span>Form clicks</span>
-            <strong id="stat-clicks">0</strong>
+            <span>Quiz completions</span>
+            <strong id="stat-quiz-submits">0</strong>
           </article>
           <article class="dash-stat">
-            <span>Submit attempts</span>
-            <strong id="stat-submits">0</strong>
+            <span>Leads</span>
+            <strong id="stat-leads">0</strong>
           </article>
           <article class="dash-stat">
             <span>Close rate</span>
@@ -222,8 +220,10 @@
                   <th>View Rate</th>
                   <th>Clicks</th>
                   <th>Click Rate</th>
-                  <th>Submits</th>
-                  <th>Submit Rate</th>
+                  <th>Quiz</th>
+                  <th>Quiz Rate</th>
+                  <th>Leads</th>
+                  <th>Lead Rate</th>
                   <th>Closes</th>
                   <th>Close Rate</th>
                   <th>Lift vs A</th>
@@ -247,6 +247,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=18"></script>
+    <script src="./dashboard.js?v=30"></script>
   </body>
 </html>

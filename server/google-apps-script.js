@@ -21,6 +21,12 @@ var HEADERS = [
   "sessionId",
   "email",
   "name",
+  "targetWeightLbs",
+  "age",
+  "strengthDays",
+  "source",
+  "ctaVariant",
+  "popupVariant",
   "createdAt",
   "formName",
   "tag"

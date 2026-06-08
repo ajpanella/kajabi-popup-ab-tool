@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Protein Popup Same-Site Example</title>
+    <link rel="stylesheet" href="./popup/popup.css?v=17">
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        color: #06270d;
+        background: #f1fbea;
+        font-family: Arial, Helvetica, sans-serif;
+      }
+
+      main {
+        width: min(860px, calc(100vw - 32px));
+        margin: 0 auto;
+        padding: 56px 0;
+      }
+
+      h1 {
+        margin: 0 0 14px;
+        font-size: clamp(38px, 7vw, 72px);
+        line-height: 1;
+        letter-spacing: 0;
+      }
+
+      p {
+        max-width: 680px;
+        color: #456052;
+        font-size: 19px;
+        line-height: 1.65;
+      }
+
+      button {
+        min-height: 48px;
+        border: 0;
+        border-radius: 6px;
+        padding: 12px 18px;
+        color: #ffffff;
+        background: #06b00b;
+        font: inherit;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .draft-status {
+        display: grid;
+        gap: 4px;
+        max-width: 720px;
+        margin: 18px 0;
+        padding: 14px;
+        border: 1px solid rgba(6, 176, 11, 0.22);
+        border-radius: 8px;
+        color: #456052;
+        background: #ffffff;
+        font-size: 14px;
+        line-height: 1.45;
+      }
+
+      .draft-status strong {
+        color: #06270d;
+      }
+
+      .article-space {
+        height: 900px;
+        margin-top: 28px;
+        border-left: 4px solid rgba(6, 176, 11, 0.22);
+        padding-left: 18px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>High-Protein Meals Made Simple</h1>
+      <p>This page shows the popup running on the same site as the protein calculator. In Kajabi, the popup assets can live on a stable hosted URL while the redirect points to your protein-plan page.</p>
+      <button id="force-popup" type="button">Reset and Show Popup</button>
+      <div class="draft-status" id="draft-status">Loading popup draft...</div>
+      <div class="article-space">
+        <p>Scroll space for testing delayed or scroll-depth popup triggers.</p>
+      </div>
+    </main>
+
+    <script src="./popup/variants.js"></script>
+    <script>
+      var loadedDraft = null;
+      try {
+        loadedDraft = JSON.parse(localStorage.getItem("ll_popup_dashboard_config_blog-optin-v1") || "null");
+        if (loadedDraft && loadedDraft.variants) {
+          window.LL_POPUP_CONFIG = loadedDraft;
+        }
+      } catch (error) {}
+
+      window.LL_POPUP_CONFIG = Object.assign({}, window.LL_POPUP_CONFIG, {
+        leadWebhookUrl: "",
+        proteinPlanUrl: "../protein-calculator/index.html",
+        cooldownDaysAfterClose: 0,
+        cooldownDaysAfterSubmitAttempt: 0,
+        triggers: {
+          delayMs: 3000,
+          scrollDepth: 0
+        }
+      });
+
+      var status = document.getElementById("draft-status");
+      var firstVariant = window.LL_POPUP_CONFIG.variants && window.LL_POPUP_CONFIG.variants[0];
+      var quiz = Object.assign({}, window.LL_POPUP_CONFIG.proteinQuiz || {}, firstVariant && firstVariant.proteinQuiz || {});
+      status.innerHTML = [
+        "<strong>Loaded popup config:</strong> " + (loadedDraft ? "Dashboard draft" : "Saved variants.js"),
+        "<span><strong>Variant A headline:</strong> " + (firstVariant && firstVariant.headline ? firstVariant.headline : "Not found") + "</span>",
+        "<span><strong>Target weight placeholder:</strong> " + (quiz.targetWeightPlaceholder || "Not set") + "</span>",
+        "<span><strong>Quiz button:</strong> " + (quiz.quizButtonText || "Not set") + "</span>",
+        "<span><strong>Lead-step headline:</strong> " + (quiz.leadHeadline || "Not set") + "</span>",
+        "<span><strong>Draft saved:</strong> " + (window.LL_POPUP_CONFIG.draftSavedAt || "No draft timestamp") + "</span>"
+      ].join("");
+    </script>
+    <script src="./popup/popup.js" defer></script>
+    <script>
+      document.getElementById("force-popup").addEventListener("click", function () {
+        Object.keys(localStorage).forEach(function (key) {
+          if (key.indexOf("ll_popup_blog-optin-v1_") === 0 && key.indexOf("dashboard_config") === -1) {
+            localStorage.removeItem(key);
+          }
+        });
+        sessionStorage.removeItem("ll_popup_blog-optin-v1_session_id");
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>
