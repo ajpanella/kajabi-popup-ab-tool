@@ -522,6 +522,7 @@
         variant: variant.id,
         configVersion: config.configVersion || "v1",
         sessions: new Set(),
+        actionSessions: new Set(),
         views: 0,
         clicks: 0,
         quizSubmits: 0,
@@ -539,6 +540,7 @@
           variant: row.variant || "Unknown",
           configVersion: rowVersion,
           sessions: new Set(),
+          actionSessions: new Set(),
           views: 0,
           clicks: 0,
           quizSubmits: 0,
@@ -549,52 +551,68 @@
       }
 
       var item = byVariant[rowKey];
-      if (row.eventType === "popup_view") {
+      var type = eventType(row);
+      if (row.sessionId && (type === "popup_quiz_submit" || type === "popup_lead_submit" || type === "kajabi_form_submitted" || type === "popup_submit_attempt")) {
+        item.actionSessions.add(row.sessionId);
+      }
+      if (type === "popup_view") {
         if (row.sessionId) item.sessions.add(row.sessionId);
         item.views += 1;
       }
-      if (row.eventType === "popup_form_click") item.clicks += 1;
-      if (row.eventType === "popup_quiz_submit") item.quizSubmits += 1;
-      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.leads += 1;
-      if (row.eventType === "popup_submit_attempt" || row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.submits += 1;
-      if (row.eventType === "popup_close") item.closes += 1;
+      if (type === "popup_form_click") item.clicks += 1;
+      if (type === "popup_quiz_submit") item.quizSubmits += 1;
+      if (type === "popup_lead_submit" || type === "kajabi_form_submitted") item.leads += 1;
+      if (type === "popup_submit_attempt" || type === "popup_lead_submit" || type === "kajabi_form_submitted") item.submits += 1;
+      if (type === "popup_close") item.closes += 1;
     });
 
     var result = Object.keys(byVariant).sort().map(function (key) {
       var item = byVariant[key];
-      var sessionCount = item.sessions.size || item.views;
-      var conversionRate = rate(item.submits, item.views);
+      item.actionSessions.forEach(function (sessionId) {
+        if (!item.sessions.has(sessionId)) item.sessions.add(sessionId);
+      });
+      var inferredViews = Math.max(item.views, item.sessions.size, item.quizSubmits, item.leads, item.submits);
+      var sessionCount = item.sessions.size || inferredViews;
+      var leadConversionRate = rate(item.leads, inferredViews);
+      var submitConversionRate = rate(item.submits, inferredViews);
       return {
         variant: item.variant,
         configVersion: item.configVersion,
         sessions: sessionCount,
-        views: item.views,
-        viewRate: rate(item.views, sessionCount),
+        views: inferredViews,
+        trackedViews: item.views,
+        inferredViews: Math.max(0, inferredViews - item.views),
+        viewRate: rate(inferredViews, sessionCount),
         clicks: item.clicks,
-        clickRate: rate(item.clicks, item.views),
+        clickRate: rate(item.clicks, inferredViews),
         quizSubmits: item.quizSubmits,
-        quizRate: rate(item.quizSubmits, item.views),
+        quizRate: rate(item.quizSubmits, inferredViews),
         leads: item.leads,
-        leadRate: rate(item.leads, item.views),
+        leadRate: leadConversionRate,
         submits: item.submits,
-        submitRate: conversionRate,
+        submitRate: submitConversionRate,
         closes: item.closes,
-        closeRate: rate(item.closes, item.views),
+        closeRate: rate(item.closes, inferredViews),
+        cvr: leadConversionRate || submitConversionRate,
         lift: 0
       };
     });
 
     var controlRates = {};
     result.forEach(function (item) {
-      if (item.variant === "A") controlRates[item.configVersion] = item.leadRate || item.submitRate;
+      if (item.variant === "A") controlRates[item.configVersion] = item.cvr;
     });
     result.forEach(function (item) {
       var controlRate = controlRates[item.configVersion] || 0;
-      var comparisonRate = item.leadRate || item.submitRate;
+      var comparisonRate = item.cvr;
       item.lift = controlRate > 0 ? (comparisonRate / controlRate) - 1 : 0;
     });
 
     return result;
+  }
+
+  function eventType(row) {
+    return String(row && row.eventType || "").trim().toLowerCase();
   }
 
   function renderStats(metrics) {
@@ -611,7 +629,7 @@
     document.getElementById("stat-views").textContent = formatNumber(totals.views);
     document.getElementById("stat-quiz-submits").textContent = formatNumber(totals.quizSubmits);
     document.getElementById("stat-leads").textContent = formatNumber(totals.leads || totals.submits);
-    document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.closes, totals.views));
+    document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.leads || totals.submits, totals.views));
   }
 
   function renderTable(metrics) {
@@ -635,9 +653,8 @@
         formatNumber(item.quizSubmits),
         formatPercent(item.quizRate),
         formatNumber(item.leads || item.submits),
-        formatPercent(item.leadRate || item.submitRate),
+        formatPercent(item.cvr),
         formatNumber(item.closes),
-        formatPercent(item.closeRate),
         item.variant === "A" ? "Control" : formatPercent(item.lift, true)
       ].forEach(function (value) {
         var cell = document.createElement("td");
@@ -661,9 +678,9 @@
     active.forEach(function (item) {
       if (item.views < 100) {
         messages.push("Variant " + item.variant + " / " + item.configVersion + " has " + item.views + " views. Wait for at least 100 views before making a decision.");
-      } else if (item.closeRate > 0.65 && item.clickRate < 0.08) {
-        messages.push("Variant " + item.variant + " / " + item.configVersion + " has a high close rate and low click rate. Test a stronger headline or a more specific image.");
-      } else if (item.clickRate > 0.12 && (item.leadRate || item.submitRate) < 0.04) {
+      } else if (item.quizRate > 0.12 && item.cvr < 0.04) {
+        messages.push("Variant " + item.variant + " / " + item.configVersion + " gets quiz completions but few leads. The lead step may need less friction or stronger copy.");
+      } else if (item.clickRate > 0.12 && item.cvr < 0.04) {
         messages.push("Variant " + item.variant + " / " + item.configVersion + " gets clicks but few leads. The form or offer may need less friction.");
       } else if (item.lift > 0.15) {
         messages.push("Variant " + item.variant + " / " + item.configVersion + " is showing positive lift. Consider shifting more traffic only after sample size is strong.");
@@ -682,8 +699,8 @@
 
     drawChart("conversion-chart", "bar", labels, [
       {
-        label: "Lead rate",
-        data: metrics.map(function (item) { return Math.round((item.leadRate || item.submitRate) * 1000) / 10; }),
+        label: "Lead CVR",
+        data: metrics.map(function (item) { return Math.round(item.cvr * 1000) / 10; }),
         backgroundColor: "#06b00b"
       },
       {
