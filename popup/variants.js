@@ -1,7 +1,7 @@
 (function () {
   window.LL_POPUP_CONFIG = {
   "testId": "blog-optin-v1",
-  "webhookUrl": "https://script.google.com/macros/s/AKfycbwW19LylTQ_BXzMeC6r2QL1-Z8WGv_6G1q0NkSxLnBEx4umo61UuNoumz-5FGUDvsnIew/exec",
+  "webhookUrl": "https://script.google.com/macros/s/AKfycbzZmjBOkq6JYxFEeMzemDozYiUOuAYZjkBAw5-0afFO_JLb1-riB9jeAIfWn40nlDqVnQ/exec",
   "kajabiFormEmbed": "<script src=https://www.longevitylifestyle.me/forms/2148823405/embed.js></script>",
   "cooldownDaysAfterClose": 7,
   "cooldownDaysAfterSubmitAttempt": 90,
@@ -121,6 +121,7 @@
     "emailPlaceholder": "Email",
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
-  }
+  },
+  "draftSavedAt": "2026-06-09T17:15:43.442Z"
 };
 })();
