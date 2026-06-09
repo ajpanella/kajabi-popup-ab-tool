@@ -99,7 +99,7 @@
           <div class="dash-publish-box">
             <div class="dash-flow-head">
               <strong>GitHub Publish</strong>
-              <span>Publish dashboard edits to the hosted popup/variants.js file without changing the Kajabi embed. Token stays in this browser.</span>
+              <span>Publish dashboard edits to the hosted popup/variants.js file without changing the Kajabi embed. Local dashboard uses your signed-in GitHub app; hosted dashboard needs a token.</span>
             </div>
             <div class="dash-global-editor">
               <label>
@@ -119,7 +119,7 @@
                 <input id="github-path" type="text" autocomplete="off" value="popup/variants.js">
               </label>
               <label class="dash-global-wide">
-                GitHub fine-grained token
+                GitHub fine-grained token (hosted dashboard only)
                 <input id="github-token" type="password" autocomplete="off" placeholder="Contents: Read and write">
               </label>
               <label class="dash-global-wide">
@@ -281,6 +281,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=33"></script>
+    <script src="./dashboard.js?v=34"></script>
   </body>
 </html>

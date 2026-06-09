@@ -1204,12 +1204,22 @@
     saveGitHubPublishSettings();
     setPublishStatus("Preparing publish...", "");
 
-    if (!owner || !repo || !path || !token) {
-      setPublishStatus("Add repository owner, repository name, publish path, and a GitHub token before publishing.", "error");
+    if (!owner || !repo || !path) {
+      setPublishStatus("Add repository owner, repository name, and publish path before publishing.", "error");
       return;
     }
 
     saveDraftConfig();
+
+    if (canUseLocalPublisher()) {
+      publishConfigWithLocalServer(path, message);
+      return;
+    }
+
+    if (!token) {
+      setPublishStatus("Add a GitHub token before publishing from the hosted dashboard, or use the local dashboard at http://localhost:3102/dashboard/.", "error");
+      return;
+    }
 
     var apiBase = "https://api.github.com/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo) + "/contents/" + path.split("/").map(encodeURIComponent).join("/");
     var headers = {
@@ -1248,6 +1258,39 @@
       .then(function (result) {
         var commitSha = result.commit && result.commit.sha ? result.commit.sha.slice(0, 7) : "published";
         setPublishStatus("Published popup/variants.js to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
+      })
+      .catch(function (error) {
+        setPublishStatus(error.message, "error");
+      });
+  }
+
+  function canUseLocalPublisher() {
+    return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
+  }
+
+  function publishConfigWithLocalServer(path, message) {
+    fetch("/api/publish-github", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        path: path,
+        message: message,
+        content: generateVariantsJs()
+      })
+    })
+      .then(function (response) {
+        return response.json().catch(function () {
+          return {};
+        }).then(function (body) {
+          if (!response.ok || body.ok === false) {
+            throw new Error(body.error || "Local GitHub publish failed.");
+          }
+          return body;
+        });
+      })
+      .then(function (body) {
+        var note = body.status === "unchanged" ? "No file changes were needed." : "Published popup/variants.js to GitHub.";
+        setPublishStatus(note + " GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
       .catch(function (error) {
         setPublishStatus(error.message, "error");
