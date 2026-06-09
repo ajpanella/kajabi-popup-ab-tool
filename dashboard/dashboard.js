@@ -15,7 +15,7 @@
   var urlParams = new URLSearchParams(window.location.search);
   var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
   var googleDocUrl = urlParams.get("doc") || "";
-  var trackingSheetUrl = urlParams.get("sheet") || "https://docs.google.com/spreadsheets/d/1qIp6VXteTDFmDH60CSkXhssxKZ3Iwb96C_ezVdREGHY";
+  var trackingSheetUrl = urlParams.get("sheet") || "https://docs.google.com/spreadsheets/d/1fjbkrBO5r1XaJf3x-WNT0UNjEtn0IlDlAA9e2Sza69w";
   var rows = [];
   var charts = {};
   var previewMode = "desktop";
