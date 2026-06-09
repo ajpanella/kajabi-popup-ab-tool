@@ -4,6 +4,7 @@
   var originalConfig = window.LL_POPUP_CONFIG || { variants: [] };
   var DRAFT_KEY = "ll_popup_dashboard_config_" + sanitizeKey(originalConfig.testId || "default");
   var ASSET_BASE_KEY = "ll_popup_dashboard_asset_base";
+  var PUBLIC_ASSET_BASE_URL = "https://ajpanella.github.io/kajabi-popup-ab-tool";
   var CSV_URL_KEY = "ll_popup_dashboard_csv_url";
   var GITHUB_OWNER_KEY = "ll_popup_dashboard_github_owner";
   var GITHUB_REPO_KEY = "ll_popup_dashboard_github_repo";
@@ -71,7 +72,7 @@
   };
 
   els.csvUrl.value = defaultCsvUrl;
-  els.assetBaseUrl.value = localStorage.getItem(ASSET_BASE_KEY) || defaultAssetBaseUrl();
+  els.assetBaseUrl.value = savedAssetBaseUrl();
   els.githubOwner.value = localStorage.getItem(GITHUB_OWNER_KEY) || els.githubOwner.value || "ajpanella";
   els.githubRepo.value = localStorage.getItem(GITHUB_REPO_KEY) || els.githubRepo.value || "kajabi-popup-ab-tool";
   els.githubBranch.value = localStorage.getItem(GITHUB_BRANCH_KEY) || els.githubBranch.value || "main";
@@ -1155,16 +1156,17 @@
     return value.replace(/\/+$/, "");
   }
 
-  function defaultAssetBaseUrl() {
-    if (window.location.protocol.indexOf("http") === 0) {
-      var path = window.location.pathname
-        .replace(/\/dashboard\/?$/, "")
-        .replace(/\/dashboard\/index\.html$/, "")
-        .replace(/\/index\.html$/, "")
-        .replace(/\/+$/, "");
-      return window.location.origin + (path && path !== "/" ? path : "");
+  function savedAssetBaseUrl() {
+    var saved = localStorage.getItem(ASSET_BASE_KEY) || "";
+    if (!saved || /^https?:\/\/localhost(?::\d+)?(?:\/|$)/i.test(saved) || /^https?:\/\/127\.0\.0\.1(?::\d+)?(?:\/|$)/i.test(saved)) {
+      localStorage.setItem(ASSET_BASE_KEY, defaultAssetBaseUrl());
+      return defaultAssetBaseUrl();
     }
-    return "https://YOUR-HOST/kajabi-popup-ab-tool";
+    return saved;
+  }
+
+  function defaultAssetBaseUrl() {
+    return PUBLIC_ASSET_BASE_URL;
   }
 
   function generateVariantsJs() {
