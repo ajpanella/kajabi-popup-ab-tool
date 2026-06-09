@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
-    <link rel="stylesheet" href="../popup/popup.css?v=17">
-    <link rel="stylesheet" href="./dashboard.css?v=17">
+    <link rel="stylesheet" href="../popup/popup.css?v=18">
+    <link rel="stylesheet" href="./dashboard.css?v=18">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js"></script>
   </head>
@@ -96,6 +96,40 @@
           <div class="dash-editor-note">
             Keep the Kajabi embed URL stable. When you publish a new design, update the version so historical results stay separated from the new test.
           </div>
+          <div class="dash-publish-box">
+            <div class="dash-flow-head">
+              <strong>GitHub Publish</strong>
+              <span>Publish dashboard edits to the hosted popup/variants.js file without changing the Kajabi embed. Token stays in this browser.</span>
+            </div>
+            <div class="dash-global-editor">
+              <label>
+                Repository owner
+                <input id="github-owner" type="text" autocomplete="off" value="ajpanella">
+              </label>
+              <label>
+                Repository name
+                <input id="github-repo" type="text" autocomplete="off" value="kajabi-popup-ab-tool">
+              </label>
+              <label>
+                Branch
+                <input id="github-branch" type="text" autocomplete="off" value="main">
+              </label>
+              <label>
+                Publish path
+                <input id="github-path" type="text" autocomplete="off" value="popup/variants.js">
+              </label>
+              <label class="dash-global-wide">
+                GitHub fine-grained token
+                <input id="github-token" type="password" autocomplete="off" placeholder="Contents: Read and write">
+              </label>
+              <label class="dash-global-wide">
+                Commit message
+                <input id="github-message" type="text" value="Publish popup variants from dashboard">
+              </label>
+            </div>
+            <button id="publish-github" class="dash-save-test" type="button">Save & Publish to GitHub</button>
+            <p id="github-publish-status" class="dash-publish-status"></p>
+          </div>
           <div class="dash-global-editor">
             <label>
               Webhook URL
@@ -114,7 +148,7 @@
             </label>
             <label>
               Protein plan URL
-              <input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/protein-plan">
+              <input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/personalized-protein-plan">
             </label>
             <label>
               Delay seconds
@@ -247,6 +281,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=30"></script>
+    <script src="./dashboard.js?v=31"></script>
   </body>
 </html>

@@ -27,8 +27,11 @@ const headers = [
   "email",
   "name",
   "targetWeightLbs",
+  "TargetWeight",
   "age",
+  "Age",
   "strengthDays",
+  "StrengthDays",
   "source",
   "ctaVariant",
   "popupVariant",
@@ -44,13 +47,13 @@ events.freezePanes.freezeRows(1);
 
 events.getRangeByIndexes(0, 0, 1, headers.length).values = [headers];
 events.getRangeByIndexes(1, 0, 5, headers.length).values = Array.from({ length: 5 }, () => headers.map(() => ""));
-events.tables.add(`A1:AD6`, true, "PopupEventsTable");
-events.getRange("A1:AD1").format = {
+events.tables.add(`A1:AG6`, true, "PopupEventsTable");
+events.getRange("A1:AG1").format = {
   fill: "#111827",
   font: { bold: true, color: "#FFFFFF" },
   wrapText: true
 };
-events.getRange("A:AD").format = {
+events.getRange("A:AG").format = {
   wrapText: true
 };
 events.getRange("A:A").format.columnWidthPx = 170;

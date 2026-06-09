@@ -234,6 +234,39 @@ body {
   line-height: 1.45;
 }
 
+.dash-publish-box {
+  display: grid;
+  gap: 14px;
+  margin: 0 0 20px;
+  padding: 16px;
+  border: 1px solid rgba(6, 176, 11, 0.26);
+  border-radius: 8px;
+  background: #f5fff2;
+}
+
+.dash-publish-box .dash-save-test {
+  max-width: 280px;
+  border-color: #06b00b;
+  background: #06b00b;
+}
+
+.dash-publish-status {
+  min-height: 20px;
+  margin: 0;
+  color: #456052;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.dash-publish-status.is-error {
+  color: #b42318;
+}
+
+.dash-publish-status.is-success {
+  color: #067647;
+  font-weight: 700;
+}
+
 .dash-global-editor,
 .dash-editor-grid {
   display: grid;

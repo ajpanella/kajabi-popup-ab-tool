@@ -5,6 +5,11 @@
   var DRAFT_KEY = "ll_popup_dashboard_config_" + sanitizeKey(originalConfig.testId || "default");
   var ASSET_BASE_KEY = "ll_popup_dashboard_asset_base";
   var CSV_URL_KEY = "ll_popup_dashboard_csv_url";
+  var GITHUB_OWNER_KEY = "ll_popup_dashboard_github_owner";
+  var GITHUB_REPO_KEY = "ll_popup_dashboard_github_repo";
+  var GITHUB_BRANCH_KEY = "ll_popup_dashboard_github_branch";
+  var GITHUB_PATH_KEY = "ll_popup_dashboard_github_path";
+  var GITHUB_TOKEN_KEY = "ll_popup_dashboard_github_token";
   var config = loadDraftConfig();
   var urlParams = new URLSearchParams(window.location.search);
   var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
@@ -36,6 +41,14 @@
     restoreWinner: document.getElementById("restore-winner"),
     downloadConfig: document.getElementById("download-config"),
     copyConfig: document.getElementById("copy-config"),
+    githubOwner: document.getElementById("github-owner"),
+    githubRepo: document.getElementById("github-repo"),
+    githubBranch: document.getElementById("github-branch"),
+    githubPath: document.getElementById("github-path"),
+    githubToken: document.getElementById("github-token"),
+    githubMessage: document.getElementById("github-message"),
+    publishGithub: document.getElementById("publish-github"),
+    publishStatus: document.getElementById("github-publish-status"),
     webhookUrl: document.getElementById("webhook-url"),
     leadMagnetMode: document.getElementById("lead-magnet-mode"),
     leadWebhookUrl: document.getElementById("lead-webhook-url"),
@@ -59,6 +72,11 @@
 
   els.csvUrl.value = defaultCsvUrl;
   els.assetBaseUrl.value = localStorage.getItem(ASSET_BASE_KEY) || defaultAssetBaseUrl();
+  els.githubOwner.value = localStorage.getItem(GITHUB_OWNER_KEY) || els.githubOwner.value || "ajpanella";
+  els.githubRepo.value = localStorage.getItem(GITHUB_REPO_KEY) || els.githubRepo.value || "kajabi-popup-ab-tool";
+  els.githubBranch.value = localStorage.getItem(GITHUB_BRANCH_KEY) || els.githubBranch.value || "main";
+  els.githubPath.value = localStorage.getItem(GITHUB_PATH_KEY) || els.githubPath.value || "popup/variants.js";
+  els.githubToken.value = localStorage.getItem(GITHUB_TOKEN_KEY) || "";
   if (googleDocUrl) els.docLink.href = googleDocUrl;
   if (trackingSheetUrl) els.trackingSheetLink.href = trackingSheetUrl;
 
@@ -92,6 +110,10 @@
   });
   els.downloadConfig.addEventListener("click", downloadConfig);
   els.restoreWinner.addEventListener("click", restoreWinningVariant);
+  els.publishGithub.addEventListener("click", publishConfigToGitHub);
+  [els.githubOwner, els.githubRepo, els.githubBranch, els.githubPath, els.githubToken].forEach(function (element) {
+    element.addEventListener("input", saveGitHubPublishSettings);
+  });
   els.resetConfig.addEventListener("click", function () {
     localStorage.removeItem(DRAFT_KEY);
     config = cloneConfig(originalConfig);
@@ -929,8 +951,11 @@
         var form = event.currentTarget;
         quizData = {
           targetWeightLbs: form.elements.targetWeight.value,
+          TargetWeight: form.elements.targetWeight.value,
           age: form.elements.age.value,
-          strengthDays: form.elements.strengthDays.value
+          Age: form.elements.age.value,
+          strengthDays: form.elements.strengthDays.value,
+          StrengthDays: form.elements.strengthDays.value
         };
         renderLeadStep();
       });
@@ -957,8 +982,11 @@
           name: form.elements.name.value,
           email: form.elements.email.value,
           targetWeightLbs: quizData.targetWeightLbs,
+          TargetWeight: quizData.TargetWeight || quizData.targetWeightLbs,
           age: quizData.age,
+          Age: quizData.Age || quizData.age,
           strengthDays: quizData.strengthDays,
+          StrengthDays: quizData.StrengthDays || quizData.strengthDays,
           source: "protein_popup",
           ctaVariant: "show_my_protein_plan",
           popupVariant: variant.id
@@ -1116,9 +1144,9 @@
   function renderEmbedCode() {
     var base = normalizedAssetBaseUrl();
     els.embedCode.value = [
-      "<link rel=\"stylesheet\" href=\"" + base + "/popup/popup.css\">",
-      "<script src=\"" + base + "/popup/variants.js\"></script>",
-      "<script src=\"" + base + "/popup/popup.js\" defer></script>"
+      "<link rel=\"stylesheet\" href=\"" + base + "/popup/popup.css?v=live\">",
+      "<script src=\"" + base + "/popup/variants.js?v=live\"></script>",
+      "<script src=\"" + base + "/popup/popup.js?v=live\" defer></script>"
     ].join("\n");
   }
 
@@ -1153,6 +1181,85 @@
     link.click();
     document.body.removeChild(link);
     URL.revokeObjectURL(url);
+  }
+
+  function saveGitHubPublishSettings() {
+    localStorage.setItem(GITHUB_OWNER_KEY, els.githubOwner.value.trim());
+    localStorage.setItem(GITHUB_REPO_KEY, els.githubRepo.value.trim());
+    localStorage.setItem(GITHUB_BRANCH_KEY, els.githubBranch.value.trim());
+    localStorage.setItem(GITHUB_PATH_KEY, els.githubPath.value.trim());
+    localStorage.setItem(GITHUB_TOKEN_KEY, els.githubToken.value.trim());
+  }
+
+  function publishConfigToGitHub() {
+    var owner = els.githubOwner.value.trim();
+    var repo = els.githubRepo.value.trim();
+    var branch = els.githubBranch.value.trim() || "main";
+    var path = els.githubPath.value.trim() || "popup/variants.js";
+    var token = els.githubToken.value.trim();
+    var message = els.githubMessage.value.trim() || "Publish popup variants from dashboard";
+
+    saveGitHubPublishSettings();
+    setPublishStatus("Preparing publish...", "");
+
+    if (!owner || !repo || !path || !token) {
+      setPublishStatus("Add repository owner, repository name, publish path, and a GitHub token before publishing.", "error");
+      return;
+    }
+
+    saveDraftConfig();
+
+    var apiBase = "https://api.github.com/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo) + "/contents/" + path.split("/").map(encodeURIComponent).join("/");
+    var headers = {
+      "Accept": "application/vnd.github+json",
+      "Authorization": "Bearer " + token,
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+
+    fetch(apiBase + "?ref=" + encodeURIComponent(branch), { headers: headers })
+      .then(function (response) {
+        if (!response.ok) throw new Error("Could not load current GitHub file. Check repo, branch, path, and token permissions.");
+        return response.json();
+      })
+      .then(function (currentFile) {
+        return fetch(apiBase, {
+          method: "PUT",
+          headers: Object.assign({}, headers, { "Content-Type": "application/json" }),
+          body: JSON.stringify({
+            message: message,
+            content: encodeBase64(generateVariantsJs()),
+            branch: branch,
+            sha: currentFile.sha
+          })
+        });
+      })
+      .then(function (response) {
+        if (!response.ok) {
+          return response.json().catch(function () {
+            return {};
+          }).then(function (body) {
+            throw new Error(body.message || "GitHub publish failed.");
+          });
+        }
+        return response.json();
+      })
+      .then(function (result) {
+        var commitSha = result.commit && result.commit.sha ? result.commit.sha.slice(0, 7) : "published";
+        setPublishStatus("Published popup/variants.js to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
+      })
+      .catch(function (error) {
+        setPublishStatus(error.message, "error");
+      });
+  }
+
+  function setPublishStatus(message, type) {
+    els.publishStatus.textContent = message || "";
+    els.publishStatus.classList.toggle("is-error", type === "error");
+    els.publishStatus.classList.toggle("is-success", type === "success");
+  }
+
+  function encodeBase64(value) {
+    return btoa(unescape(encodeURIComponent(value)));
   }
 
   function copyText(text) {

@@ -283,8 +283,11 @@
           name: form.elements.name.value,
           email: form.elements.email.value,
           targetWeightLbs: quizData.targetWeight,
+          TargetWeight: quizData.targetWeight,
           age: quizData.age,
+          Age: quizData.age,
           strengthDays: quizData.strengthDays,
+          StrengthDays: quizData.strengthDays,
           source: "protein_popup",
           ctaVariant: "show_my_protein_plan",
           popupVariant: variant.id
@@ -342,8 +345,11 @@
   function getProteinTrackingFields(payload) {
     return {
       targetWeightLbs: payload.targetWeightLbs || payload.targetWeight || "",
-      age: payload.age || "",
-      strengthDays: payload.strengthDays || "",
+      TargetWeight: payload.TargetWeight || payload.targetWeightLbs || payload.targetWeight || "",
+      age: payload.age || payload.Age || "",
+      Age: payload.Age || payload.age || "",
+      strengthDays: payload.strengthDays || payload.StrengthDays || "",
+      StrengthDays: payload.StrengthDays || payload.strengthDays || "",
       source: payload.source || "protein_popup",
       ctaVariant: payload.ctaVariant || "show_my_protein_plan",
       popupVariant: payload.popupVariant || variant.id

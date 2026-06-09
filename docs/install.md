@@ -158,7 +158,7 @@ Webhooks by Zapier: Catch Hook
 -> Google Sheets: add row to Popup Events
 ```
 
-For the Zapier lead webhook, the popup sends `name`, `email`, `targetWeightLbs`, `age`, `strengthDays`, `source`, `ctaVariant`, and `popupVariant`. Keep analytics fields in the separate Google Sheets webhook too.
+For the Zapier lead webhook, the popup sends `name`, `email`, `targetWeightLbs`, `TargetWeight`, `age`, `Age`, `strengthDays`, `StrengthDays`, `source`, `ctaVariant`, and `popupVariant`. The capitalized fields match the protein-plan redirect parameters, while the lower-camel fields preserve compatibility with earlier tests. Keep analytics fields in the separate Google Sheets webhook too.
 
 Include `email`, `name`, `createdAt`, `formName`, and `tag` when available.
 
@@ -166,8 +166,11 @@ For the protein-plan popup, the tracker also supports:
 
 ```text
 targetWeightLbs
+TargetWeight
 age
+Age
 strengthDays
+StrengthDays
 source
 ctaVariant
 popupVariant

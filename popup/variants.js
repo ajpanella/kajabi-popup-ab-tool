@@ -104,7 +104,7 @@
   "formMode": "zapier",
   "leadWebhookUrl": "https://hooks.zapier.com/hooks/catch/18993655/4b2jb8t/",
   "leadMagnetMode": "protein_plan",
-  "proteinPlanUrl": "https://www.longevitylifestyle.me/protein-plan",
+  "proteinPlanUrl": "https://www.longevitylifestyle.me/personalized-protein-plan",
   "proteinQuiz": {
     "targetWeightLabel": "Target weight in lbs",
     "targetWeightPlaceholder": "155",
