@@ -16,8 +16,8 @@
       "name": "Control",
       "active": true,
       "trafficSplit": 50,
-      "headline": "Your Personalized Protein Plan",
-      "subheadline": "Answer 3 quick questions and get your daily protein target plus a healthy high-protein week built around your needs.",
+      "headline": "Build Your Personalized Protein Plan",
+      "subheadline": "Get your daily protein goal, a personalized 7-day meal plan, and a printable family-friendly grocery list, built around your goals and preferences.",
       "imageUrl": "https://res.cloudinary.com/dvs4ciaw7/image/upload/v1780612426/protein-plan-hero_ezz3pz.png",
       "width": 800,
       "backgroundColor": "#ffffff",
@@ -29,7 +29,7 @@
       "textAlign": "center",
       "height": 560,
       "sizeToImage": true,
-      "subheadlineHtml": "Answer 3 quick questions and get your daily protein target plus a <b>healthy high-protein week</b> built around your needs.",
+      "subheadlineHtml": "Get your<b>&nbsp;daily protein goal</b>, a <b>personalized&nbsp;7-day meal plan</b>, and a <b>printable family-friendly grocery list</b>, built around your goals and preferences.",
       "proteinQuiz": {
         "targetWeightLabel": "Target weight in lbs",
         "targetWeightPlaceholder": "155",
@@ -38,13 +38,13 @@
         "ageLabel": "Age",
         "agePlaceholder": "48",
         "quizButtonText": "Continue",
-        "leadHeadline": "Get your free personalized protein goal + 7-day high-protein meal plan",
-        "leadSubheadline": "Tell us where to send it, then your plan will open right away.",
+        "leadHeadline": "Get your FREE personalized protein goal, a 7-day meal plan, and quick-print grocery list.",
+        "leadSubheadline": "Just tell us where to send it and your plan will open right away!",
         "firstNameLabel": "First name",
         "firstNamePlaceholder": "First Name",
         "emailLabel": "Email",
         "emailPlaceholder": "Email",
-        "leadButtonText": "Show My Protein Plan",
+        "leadButtonText": "Build My Protein Plan",
         "backButtonText": "Back"
       }
     },
@@ -53,8 +53,8 @@
       "name": "Benefit Led",
       "active": true,
       "trafficSplit": 50,
-      "headline": "Find Your Protein Number",
-      "subheadline": "Get a realistic daily protein goal and a 7-day meal plan you can actually use.",
+      "headline": "Generate Your Personalized Protein Plan",
+      "subheadline": "Get your customized daily protein goal, a 7-day meal plan, and a printable family-friendly grocery list, built to your preferences.",
       "imageUrl": "https://res.cloudinary.com/dvs4ciaw7/image/upload/v1780612426/protein-plan-hero_ezz3pz.png",
       "width": 560,
       "backgroundColor": "#fbfaf7",
@@ -66,7 +66,7 @@
       "textAlign": "center",
       "height": 560,
       "sizeToImage": true,
-      "subheadlineHtml": "Get a realistic daily protein goal and a <b>7-day meal plan</b> you can actually use.",
+      "subheadlineHtml": "Get your<b>&nbsp;customized daily protein goal</b>, a<b>&nbsp;7-day meal plan</b>, and a <b>printable family-friendly grocery list</b>, built to your preferences.",
       "proteinQuiz": {
         "targetWeightLabel": "Target weight in lbs",
         "targetWeightPlaceholder": "155",
@@ -75,19 +75,19 @@
         "ageLabel": "Age",
         "agePlaceholder": "48",
         "quizButtonText": "Continue",
-        "leadHeadline": "Get your free personalized protein goal + 7-day high-protein meal plan",
-        "leadSubheadline": "Tell us where to send it, then your plan will open right away.",
+        "leadHeadline": "Get your FREE personalized protein goal, a 7-day meal plan, and quick-print grocery list.",
+        "leadSubheadline": "Just tell us where to send it and your plan will open right away!",
         "firstNameLabel": "First name",
         "firstNamePlaceholder": "First Name",
         "emailLabel": "Email",
         "emailPlaceholder": "Email",
-        "leadButtonText": "Show My Protein Plan",
+        "leadButtonText": "Generate My Protein Plan",
         "backButtonText": "Back"
       }
     }
   ],
-  "configVersion": "v1",
-  "changeNote": "",
+  "configVersion": "6/11/26",
+  "changeNote": "Better headline/sub-headline explaining everything included",
   "savedColors": [
     "#111827",
     "#ffffff",
@@ -122,6 +122,6 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-06-09T17:31:25.346Z"
+  "draftSavedAt": "2026-06-11T18:56:49.132Z"
 };
 })();
