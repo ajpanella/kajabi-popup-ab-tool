@@ -13,6 +13,7 @@
   var GITHUB_TOKEN_KEY = "ll_popup_dashboard_github_token";
   var LATEST_TWO_VERSIONS = "__latest_two_versions";
   var HIDDEN_HISTORY_KEY = "ll_popup_dashboard_hidden_history";
+  var HIDDEN_METRICS_KEY = "ll_popup_dashboard_hidden_metrics";
   var config = loadDraftConfig();
   var urlParams = new URLSearchParams(window.location.search);
   var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
@@ -100,6 +101,7 @@
   els.editors.addEventListener("click", onEditorClick);
   els.editors.addEventListener("focusin", onEditorFocus);
   els.history.addEventListener("click", onHistoryClick);
+  els.body.addEventListener("click", onMetricRowClick);
   els.savedColors.addEventListener("input", onPaletteInput);
   els.savedColors.addEventListener("click", onPaletteClick);
   els.assetBaseUrl.addEventListener("input", function () {
@@ -495,7 +497,7 @@
   function updateDashboard() {
     var filtered = applyFilters(rows);
     var historyFiltered = applyHistoryFilters(rows);
-    var metrics = buildMetrics(filtered);
+    var metrics = getVisibleMetrics(buildMetrics(filtered));
     renderStats(metrics);
     renderTable(metrics);
     renderCharts(metrics);
@@ -717,7 +719,8 @@
         formatNumber(item.leads || item.submits),
         formatPercent(item.cvr),
         formatNumber(item.closes),
-        item.variant === "A" ? "Control" : formatPercent(item.lift, true)
+        item.variant === "A" ? "Control" : formatPercent(item.lift, true),
+        { html: "<button class=\"dash-row-remove\" type=\"button\" data-metric-remove=\"" + escapeHtmlAttr(metricRowKey(item)) + "\" aria-label=\"Hide performance row\">&times;</button>" }
       ].forEach(function (value) {
         var cell = document.createElement("td");
         if (value && typeof value === "object" && value.html) {
@@ -729,6 +732,37 @@
       });
       els.body.appendChild(row);
     });
+  }
+
+  function getVisibleMetrics(metrics) {
+    var hidden = getHiddenMetricKeys();
+    return metrics.filter(function (item) {
+      return hidden.indexOf(metricRowKey(item)) < 0;
+    });
+  }
+
+  function onMetricRowClick(event) {
+    var button = event.target.closest("[data-metric-remove]");
+    if (!button) return;
+
+    var key = button.dataset.metricRemove;
+    var hidden = getHiddenMetricKeys();
+    if (hidden.indexOf(key) < 0) hidden.push(key);
+    localStorage.setItem(HIDDEN_METRICS_KEY, JSON.stringify(hidden));
+    updateDashboard();
+  }
+
+  function metricRowKey(item) {
+    return [item && item.configVersion || "unversioned", item && item.variant || "Unknown"].join("::");
+  }
+
+  function getHiddenMetricKeys() {
+    try {
+      var value = JSON.parse(localStorage.getItem(HIDDEN_METRICS_KEY)) || [];
+      return Array.isArray(value) ? value : [];
+    } catch (error) {
+      return [];
+    }
   }
 
   function isLiveMetricRow(item) {

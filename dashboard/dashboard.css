@@ -910,6 +910,26 @@ td {
   text-transform: uppercase;
 }
 
+.dash-row-remove {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  color: #667085;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.dash-row-remove:hover {
+  color: #b42318;
+  background: #fee4e2;
+}
+
 @media (max-width: 980px) {
   .dash-layout {
     grid-template-columns: 1fr;
