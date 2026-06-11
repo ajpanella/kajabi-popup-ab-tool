@@ -1226,10 +1226,11 @@
       return;
     }
 
+    var versionMessage = ensureFreshPublishVersion();
     saveDraftConfig();
 
     if (canUseLocalPublisher()) {
-      publishConfigWithLocalServer(path, message);
+      publishConfigWithLocalServer(path, message, versionMessage);
       return;
     }
 
@@ -1274,18 +1275,70 @@
       })
       .then(function (result) {
         var commitSha = result.commit && result.commit.sha ? result.commit.sha.slice(0, 7) : "published";
-        setPublishStatus("Published popup/variants.js to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
+        setPublishStatus(versionMessage + "Published popup/variants.js to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
       .catch(function (error) {
         setPublishStatus(error.message, "error");
       });
   }
 
+  function ensureFreshPublishVersion() {
+    var currentVersion = config.configVersion || "v1";
+    var hasLiveTraffic = rows.some(function (row) {
+      return (row.configVersion || "unversioned") === currentVersion && isLiveTrackingEvent(row);
+    });
+
+    if (!hasLiveTraffic) return "";
+
+    var nextVersion = createVersionId();
+    config.configVersion = nextVersion;
+    els.configVersion.value = nextVersion;
+
+    if (!config.changeNote) {
+      config.changeNote = "New test version created from dashboard publish.";
+      els.changeNote.value = config.changeNote;
+    }
+
+    populateFilters();
+    updateDashboard();
+    return "Started new tracking version " + nextVersion + ". ";
+  }
+
+  function isLiveTrackingEvent(row) {
+    var type = eventType(row);
+    return [
+      "popup_view",
+      "popup_form_focus",
+      "popup_form_click",
+      "popup_quiz_submit",
+      "popup_submit_attempt",
+      "popup_lead_submit",
+      "kajabi_form_submitted",
+      "popup_close"
+    ].indexOf(type) >= 0;
+  }
+
+  function createVersionId() {
+    var now = new Date();
+    var stamp = [
+      now.getFullYear(),
+      pad2(now.getMonth() + 1),
+      pad2(now.getDate()),
+      pad2(now.getHours()),
+      pad2(now.getMinutes())
+    ].join("");
+    return "test-" + stamp;
+  }
+
+  function pad2(value) {
+    return String(value).padStart(2, "0");
+  }
+
   function canUseLocalPublisher() {
     return window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1";
   }
 
-  function publishConfigWithLocalServer(path, message) {
+  function publishConfigWithLocalServer(path, message, versionMessage) {
     fetch("/api/publish-github", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1307,7 +1360,7 @@
       })
       .then(function (body) {
         var note = body.status === "unchanged" ? "No file changes were needed." : "Published popup/variants.js to GitHub.";
-        setPublishStatus(note + " GitHub Pages may take 1-2 minutes to refresh.", "success");
+        setPublishStatus((versionMessage || "") + note + " GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
       .catch(function (error) {
         setPublishStatus(error.message, "error");
