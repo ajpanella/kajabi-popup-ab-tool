@@ -1985,4 +1985,8 @@
       }[char];
     });
   }
+
+  function escapeHtmlAttr(value) {
+    return escapeHtml(value).replace(/`/g, "&#096;");
+  }
 })();
