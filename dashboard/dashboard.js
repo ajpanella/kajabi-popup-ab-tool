@@ -11,6 +11,7 @@
   var GITHUB_BRANCH_KEY = "ll_popup_dashboard_github_branch";
   var GITHUB_PATH_KEY = "ll_popup_dashboard_github_path";
   var GITHUB_TOKEN_KEY = "ll_popup_dashboard_github_token";
+  var LATEST_TWO_VERSIONS = "__latest_two_versions";
   var config = loadDraftConfig();
   var urlParams = new URLSearchParams(window.location.search);
   var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
@@ -462,7 +463,7 @@
       return row.variant;
     }))), "All variants");
 
-    setOptions(els.version, unique(["", config.configVersion].concat(rows.map(function (row) {
+    setOptions(els.version, unique(["", LATEST_TWO_VERSIONS, config.configVersion].concat(rows.map(function (row) {
       return row.configVersion || "unversioned";
     }))), "All versions");
   }
@@ -473,7 +474,7 @@
     values.filter(Boolean).forEach(function (value) {
       var option = document.createElement("option");
       option.value = value;
-      option.textContent = value;
+      option.textContent = optionLabel(value);
       select.appendChild(option);
     });
 
@@ -482,6 +483,11 @@
     all.textContent = allLabel;
     select.insertBefore(all, select.firstChild);
     select.value = values.indexOf(current) >= 0 ? current : "";
+  }
+
+  function optionLabel(value) {
+    if (value === LATEST_TWO_VERSIONS) return "Latest 2 versions";
+    return value;
   }
 
   function updateDashboard() {
@@ -498,17 +504,49 @@
     var start = els.start.value ? new Date(els.start.value + "T00:00:00") : null;
     var end = els.end.value ? new Date(els.end.value + "T23:59:59") : null;
     var pageNeedle = els.pageUrl.value.trim().toLowerCase();
+    var latestVersions = els.version.value === LATEST_TWO_VERSIONS ? getLatestVersions(data, 2) : null;
 
     return data.filter(function (row) {
       var timestamp = row.timestamp ? new Date(row.timestamp) : null;
       if (els.testId.value && row.testId !== els.testId.value) return false;
       if (els.variant.value && row.variant !== els.variant.value) return false;
-      if (els.version.value && (row.configVersion || "unversioned") !== els.version.value) return false;
+      if (latestVersions && latestVersions.indexOf(row.configVersion || "unversioned") === -1) return false;
+      if (els.version.value && els.version.value !== LATEST_TWO_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
       if (els.device.value && row.deviceType !== els.device.value) return false;
       if (start && timestamp && timestamp < start) return false;
       if (end && timestamp && timestamp > end) return false;
       if (pageNeedle && String(row.pageUrl || "").toLowerCase().indexOf(pageNeedle) === -1) return false;
       return true;
+    });
+  }
+
+  function getLatestVersions(data, count) {
+    var currentVersion = config.configVersion || "v1";
+    var byVersion = {};
+
+    byVersion[currentVersion] = {
+      version: currentVersion,
+      timestamp: Date.now()
+    };
+
+    data.forEach(function (row) {
+      var version = row.configVersion || "unversioned";
+      var timestamp = parseTimestamp(row.timestamp);
+      var time = timestamp ? timestamp.getTime() : 0;
+      if (!byVersion[version] || time > byVersion[version].timestamp) {
+        byVersion[version] = {
+          version: version,
+          timestamp: time
+        };
+      }
+    });
+
+    return Object.keys(byVersion).map(function (key) {
+      return byVersion[key];
+    }).sort(function (a, b) {
+      return b.timestamp - a.timestamp;
+    }).slice(0, count).map(function (item) {
+      return item.version;
     });
   }
 
@@ -1275,6 +1313,7 @@
       })
       .then(function (result) {
         var commitSha = result.commit && result.commit.sha ? result.commit.sha.slice(0, 7) : "published";
+        showLatestTwoVersions();
         setPublishStatus(versionMessage + "Published popup/variants.js to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
       .catch(function (error) {
@@ -1302,6 +1341,12 @@
     populateFilters();
     updateDashboard();
     return "Started new tracking version " + nextVersion + ". ";
+  }
+
+  function showLatestTwoVersions() {
+    populateFilters();
+    els.version.value = LATEST_TWO_VERSIONS;
+    updateDashboard();
   }
 
   function isLiveTrackingEvent(row) {
@@ -1360,6 +1405,7 @@
       })
       .then(function (body) {
         var note = body.status === "unchanged" ? "No file changes were needed." : "Published popup/variants.js to GitHub.";
+        showLatestTwoVersions();
         setPublishStatus((versionMessage || "") + note + " GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
       .catch(function (error) {
