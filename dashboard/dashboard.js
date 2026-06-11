@@ -12,6 +12,7 @@
   var GITHUB_PATH_KEY = "ll_popup_dashboard_github_path";
   var GITHUB_TOKEN_KEY = "ll_popup_dashboard_github_token";
   var LATEST_TWO_VERSIONS = "__latest_two_versions";
+  var HIDDEN_HISTORY_KEY = "ll_popup_dashboard_hidden_history";
   var config = loadDraftConfig();
   var urlParams = new URLSearchParams(window.location.search);
   var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
@@ -98,6 +99,7 @@
   els.editors.addEventListener("input", onEditorInput);
   els.editors.addEventListener("click", onEditorClick);
   els.editors.addEventListener("focusin", onEditorFocus);
+  els.history.addEventListener("click", onHistoryClick);
   els.savedColors.addEventListener("input", onPaletteInput);
   els.savedColors.addEventListener("click", onPaletteClick);
   els.assetBaseUrl.addEventListener("input", function () {
@@ -492,15 +494,36 @@
 
   function updateDashboard() {
     var filtered = applyFilters(rows);
+    var historyFiltered = applyHistoryFilters(rows);
     var metrics = buildMetrics(filtered);
     renderStats(metrics);
     renderTable(metrics);
     renderCharts(metrics);
     renderRecommendations(metrics);
-    renderVariationHistory(filtered);
+    renderVariationHistory(historyFiltered);
   }
 
   function applyFilters(data) {
+    var start = els.start.value ? new Date(els.start.value + "T00:00:00") : null;
+    var end = els.end.value ? new Date(els.end.value + "T23:59:59") : null;
+    var pageNeedle = els.pageUrl.value.trim().toLowerCase();
+    var latestVersions = els.version.value === LATEST_TWO_VERSIONS ? [config.configVersion || "v1"] : null;
+
+    return data.filter(function (row) {
+      var timestamp = row.timestamp ? new Date(row.timestamp) : null;
+      if (els.testId.value && row.testId !== els.testId.value) return false;
+      if (els.variant.value && row.variant !== els.variant.value) return false;
+      if (latestVersions && latestVersions.indexOf(row.configVersion || "unversioned") === -1) return false;
+      if (els.version.value && els.version.value !== LATEST_TWO_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
+      if (els.device.value && row.deviceType !== els.device.value) return false;
+      if (start && timestamp && timestamp < start) return false;
+      if (end && timestamp && timestamp > end) return false;
+      if (pageNeedle && String(row.pageUrl || "").toLowerCase().indexOf(pageNeedle) === -1) return false;
+      return true;
+    });
+  }
+
+  function applyHistoryFilters(data) {
     var start = els.start.value ? new Date(els.start.value + "T00:00:00") : null;
     var end = els.end.value ? new Date(els.end.value + "T23:59:59") : null;
     var pageNeedle = els.pageUrl.value.trim().toLowerCase();
@@ -1642,17 +1665,20 @@
 
   function renderVariationHistory(data) {
     var groups = {};
+    var hidden = getHiddenHistoryKeys();
     data.forEach(function (row) {
       var label = row.variantLabel || labelFromSnapshot(row.variantSnapshot) || [row.variant || "Unknown", row.configVersion || "unversioned"].join(" / ");
       var key = [
         row.testId || "",
         row.configVersion || "unversioned",
-        row.variant || "Unknown",
-        label
+        row.variant || "Unknown"
       ].join("::");
+
+      if (hidden.indexOf(key) >= 0) return;
 
       if (!groups[key]) {
         groups[key] = {
+          key: key,
           label: label,
           variant: row.variant || "Unknown",
           configVersion: row.configVersion || "unversioned",
@@ -1667,6 +1693,9 @@
       }
 
       var item = groups[key];
+      if (!item.lastSeen || String(row.timestamp) >= item.lastSeen) {
+        item.label = label;
+      }
       if (row.eventType === "popup_view") {
         if (row.sessionId) item.sessions.add(row.sessionId);
         item.views += 1;
@@ -1692,7 +1721,8 @@
     els.history.innerHTML = history.map(function (item) {
       var uniqueImpressions = item.sessions.size || item.views;
       return [
-        "<article class=\"dash-history-card\">",
+        "<article class=\"dash-history-card\" data-history-key=\"" + escapeHtmlAttr(item.key) + "\">",
+        "<button class=\"dash-history-remove\" type=\"button\" data-history-remove=\"" + escapeHtmlAttr(item.key) + "\" aria-label=\"Hide historical variation\">&times;</button>",
         "<div><strong>" + escapeHtml(item.label) + "</strong><span>" + escapeHtml(item.variant) + " / " + escapeHtml(item.configVersion) + "</span></div>",
         "<dl>",
         "<div><dt>Unique impressions</dt><dd>" + formatNumber(uniqueImpressions) + "</dd></div>",
@@ -1705,6 +1735,26 @@
         "</article>"
       ].join("");
     }).join("");
+  }
+
+  function onHistoryClick(event) {
+    var button = event.target.closest("[data-history-remove]");
+    if (!button) return;
+
+    var key = button.dataset.historyRemove;
+    var hidden = getHiddenHistoryKeys();
+    if (hidden.indexOf(key) < 0) hidden.push(key);
+    localStorage.setItem(HIDDEN_HISTORY_KEY, JSON.stringify(hidden));
+    updateDashboard();
+  }
+
+  function getHiddenHistoryKeys() {
+    try {
+      var value = JSON.parse(localStorage.getItem(HIDDEN_HISTORY_KEY)) || [];
+      return Array.isArray(value) ? value : [];
+    } catch (error) {
+      return [];
+    }
   }
 
   function buildVariantLabel(variant) {
