@@ -8,7 +8,7 @@
   <array>
     <string>/bin/zsh</string>
     <string>-lc</string>
-    <string>PORT=3102 exec /Applications/Codex.app/Contents/Resources/node server.js</string>
+    <string>PORT=3102 exec /Users/andrewpanella/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node server.js</string>
   </array>
   <key>RunAtLoad</key>
   <true/>

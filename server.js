@@ -5,7 +5,7 @@ const { execFile } = require("child_process");
 
 const port = Number(process.env.PORT || 3102);
 const root = __dirname;
-const repoRoot = process.env.POPUP_REPO_ROOT || "/Users/andrewpanella/Documents/Lead Magnets/Kajabi A:B Popup Tool copy";
+const ghBin = process.env.GH_BIN || "/opt/homebrew/bin/gh";
 
 const types = {
   ".css": "text/css; charset=utf-8",
@@ -45,8 +45,8 @@ function readJsonBody(request, callback) {
   });
 }
 
-function runGit(args, callback) {
-  execFile("git", args, { cwd: repoRoot }, (error, stdout, stderr) => {
+function runGh(args, callback) {
+  execFile(ghBin, args, { cwd: root, maxBuffer: 1024 * 1024 * 5 }, (error, stdout, stderr) => {
     if (error) {
       callback(new Error((stderr || stdout || error.message).trim()));
       return;
@@ -72,55 +72,72 @@ function publishLocalGitHub(request, response) {
       return;
     }
 
-    const targetPath = path.join(repoRoot, publishPath);
-    fs.writeFile(targetPath, content, "utf8", (writeError) => {
-      if (writeError) {
-        send(response, 500, JSON.stringify({ ok: false, error: writeError.message }), { "Content-Type": "application/json; charset=utf-8" });
+    publishWithGitHubCli(publishPath, message, content, response);
+  });
+}
+
+function publishWithGitHubCli(publishPath, message, content, response) {
+  const owner = "ajpanella";
+  const repo = "kajabi-popup-ab-tool";
+  const branch = "main";
+  const apiPath = `repos/${owner}/${repo}/contents/${publishPath}`;
+
+  runGh(["api", `${apiPath}?ref=${encodeURIComponent(branch)}`], (getError, currentFileJson) => {
+    if (getError) {
+      send(response, 500, JSON.stringify({ ok: false, error: getError.message }), { "Content-Type": "application/json; charset=utf-8" });
+      return;
+    }
+
+    let currentFile;
+    try {
+      currentFile = JSON.parse(currentFileJson);
+    } catch (error) {
+      send(response, 500, JSON.stringify({ ok: false, error: "Could not parse GitHub file metadata." }), { "Content-Type": "application/json; charset=utf-8" });
+      return;
+    }
+
+    const currentContent = Buffer.from(String(currentFile.content || "").replace(/\s/g, ""), "base64").toString("utf8");
+    if (currentContent === content) {
+      copyContentToLocalApp(content, publishPath);
+      send(response, 200, JSON.stringify({ ok: true, status: "unchanged", message: "No changes to publish." }), { "Content-Type": "application/json; charset=utf-8" });
+      return;
+    }
+
+    runGh([
+      "api",
+      apiPath,
+      "-X",
+      "PUT",
+      "-f",
+      `message=${message}`,
+      "-f",
+      `content=${Buffer.from(content, "utf8").toString("base64")}`,
+      "-f",
+      `branch=${branch}`,
+      "-f",
+      `sha=${currentFile.sha}`
+    ], (putError, resultJson) => {
+      if (putError) {
+        send(response, 500, JSON.stringify({ ok: false, error: putError.message }), { "Content-Type": "application/json; charset=utf-8" });
         return;
       }
 
-      runGit(["add", publishPath], (addError) => {
-        if (addError) {
-          send(response, 500, JSON.stringify({ ok: false, error: addError.message }), { "Content-Type": "application/json; charset=utf-8" });
-          return;
-        }
-
-        runGit(["diff", "--cached", "--quiet"], (diffError) => {
-          if (!diffError) {
-            copyPublishedFileToLocalApp(targetPath, publishPath);
-            send(response, 200, JSON.stringify({ ok: true, status: "unchanged", message: "No changes to publish." }), { "Content-Type": "application/json; charset=utf-8" });
-            return;
-          }
-
-          runGit(["commit", "-m", message], (commitError, commitOutput) => {
-            if (commitError) {
-              send(response, 500, JSON.stringify({ ok: false, error: commitError.message }), { "Content-Type": "application/json; charset=utf-8" });
-              return;
-            }
-
-            runGit(["push", "origin", "main"], (pushError) => {
-              if (pushError) {
-                send(response, 500, JSON.stringify({ ok: false, error: pushError.message }), { "Content-Type": "application/json; charset=utf-8" });
-                return;
-              }
-
-              copyPublishedFileToLocalApp(targetPath, publishPath);
-              send(response, 200, JSON.stringify({ ok: true, status: "published", message: commitOutput }), { "Content-Type": "application/json; charset=utf-8" });
-            });
-          });
-        });
-      });
+      copyContentToLocalApp(content, publishPath);
+      let result = {};
+      try {
+        result = JSON.parse(resultJson);
+      } catch (error) {}
+      const commitSha = result && result.commit && result.commit.sha ? result.commit.sha.slice(0, 7) : "published";
+      send(response, 200, JSON.stringify({ ok: true, status: "published", commitSha: commitSha }), { "Content-Type": "application/json; charset=utf-8" });
     });
   });
 }
 
-function copyPublishedFileToLocalApp(sourcePath, publishPath) {
+function copyContentToLocalApp(content, publishPath) {
   const localPath = path.join(root, publishPath);
-  if (path.resolve(sourcePath) === path.resolve(localPath)) return;
-
   fs.mkdir(path.dirname(localPath), { recursive: true }, (mkdirError) => {
     if (mkdirError) return;
-    fs.copyFile(sourcePath, localPath, () => {});
+    fs.writeFile(localPath, content, "utf8", () => {});
   });
 }
 
