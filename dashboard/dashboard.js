@@ -703,8 +703,9 @@
 
     metrics.forEach(function (item) {
       var row = document.createElement("tr");
+      var live = isLiveMetricRow(item);
       [
-        item.variant,
+        { html: escapeHtml(item.variant) + (live ? " <span class=\"dash-live-badge\">Live</span>" : "") },
         item.configVersion,
         formatNumber(item.sessions),
         formatNumber(item.views),
@@ -719,10 +720,21 @@
         item.variant === "A" ? "Control" : formatPercent(item.lift, true)
       ].forEach(function (value) {
         var cell = document.createElement("td");
-        cell.textContent = value;
+        if (value && typeof value === "object" && value.html) {
+          cell.innerHTML = value.html;
+        } else {
+          cell.textContent = value;
+        }
         row.appendChild(cell);
       });
       els.body.appendChild(row);
+    });
+  }
+
+  function isLiveMetricRow(item) {
+    if (!item || item.configVersion !== (config.configVersion || "v1")) return false;
+    return activeVariants().some(function (variant) {
+      return variant.id === item.variant;
     });
   }
 
