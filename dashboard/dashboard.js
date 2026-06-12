@@ -636,8 +636,8 @@
       });
       var inferredViews = Math.max(item.views, item.sessions.size, item.quizSubmits, item.leads, item.submits);
       var sessionCount = item.sessions.size || inferredViews;
-      var leadConversionRate = rate(item.leads, inferredViews);
-      var submitConversionRate = rate(item.submits, inferredViews);
+      var fullSubmissions = fullSubmissionCount(item.leads, item.submits);
+      var fullConversionRate = rate(fullSubmissions, inferredViews);
       return {
         variant: item.variant,
         configVersion: item.configVersion,
@@ -651,12 +651,13 @@
         quizSubmits: item.quizSubmits,
         quizRate: rate(item.quizSubmits, inferredViews),
         leads: item.leads,
-        leadRate: leadConversionRate,
+        fullSubmissions: fullSubmissions,
+        leadRate: fullConversionRate,
         submits: item.submits,
-        submitRate: submitConversionRate,
+        submitRate: fullConversionRate,
         closes: item.closes,
         closeRate: rate(item.closes, inferredViews),
-        cvr: leadConversionRate || submitConversionRate,
+        cvr: fullConversionRate,
         lift: 0
       };
     });
@@ -684,15 +685,16 @@
       sum.clicks += item.clicks;
       sum.quizSubmits += item.quizSubmits;
       sum.leads += item.leads;
+      sum.fullSubmissions += item.fullSubmissions;
       sum.submits += item.submits;
       sum.closes += item.closes;
       return sum;
-    }, { views: 0, clicks: 0, quizSubmits: 0, leads: 0, submits: 0, closes: 0 });
+    }, { views: 0, clicks: 0, quizSubmits: 0, leads: 0, fullSubmissions: 0, submits: 0, closes: 0 });
 
     document.getElementById("stat-views").textContent = formatNumber(totals.views);
     document.getElementById("stat-quiz-submits").textContent = formatNumber(totals.quizSubmits);
-    document.getElementById("stat-leads").textContent = formatNumber(totals.leads || totals.submits);
-    document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.leads || totals.submits, totals.views));
+    document.getElementById("stat-leads").textContent = formatNumber(totals.fullSubmissions);
+    document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.fullSubmissions, totals.views));
   }
 
   function renderTable(metrics) {
@@ -716,7 +718,7 @@
         formatPercent(item.clickRate),
         formatNumber(item.quizSubmits),
         formatPercent(item.quizRate),
-        formatNumber(item.leads || item.submits),
+        formatNumber(item.fullSubmissions),
         formatPercent(item.cvr),
         formatNumber(item.closes),
         item.variant === "A" ? "Control" : formatPercent(item.lift, true),
@@ -806,7 +808,7 @@
 
     drawChart("conversion-chart", "bar", labels, [
       {
-        label: "Lead CVR",
+        label: "Full CVR",
         data: metrics.map(function (item) { return Math.round(item.cvr * 1000) / 10; }),
         backgroundColor: "#06b00b"
       },
@@ -835,7 +837,7 @@
       },
       {
         label: "Leads",
-        data: metrics.map(function (item) { return item.leads || item.submits; }),
+        data: metrics.map(function (item) { return item.fullSubmissions; }),
         backgroundColor: "#06b00b"
       }
     ]);
@@ -1732,6 +1734,8 @@
           sessions: new Set(),
           views: 0,
           clicks: 0,
+          quizSubmits: 0,
+          leads: 0,
           submits: 0,
           saves: 0,
           lastSeen: ""
@@ -1747,7 +1751,9 @@
         item.views += 1;
       }
       if (row.eventType === "popup_form_click") item.clicks += 1;
-      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted" || row.eventType === "popup_submit_attempt") item.submits += 1;
+      if (row.eventType === "popup_quiz_submit") item.quizSubmits += 1;
+      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.leads += 1;
+      if (row.eventType === "popup_submit_attempt" || row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.submits += 1;
       if (row.eventType === "variant_save_test") item.saves += 1;
       if (!item.changeNote && row.changeNote) item.changeNote = row.changeNote;
       if (!item.lastSeen || String(row.timestamp) > item.lastSeen) item.lastSeen = row.timestamp || "";
@@ -1766,6 +1772,7 @@
 
     els.history.innerHTML = history.map(function (item) {
       var uniqueImpressions = item.sessions.size || item.views;
+      var fullSubmissions = fullSubmissionCount(item.leads, item.submits);
       return [
         "<article class=\"dash-history-card\" data-history-key=\"" + escapeHtmlAttr(item.key) + "\">",
         "<button class=\"dash-history-remove\" type=\"button\" data-history-remove=\"" + escapeHtmlAttr(item.key) + "\" aria-label=\"Hide historical variation\">&times;</button>",
@@ -1774,7 +1781,9 @@
         "<div><dt>Unique impressions</dt><dd>" + formatNumber(uniqueImpressions) + "</dd></div>",
         "<div><dt>Views</dt><dd>" + formatNumber(item.views) + "</dd></div>",
         "<div><dt>Click rate</dt><dd>" + formatPercent(rate(item.clicks, item.views)) + "</dd></div>",
-        "<div><dt>Conversion rate</dt><dd>" + formatPercent(rate(item.submits, item.views)) + "</dd></div>",
+        "<div><dt>Full CVR</dt><dd>" + formatPercent(rate(fullSubmissions, item.views)) + "</dd></div>",
+        "<div><dt>Quiz CVR</dt><dd>" + formatPercent(rate(item.quizSubmits, item.views)) + "</dd></div>",
+        "<div><dt>Lead-step CVR</dt><dd>" + formatPercent(rate(fullSubmissions, item.quizSubmits)) + "</dd></div>",
         "</dl>",
         item.changeNote ? "<p>" + escapeHtml(item.changeNote) + "</p>" : "",
         item.saves ? "<small>Saved/tested " + formatNumber(item.saves) + " time" + (item.saves === 1 ? "" : "s") + "</small>" : "",
@@ -2003,6 +2012,11 @@
 
   function rate(numerator, denominator) {
     return denominator > 0 ? numerator / denominator : 0;
+  }
+
+  function fullSubmissionCount(leads, submits) {
+    if (config.leadMagnetMode === "protein_plan") return Number(leads || 0);
+    return Number(leads || submits || 0);
   }
 
   function unique(values) {
