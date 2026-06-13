@@ -154,6 +154,21 @@ body {
   font-size: 19px;
 }
 
+.dash-result-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.dash-hidden-status {
+  margin: 0;
+  color: var(--dash-muted);
+  font-size: 13px;
+  font-weight: 800;
+}
+
 .dash-toggle {
   display: inline-flex;
   border: 1px solid var(--dash-line);

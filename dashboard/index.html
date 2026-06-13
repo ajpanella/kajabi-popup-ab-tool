@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=18">
-    <link rel="stylesheet" href="./dashboard.css?v=21">
+    <link rel="stylesheet" href="./dashboard.css?v=22">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js"></script>
   </head>
@@ -241,7 +241,11 @@
               <p class="dash-eyebrow">Results</p>
               <h2>Performance Table</h2>
             </div>
-            <p id="sample-warning" class="dash-warning" hidden>Sample size is below 100 popup views for at least one active variant.</p>
+            <div class="dash-result-actions">
+              <p id="hidden-metrics-status" class="dash-hidden-status" hidden></p>
+              <button id="show-hidden-metrics" class="dash-secondary-button" type="button" hidden>Show Hidden Rows</button>
+              <p id="sample-warning" class="dash-warning" hidden>Sample size is below 100 popup views for at least one active variant.</p>
+            </div>
           </div>
           <div class="dash-table-wrap">
             <table>
@@ -281,6 +285,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=41"></script>
+    <script src="./dashboard.js?v=42"></script>
   </body>
 </html>

@@ -71,6 +71,8 @@
     quizStepPreview: document.getElementById("quiz-step-preview"),
     leadStepPreview: document.getElementById("lead-step-preview"),
     warning: document.getElementById("sample-warning"),
+    hiddenMetricsStatus: document.getElementById("hidden-metrics-status"),
+    showHiddenMetrics: document.getElementById("show-hidden-metrics"),
     body: document.getElementById("performance-body")
   };
 
@@ -117,6 +119,7 @@
   els.downloadConfig.addEventListener("click", downloadConfig);
   els.restoreWinner.addEventListener("click", restoreWinningVariant);
   els.publishGithub.addEventListener("click", publishConfigToGitHub);
+  els.showHiddenMetrics.addEventListener("click", clearHiddenMetrics);
   [els.githubOwner, els.githubRepo, els.githubBranch, els.githubPath, els.githubToken].forEach(function (element) {
     element.addEventListener("input", saveGitHubPublishSettings);
   });
@@ -497,7 +500,9 @@
   function updateDashboard() {
     var filtered = applyFilters(rows);
     var historyFiltered = applyHistoryFilters(rows);
-    var metrics = getVisibleMetrics(buildMetrics(filtered));
+    var builtMetrics = buildMetrics(filtered);
+    var metrics = getVisibleMetrics(builtMetrics);
+    renderHiddenMetricsNotice(builtMetrics.length - metrics.length);
     renderStats(metrics);
     renderTable(metrics);
     renderCharts(metrics);
@@ -741,6 +746,21 @@
     return metrics.filter(function (item) {
       return hidden.indexOf(metricRowKey(item)) < 0;
     });
+  }
+
+  function renderHiddenMetricsNotice(hiddenCount) {
+    if (!els.hiddenMetricsStatus || !els.showHiddenMetrics) return;
+
+    els.hiddenMetricsStatus.hidden = hiddenCount <= 0;
+    els.showHiddenMetrics.hidden = hiddenCount <= 0;
+    els.hiddenMetricsStatus.textContent = hiddenCount > 0
+      ? hiddenCount + " performance row" + (hiddenCount === 1 ? "" : "s") + " hidden."
+      : "";
+  }
+
+  function clearHiddenMetrics() {
+    localStorage.removeItem(HIDDEN_METRICS_KEY);
+    updateDashboard();
   }
 
   function onMetricRowClick(event) {
