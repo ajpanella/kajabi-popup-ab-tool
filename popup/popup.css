@@ -122,7 +122,8 @@
 }
 
 .ll-popup-target-preview span,
-.ll-popup-target-preview strong {
+.ll-popup-target-preview strong,
+.ll-popup-target-preview small {
   display: block;
   line-height: 1.15;
 }
@@ -139,6 +140,14 @@
   font-size: clamp(24px, 4vw, 34px);
   font-weight: 900;
   letter-spacing: 0;
+}
+
+.ll-popup-target-preview-inline small {
+  margin-top: 5px;
+  color: var(--ll-popup-text, #172026);
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0.74;
 }
 
 .ll-popup-target-preview-box {
@@ -162,6 +171,14 @@
   font-size: clamp(26px, 4.2vw, 38px);
   font-weight: 900;
   letter-spacing: 0;
+}
+
+.ll-popup-target-preview-box small {
+  margin-top: 6px;
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 800;
+  opacity: 0.78;
 }
 
 .ll-popup-form {

@@ -352,7 +352,8 @@
     preview.className = "ll-popup-target-preview ll-popup-target-preview-" + (proteinQuiz.targetPreviewStyle === "box" ? "box" : "inline");
     preview.innerHTML = [
       "<span>" + escapeHtml(proteinQuiz.targetPreviewLabel || "Your Daily Target:") + "</span>",
-      "<strong>" + escapeHtml(target.rangeText) + "</strong>"
+      "<strong>" + escapeHtml(target.dailyGoalGrams + "g/day") + "</strong>",
+      "<small>Recommended range: " + escapeHtml(target.rangeText) + "</small>"
     ].join("");
 
     if (headline) {

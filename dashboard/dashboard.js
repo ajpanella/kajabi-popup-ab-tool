@@ -1224,7 +1224,8 @@
     return [
       "<div class=\"ll-popup-target-preview ll-popup-target-preview-" + (quiz.targetPreviewStyle === "box" ? "box" : "inline") + "\">",
       "<span>" + escapeHtml(quiz.targetPreviewLabel || "Your Daily Target:") + "</span>",
-      "<strong>" + escapeHtml(target.rangeText) + "</strong>",
+      "<strong>" + escapeHtml(target.dailyGoalGrams + "g/day") + "</strong>",
+      "<small>Recommended range: " + escapeHtml(target.rangeText) + "</small>",
       "</div>"
     ].join("");
   }
