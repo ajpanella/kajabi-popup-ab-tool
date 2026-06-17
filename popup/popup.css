@@ -126,6 +126,52 @@
   gap: 10px;
 }
 
+.ll-popup-progress {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 12px;
+  text-align: left;
+}
+
+.ll-popup-progress-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--ll-popup-text, #172026);
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.ll-popup-progress-top strong {
+  color: var(--ll-popup-accent, #1f6feb);
+  font-size: 11px;
+  letter-spacing: 0;
+}
+
+.ll-popup-progress-track {
+  height: 7px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e7edf4;
+}
+
+.ll-popup-progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--ll-popup-accent, #1f6feb);
+}
+
+.ll-popup-progress p {
+  margin: 0;
+  color: #667085;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
 .ll-popup-zapier-form label {
   display: block;
 }

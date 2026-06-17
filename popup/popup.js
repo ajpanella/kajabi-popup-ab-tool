@@ -227,6 +227,7 @@
       }
 
       container.innerHTML = [
+        renderProteinProgressHtml(proteinQuiz, 1),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"quiz\">",
         "<label><span>" + escapeHtml(proteinQuiz.targetWeightLabel) + "</span><input name=\"targetWeight\" type=\"number\" inputmode=\"numeric\" min=\"80\" max=\"350\" step=\"1\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.targetWeightPlaceholder) + "\" required></label>",
         "<label><span>" + escapeHtml(proteinQuiz.strengthDaysLabel) + "</span><select name=\"strengthDays\" required>",
@@ -266,6 +267,7 @@
 
       container.innerHTML = [
         "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
+        renderProteinProgressHtml(proteinQuiz, 2),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"lead\">",
         "<label><span>" + escapeHtml(proteinQuiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.firstNamePlaceholder) + "\" required></label>",
         "<label><span>" + escapeHtml(proteinQuiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.emailPlaceholder) + "\" required></label>",
@@ -311,6 +313,11 @@
       strengthDaysPlaceholder: "Select days",
       ageLabel: "Age",
       agePlaceholder: "48",
+      progressEnabled: false,
+      progressStepOneLabel: "Step 1 of 2: Quick Calculator",
+      progressStepOneText: "Answer 3 quick questions to calculate your personalized protein target immediately.",
+      progressStepTwoLabel: "Step 2 of 2: Send Your Plan",
+      progressStepTwoText: "Your personalized target is ready. Tell us where to send the full plan.",
       quizButtonText: "Continue",
       leadHeadline: "Get your free personalized protein goal + 7-day high-protein meal plan",
       leadSubheadline: "Tell us where to send it, then your plan will open right away.",
@@ -321,6 +328,22 @@
       leadButtonText: "Show My Protein Plan",
       backButtonText: "Back"
     }, config.proteinQuiz || {}, activeVariant && activeVariant.proteinQuiz || {});
+  }
+
+  function renderProteinProgressHtml(proteinQuiz, step) {
+    if (!proteinQuiz || !proteinQuiz.progressEnabled) return "";
+
+    var label = step === 2 ? proteinQuiz.progressStepTwoLabel : proteinQuiz.progressStepOneLabel;
+    var text = step === 2 ? proteinQuiz.progressStepTwoText : proteinQuiz.progressStepOneText;
+    var percent = step === 2 ? 100 : 50;
+
+    return [
+      "<div class=\"ll-popup-progress\" aria-label=\"" + escapeHtmlAttr(label || ("Step " + step + " of 2")) + "\">",
+      "<div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label || ("Step " + step + " of 2")) + "</span><strong>" + step + "/2</strong></div>",
+      "<div class=\"ll-popup-progress-track\" role=\"progressbar\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"" + percent + "\"><span style=\"width:" + percent + "%\"></span></div>",
+      text ? "<p>" + escapeHtml(text) + "</p>" : "",
+      "</div>"
+    ].join("");
   }
 
   function redirectToProteinPlan(payload) {

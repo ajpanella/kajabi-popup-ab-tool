@@ -248,6 +248,11 @@
       strengthDaysPlaceholder: "Select days",
       ageLabel: "Age",
       agePlaceholder: "48",
+      progressEnabled: false,
+      progressStepOneLabel: "Step 1 of 2: Quick Calculator",
+      progressStepOneText: "Answer 3 quick questions to calculate your personalized protein target immediately.",
+      progressStepTwoLabel: "Step 2 of 2: Send Your Plan",
+      progressStepTwoText: "Your personalized target is ready. Tell us where to send the full plan.",
       quizButtonText: "Continue",
       leadHeadline: "Get your free personalized protein goal + 7-day high-protein meal plan",
       leadSubheadline: "Tell us where to send it, then your plan will open right away.",
@@ -336,6 +341,9 @@
       "<div class=\"dash-flow-editor dash-variant-flow-editor\">",
       "<div class=\"dash-flow-head\"><strong>Protein Quiz Flow</strong><span>Variant-specific quiz labels, placeholders, and step-two copy.</span></div>",
       "<div class=\"dash-global-editor\">",
+      editorCheckbox("proteinQuiz.progressEnabled", index, "Show progress bar and step framing", quiz.progressEnabled),
+      editorInput("proteinQuiz.progressStepOneLabel", index, "Step 1 progress label", quiz.progressStepOneLabel, "text"),
+      editorTextarea("proteinQuiz.progressStepOneText", index, "Step 1 framing text", quiz.progressStepOneText),
       editorInput("proteinQuiz.targetWeightLabel", index, "Target weight label", quiz.targetWeightLabel, "text"),
       editorInput("proteinQuiz.targetWeightPlaceholder", index, "Target weight placeholder", quiz.targetWeightPlaceholder, "text"),
       editorInput("proteinQuiz.strengthDaysLabel", index, "Strength days label", quiz.strengthDaysLabel, "text"),
@@ -344,6 +352,8 @@
       editorInput("proteinQuiz.agePlaceholder", index, "Age placeholder", quiz.agePlaceholder, "text"),
       editorInput("proteinQuiz.quizButtonText", index, "Quiz button text", quiz.quizButtonText, "text"),
       "<div class=\"dash-flow-divider\"><span>After visitor clicks quiz submit</span></div>",
+      editorInput("proteinQuiz.progressStepTwoLabel", index, "Step 2 progress label", quiz.progressStepTwoLabel, "text"),
+      editorTextarea("proteinQuiz.progressStepTwoText", index, "Step 2 framing text", quiz.progressStepTwoText),
       editorInput("proteinQuiz.leadHeadline", index, "Lead-step headline", quiz.leadHeadline, "text"),
       editorTextarea("proteinQuiz.leadSubheadline", index, "Lead-step subheadline", quiz.leadSubheadline),
       editorInput("proteinQuiz.firstNameLabel", index, "First name label", quiz.firstNameLabel, "text"),
@@ -357,7 +367,7 @@
   }
 
   function editorInput(field, index, label, value, type) {
-    return "<label>" + escapeHtml(label) + "<input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"" + type + "\" value=\"" + escapeHtml(value) + "\"></label>";
+    return "<label>" + escapeHtml(label) + "<input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"" + type + "\" value=\"" + escapeHtmlAttr(value) + "\"></label>";
   }
 
   function editorCheckbox(field, index, label, checked) {
@@ -954,9 +964,9 @@
     var form = document.createElement("div");
     form.className = "ll-popup-form";
     form.innerHTML = config.leadMagnetMode === "protein_plan" && step === "lead"
-      ? "<button class=\"ll-popup-step-back\" type=\"button\" aria-label=\"Back\">&#8592;</button><div class=\"dash-fake-field\">" + escapeHtml(quiz.firstNameLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.emailLabel) + "</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.leadButtonText) + "</button>"
+      ? "<button class=\"ll-popup-step-back\" type=\"button\" aria-label=\"Back\">&#8592;</button>" + renderProteinProgressHtml(quiz, 2) + "<div class=\"dash-fake-field\">" + escapeHtml(quiz.firstNameLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.emailLabel) + "</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.leadButtonText) + "</button>"
       : config.leadMagnetMode === "protein_plan"
-      ? "<div class=\"dash-fake-field\">" + escapeHtml(quiz.targetWeightLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.strengthDaysLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.ageLabel) + "</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.quizButtonText) + "</button>"
+      ? renderProteinProgressHtml(quiz, 1) + "<div class=\"dash-fake-field\">" + escapeHtml(quiz.targetWeightLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.strengthDaysLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.ageLabel) + "</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.quizButtonText) + "</button>"
       : "<div class=\"dash-fake-field\">First Name</div><div class=\"dash-fake-field\">Email</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(variant.buttonText || "Submit") + "</button>";
 
     content.appendChild(copy);
@@ -1075,6 +1085,7 @@
       if (headline) headline.textContent = variant.quizHeadline || variant.headline || "";
       if (subheadline) subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || escapeHtml(variant.subheadline || ""));
       container.innerHTML = [
+        renderProteinProgressHtml(quiz, 1),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"quiz\">",
         "<label><span>" + escapeHtml(quiz.targetWeightLabel) + "</span><input name=\"targetWeight\" type=\"number\" inputmode=\"numeric\" min=\"80\" max=\"350\" step=\"1\" placeholder=\"" + escapeHtmlAttr(quiz.targetWeightPlaceholder) + "\" required></label>",
         "<label><span>" + escapeHtml(quiz.strengthDaysLabel) + "</span><select name=\"strengthDays\" required>",
@@ -1114,6 +1125,7 @@
       if (subheadline) subheadline.innerHTML = sanitizeRichHtml(quiz.leadSubheadline);
       container.innerHTML = [
         "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
+        renderProteinProgressHtml(quiz, 2),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"lead\">",
         "<label><span>" + escapeHtml(quiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(quiz.firstNamePlaceholder) + "\" required></label>",
         "<label><span>" + escapeHtml(quiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(quiz.emailPlaceholder) + "\" required></label>",
@@ -1142,6 +1154,22 @@
       });
       schedulePopupFit(container.closest(".ll-popup-root"));
     }
+  }
+
+  function renderProteinProgressHtml(quiz, step) {
+    if (!quiz || !quiz.progressEnabled) return "";
+
+    var label = step === 2 ? quiz.progressStepTwoLabel : quiz.progressStepOneLabel;
+    var text = step === 2 ? quiz.progressStepTwoText : quiz.progressStepOneText;
+    var percent = step === 2 ? 100 : 50;
+
+    return [
+      "<div class=\"ll-popup-progress\" aria-label=\"" + escapeHtmlAttr(label || ("Step " + step + " of 2")) + "\">",
+      "<div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label || ("Step " + step + " of 2")) + "</span><strong>" + step + "/2</strong></div>",
+      "<div class=\"ll-popup-progress-track\" role=\"progressbar\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"" + percent + "\"><span style=\"width:" + percent + "%\"></span></div>",
+      text ? "<p>" + escapeHtml(text) + "</p>" : "",
+      "</div>"
+    ].join("");
   }
 
   function showFormStatus(container, message) {
