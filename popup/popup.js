@@ -221,6 +221,7 @@
     renderQuizStep();
 
     function renderQuizStep() {
+      renderProteinTargetPreview(root, proteinQuiz, null);
       if (headline) headline.textContent = variant.quizHeadline || initialHeadline || "Your Personalized Protein Plan";
       if (subheadline) {
         subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || initialSubheadline || "Answer 3 quick questions and get your daily protein target plus a 7-day high-protein week.");
@@ -252,7 +253,8 @@
         quizData = {
           targetWeight: form.elements.targetWeight.value,
           strengthDays: form.elements.strengthDays.value,
-          age: form.elements.age.value
+          age: form.elements.age.value,
+          proteinTarget: calculateProteinTarget(form.elements.targetWeight.value, form.elements.age.value, form.elements.strengthDays.value)
         };
         trackEvent("popup_quiz_submit", getProteinTrackingFields(quizData));
         renderLeadStep();
@@ -264,6 +266,7 @@
     function renderLeadStep() {
       if (headline) headline.textContent = proteinQuiz.leadHeadline;
       if (subheadline) subheadline.innerHTML = sanitizeRichHtml(proteinQuiz.leadSubheadline);
+      renderProteinTargetPreview(root, proteinQuiz, quizData.proteinTarget);
 
       container.innerHTML = [
         "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
@@ -290,6 +293,10 @@
           Age: quizData.age,
           strengthDays: quizData.strengthDays,
           StrengthDays: quizData.strengthDays,
+          proteinTargetRange: quizData.proteinTarget && quizData.proteinTarget.rangeText,
+          ProteinTargetRange: quizData.proteinTarget && quizData.proteinTarget.rangeText,
+          proteinDailyGoalGrams: quizData.proteinTarget && quizData.proteinTarget.dailyGoalGrams,
+          ProteinDailyGoalGrams: quizData.proteinTarget && quizData.proteinTarget.dailyGoalGrams,
           source: "protein_popup",
           ctaVariant: "show_my_protein_plan",
           popupVariant: variant.id
@@ -318,6 +325,8 @@
       progressStepOneText: "Answer 3 quick questions to calculate your personalized protein target immediately.",
       progressStepTwoLabel: "Step 2 of 2: Send Your Plan",
       progressStepTwoText: "Your personalized target is ready. Tell us where to send the full plan.",
+      targetPreviewStyle: "off",
+      targetPreviewLabel: "Your Daily Target:",
       quizButtonText: "Continue",
       leadHeadline: "Get your free personalized protein goal + 7-day high-protein meal plan",
       leadSubheadline: "Tell us where to send it, then your plan will open right away.",
@@ -328,6 +337,73 @@
       leadButtonText: "Show My Protein Plan",
       backButtonText: "Back"
     }, config.proteinQuiz || {}, activeVariant && activeVariant.proteinQuiz || {});
+  }
+
+  function renderProteinTargetPreview(root, proteinQuiz, target) {
+    if (!root) return;
+
+    var copy = root.querySelector(".ll-popup-copy");
+    var existing = copy && copy.querySelector(".ll-popup-target-preview");
+    if (existing) existing.remove();
+    if (!copy || !target || !proteinQuiz || proteinQuiz.targetPreviewStyle === "off") return;
+
+    var headline = copy.querySelector(".ll-popup-headline");
+    var preview = document.createElement("div");
+    preview.className = "ll-popup-target-preview ll-popup-target-preview-" + (proteinQuiz.targetPreviewStyle === "box" ? "box" : "inline");
+    preview.innerHTML = [
+      "<span>" + escapeHtml(proteinQuiz.targetPreviewLabel || "Your Daily Target:") + "</span>",
+      "<strong>" + escapeHtml(target.rangeText) + "</strong>"
+    ].join("");
+
+    if (headline) {
+      copy.insertBefore(preview, headline);
+    } else {
+      copy.insertBefore(preview, copy.firstChild);
+    }
+  }
+
+  function calculateProteinTarget(targetWeight, age, strengthDays) {
+    var weight = Number(targetWeight);
+    var years = Number(age);
+    var strength = Number(strengthDays);
+    var low = Math.round(weight * 0.6);
+    var high = Math.round(weight);
+    var strengthAdjustments = {
+      0: 0,
+      1: 0.1,
+      2: 0.2,
+      3: 0.25,
+      4: 0.3,
+      5: 0.35,
+      6: 0.38,
+      7: 0.4
+    };
+    var rawMultiplier = 0.6 + (strengthAdjustments[strength] || 0) + getProteinAgeAdjustment(years);
+    var multiplier = clampNumber(rawMultiplier, 0.6, 1);
+    var dailyGoal = clampNumber(roundToFive(weight * multiplier), low, high);
+
+    return {
+      lowGrams: low,
+      highGrams: high,
+      rangeText: low + "-" + high + "g/day",
+      multiplier: Number(multiplier.toFixed(2)),
+      dailyGoalGrams: dailyGoal
+    };
+  }
+
+  function getProteinAgeAdjustment(age) {
+    if (age >= 70) return 0.1;
+    if (age >= 60) return 0.08;
+    if (age >= 50) return 0.05;
+    return 0;
+  }
+
+  function clampNumber(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function roundToFive(value) {
+    return Math.round(value / 5) * 5;
   }
 
   function renderProteinProgressHtml(proteinQuiz, step) {
@@ -359,6 +435,8 @@
     url.searchParams.set("TargetWeight", payload.targetWeightLbs || "");
     url.searchParams.set("Age", payload.age || "");
     url.searchParams.set("StrengthDays", payload.strengthDays || "");
+    if (payload.proteinTargetRange || payload.ProteinTargetRange) url.searchParams.set("ProteinTargetRange", payload.proteinTargetRange || payload.ProteinTargetRange);
+    if (payload.proteinDailyGoalGrams || payload.ProteinDailyGoalGrams) url.searchParams.set("ProteinDailyGoalGrams", payload.proteinDailyGoalGrams || payload.ProteinDailyGoalGrams);
 
     window.setTimeout(function () {
       window.location.href = url.toString();
@@ -373,6 +451,10 @@
       Age: payload.Age || payload.age || "",
       strengthDays: payload.strengthDays || payload.StrengthDays || "",
       StrengthDays: payload.StrengthDays || payload.strengthDays || "",
+      proteinTargetRange: payload.proteinTargetRange || payload.ProteinTargetRange || "",
+      ProteinTargetRange: payload.ProteinTargetRange || payload.proteinTargetRange || "",
+      proteinDailyGoalGrams: payload.proteinDailyGoalGrams || payload.ProteinDailyGoalGrams || "",
+      ProteinDailyGoalGrams: payload.ProteinDailyGoalGrams || payload.proteinDailyGoalGrams || "",
       source: payload.source || "protein_popup",
       ctaVariant: payload.ctaVariant || "show_my_protein_plan",
       popupVariant: payload.popupVariant || variant.id

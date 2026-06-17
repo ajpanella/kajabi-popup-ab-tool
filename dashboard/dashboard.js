@@ -253,6 +253,8 @@
       progressStepOneText: "Answer 3 quick questions to calculate your personalized protein target immediately.",
       progressStepTwoLabel: "Step 2 of 2: Send Your Plan",
       progressStepTwoText: "Your personalized target is ready. Tell us where to send the full plan.",
+      targetPreviewStyle: "off",
+      targetPreviewLabel: "Your Daily Target:",
       quizButtonText: "Continue",
       leadHeadline: "Get your free personalized protein goal + 7-day high-protein meal plan",
       leadSubheadline: "Tell us where to send it, then your plan will open right away.",
@@ -352,6 +354,8 @@
       editorInput("proteinQuiz.agePlaceholder", index, "Age placeholder", quiz.agePlaceholder, "text"),
       editorInput("proteinQuiz.quizButtonText", index, "Quiz button text", quiz.quizButtonText, "text"),
       "<div class=\"dash-flow-divider\"><span>After visitor clicks quiz submit</span></div>",
+      editorProteinTargetPreviewSelect("proteinQuiz.targetPreviewStyle", index, "Step 2 target display", quiz.targetPreviewStyle),
+      editorInput("proteinQuiz.targetPreviewLabel", index, "Target display label", quiz.targetPreviewLabel, "text"),
       editorInput("proteinQuiz.progressStepTwoLabel", index, "Step 2 progress label", quiz.progressStepTwoLabel, "text"),
       editorTextarea("proteinQuiz.progressStepTwoText", index, "Step 2 framing text", quiz.progressStepTwoText),
       editorInput("proteinQuiz.leadHeadline", index, "Lead-step headline", quiz.leadHeadline, "text"),
@@ -427,6 +431,17 @@
     ];
     return "<label>" + escapeHtml(label) + "<select data-variant-index=\"" + index + "\" data-field=\"" + field + "\">" + options.map(function (option) {
       return "<option value=\"" + escapeHtml(option.value) + "\"" + (option.value === value ? " selected" : "") + ">" + escapeHtml(option.label) + "</option>";
+    }).join("") + "</select></label>";
+  }
+
+  function editorProteinTargetPreviewSelect(field, index, label, value) {
+    var options = [
+      { label: "Off", value: "off" },
+      { label: "Inline text", value: "inline" },
+      { label: "Calculator box", value: "box" }
+    ];
+    return "<label>" + escapeHtml(label) + "<select data-variant-index=\"" + index + "\" data-field=\"" + field + "\">" + options.map(function (option) {
+      return "<option value=\"" + escapeHtmlAttr(option.value) + "\"" + (option.value === value ? " selected" : "") + ">" + escapeHtml(option.label) + "</option>";
     }).join("") + "</select></label>";
   }
 
@@ -955,8 +970,11 @@
     var copy = document.createElement("div");
     copy.className = "ll-popup-copy";
     copy.style.textAlign = variant.textAlign || "left";
+    var targetPreview = step === "lead" && config.leadMagnetMode === "protein_plan"
+      ? renderProteinTargetPreviewHtml(quiz, getSampleProteinTarget(quiz))
+      : "";
     copy.innerHTML = step === "lead" && config.leadMagnetMode === "protein_plan"
-      ? "<h2 class=\"ll-popup-headline\">" + escapeHtml(quiz.leadHeadline) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(quiz.leadSubheadline) + "</p>"
+      ? targetPreview + "<h2 class=\"ll-popup-headline\">" + escapeHtml(quiz.leadHeadline) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(quiz.leadSubheadline) + "</p>"
       : "<h2 class=\"ll-popup-headline\">" + escapeHtml(variant.headline || "") + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || "")) + "</p>";
     copy.querySelector(".ll-popup-headline").style.textAlign = variant.textAlign || "left";
     copy.querySelector(".ll-popup-subheadline").style.textAlign = variant.textAlign || "left";
@@ -1082,6 +1100,7 @@
     renderQuizStep();
 
     function renderQuizStep() {
+      renderProteinTargetPreview(root, quiz, null);
       if (headline) headline.textContent = variant.quizHeadline || variant.headline || "";
       if (subheadline) subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || escapeHtml(variant.subheadline || ""));
       container.innerHTML = [
@@ -1113,7 +1132,8 @@
           age: form.elements.age.value,
           Age: form.elements.age.value,
           strengthDays: form.elements.strengthDays.value,
-          StrengthDays: form.elements.strengthDays.value
+          StrengthDays: form.elements.strengthDays.value,
+          proteinTarget: calculateProteinTarget(form.elements.targetWeight.value, form.elements.age.value, form.elements.strengthDays.value)
         };
         renderLeadStep();
       });
@@ -1123,6 +1143,7 @@
     function renderLeadStep() {
       if (headline) headline.textContent = quiz.leadHeadline;
       if (subheadline) subheadline.innerHTML = sanitizeRichHtml(quiz.leadSubheadline);
+      renderProteinTargetPreview(root, quiz, quizData.proteinTarget);
       container.innerHTML = [
         "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
         renderProteinProgressHtml(quiz, 2),
@@ -1146,6 +1167,10 @@
           Age: quizData.Age || quizData.age,
           strengthDays: quizData.strengthDays,
           StrengthDays: quizData.StrengthDays || quizData.strengthDays,
+          proteinTargetRange: quizData.proteinTarget && quizData.proteinTarget.rangeText,
+          ProteinTargetRange: quizData.proteinTarget && quizData.proteinTarget.rangeText,
+          proteinDailyGoalGrams: quizData.proteinTarget && quizData.proteinTarget.dailyGoalGrams,
+          ProteinDailyGoalGrams: quizData.proteinTarget && quizData.proteinTarget.dailyGoalGrams,
           source: "protein_popup",
           ctaVariant: "show_my_protein_plan",
           popupVariant: variant.id
@@ -1170,6 +1195,86 @@
       text ? "<p>" + escapeHtml(text) + "</p>" : "",
       "</div>"
     ].join("");
+  }
+
+  function renderProteinTargetPreview(root, quiz, target) {
+    if (!root) return;
+
+    var copy = root.querySelector(".ll-popup-copy");
+    var existing = copy && copy.querySelector(".ll-popup-target-preview");
+    if (existing) existing.remove();
+    if (!copy || !target) return;
+
+    var html = renderProteinTargetPreviewHtml(quiz, target);
+    if (!html) return;
+
+    var template = document.createElement("template");
+    template.innerHTML = html;
+    var preview = template.content.firstElementChild;
+    var headline = copy.querySelector(".ll-popup-headline");
+    if (headline) {
+      copy.insertBefore(preview, headline);
+    } else {
+      copy.insertBefore(preview, copy.firstChild);
+    }
+  }
+
+  function renderProteinTargetPreviewHtml(quiz, target) {
+    if (!quiz || !target || quiz.targetPreviewStyle === "off") return "";
+    return [
+      "<div class=\"ll-popup-target-preview ll-popup-target-preview-" + (quiz.targetPreviewStyle === "box" ? "box" : "inline") + "\">",
+      "<span>" + escapeHtml(quiz.targetPreviewLabel || "Your Daily Target:") + "</span>",
+      "<strong>" + escapeHtml(target.rangeText) + "</strong>",
+      "</div>"
+    ].join("");
+  }
+
+  function getSampleProteinTarget() {
+    return calculateProteinTarget(155, 48, 3);
+  }
+
+  function calculateProteinTarget(targetWeight, age, strengthDays) {
+    var weight = Number(targetWeight);
+    var years = Number(age);
+    var strength = Number(strengthDays);
+    var low = Math.round(weight * 0.6);
+    var high = Math.round(weight);
+    var strengthAdjustments = {
+      0: 0,
+      1: 0.1,
+      2: 0.2,
+      3: 0.25,
+      4: 0.3,
+      5: 0.35,
+      6: 0.38,
+      7: 0.4
+    };
+    var rawMultiplier = 0.6 + (strengthAdjustments[strength] || 0) + getProteinAgeAdjustment(years);
+    var multiplier = clampNumber(rawMultiplier, 0.6, 1);
+    var dailyGoal = clampNumber(roundToFive(weight * multiplier), low, high);
+
+    return {
+      lowGrams: low,
+      highGrams: high,
+      rangeText: low + "-" + high + "g/day",
+      multiplier: Number(multiplier.toFixed(2)),
+      dailyGoalGrams: dailyGoal
+    };
+  }
+
+  function getProteinAgeAdjustment(age) {
+    if (age >= 70) return 0.1;
+    if (age >= 60) return 0.08;
+    if (age >= 50) return 0.05;
+    return 0;
+  }
+
+  function clampNumber(value, min, max) {
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function roundToFive(value) {
+    return Math.round(value / 5) * 5;
   }
 
   function showFormStatus(container, message) {
