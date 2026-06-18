@@ -16,8 +16,8 @@
       "name": "Control",
       "active": true,
       "trafficSplit": 50,
-      "headline": "Build Your Personalized Protein Plan",
-      "subheadline": "Get your daily protein goal, a personalized 7-day meal plan, and a printable family-friendly grocery list, built around your goals and preferences.",
+      "headline": "Get Your Exact Daily Protein Target + Custom 7-Day Family Meal Plan (Free Grocery List Included)",
+      "subheadline": "Takes 30 seconds. Backed by 1,000+ hours of Nutrition & Wellness Coaching. Built for busy parents.",
       "imageUrl": "https://res.cloudinary.com/dvs4ciaw7/image/upload/v1780612426/protein-plan-hero_ezz3pz.png",
       "width": 800,
       "backgroundColor": "#ffffff",
@@ -29,7 +29,7 @@
       "textAlign": "center",
       "height": 560,
       "sizeToImage": true,
-      "subheadlineHtml": "Get your<b>&nbsp;daily protein goal</b>, a <b>personalized&nbsp;7-day meal plan</b>, and a <b>printable family-friendly grocery list</b>, built around your goals and preferences.",
+      "subheadlineHtml": "Takes 30 seconds. <b>Backed by 1,000+ hours of Nutrition &amp; Wellness Coaching. </b>Built for busy parents.",
       "proteinQuiz": {
         "targetWeightLabel": "Target weight in lbs",
         "targetWeightPlaceholder": "155",
@@ -143,6 +143,6 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-06-18T15:04:35.404Z"
+  "draftSavedAt": "2026-06-18T15:19:51.007Z"
 };
 })();
