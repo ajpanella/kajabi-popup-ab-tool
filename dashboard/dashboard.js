@@ -1425,9 +1425,7 @@
   function renderEmbedCode() {
     var base = normalizedAssetBaseUrl();
     els.embedCode.value = [
-      "<link rel=\"stylesheet\" href=\"" + base + "/popup/popup.css?v=live\">",
-      "<script src=\"" + base + "/popup/variants.js?v=live\"></script>",
-      "<script src=\"" + base + "/popup/popup.js?v=live\" defer></script>"
+      "<script src=\"" + base + "/popup/popup-loader.js?v=2\" defer></script>"
     ].join("\n");
   }
 
