@@ -14,7 +14,6 @@
     {
       "id": "A",
       "name": "Control",
-      "trackingVersion": "6/18/26",
       "active": true,
       "trafficSplit": 50,
       "headline": "Get Your Exact Daily Protein Target + Custom 7-Day Family Meal Plan (Free Grocery List Included)",
@@ -54,12 +53,13 @@
         "emailPlaceholder": "Email",
         "leadButtonText": "Send My Free Personalized Protein Plan Now",
         "backButtonText": "Back"
-      }
+      },
+      "trackingVersion": "6/18/26",
+      "trackingFingerprint": "{\"headline\":\"Get Your Exact Daily Protein Target + Custom 7-Day Family Meal Plan (Free Grocery List Included)\",\"subheadline\":\"Takes 30 seconds. Backed by 1,000+ hours of Nutrition & Wellness Coaching. Built for busy parents.\",\"subheadlineHtml\":\"Takes 30 seconds. <b>Backed by 1,000+ hours of Nutrition &amp; Wellness Coaching. </b>Built for busy parents.\",\"buttonText\":\"Show My Protein Plan\",\"imageUrl\":\"https://res.cloudinary.com/dvs4ciaw7/image/upload/v1780612426/protein-plan-hero_ezz3pz.png\",\"imageAlt\":\"\",\"width\":800,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#ffffff\",\"textColor\":\"#172026\",\"accentColor\":\"#06b00b\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Send My Free Personalized Protein Plan Now\",\"backButtonText\":\"Back\"}}"
     },
     {
       "id": "B",
       "name": "Benefit Led",
-      "trackingVersion": "6/22/2026",
       "active": true,
       "trafficSplit": 50,
       "headline": "Get Your Exact Daily Protein Target + Custom 7-Day Family Meal Plan (Free Grocery List Included)",
@@ -99,7 +99,9 @@
         "emailPlaceholder": "Email",
         "leadButtonText": "Send My Free Personalized Protein Plan Now",
         "backButtonText": "Back"
-      }
+      },
+      "trackingVersion": "test-202606220933",
+      "trackingFingerprint": "{\"headline\":\"Get Your Exact Daily Protein Target + Custom 7-Day Family Meal Plan (Free Grocery List Included)\",\"subheadline\":\"Takes 30 seconds. Backed by 1,000+ hours of Nutrition & Wellness Coaching. Built for busy parents. \",\"subheadlineHtml\":\"<span><span>Takes 30 seconds. <b>Backed by 1,000+ hours of Nutrition &amp; Wellness Coaching. </b></span></span><span>Built for busy parents. </span>\",\"buttonText\":\"Show My Protein Plan\",\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":560,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"accentColor\":\"#06b00b\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Send My Free Personalized Protein Plan Now\",\"backButtonText\":\"Back\"}}"
     }
   ],
   "configVersion": "6/22/2026",
@@ -145,6 +147,6 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-06-22T13:34:20.782Z"
+  "draftSavedAt": "2026-06-22T13:51:58.927Z"
 };
 })();
