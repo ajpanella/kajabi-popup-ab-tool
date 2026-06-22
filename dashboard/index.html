@@ -94,7 +94,7 @@
             </div>
           </div>
           <div class="dash-editor-note">
-            Keep the Kajabi embed URL stable. When you publish a new design, update the version so historical results stay separated from the new test.
+            Keep the Kajabi embed URL stable. Publishing starts a new tracking version only for variants whose content changed; unchanged variants keep accumulating data.
           </div>
           <div class="dash-publish-box">
             <div class="dash-flow-head">
@@ -159,7 +159,7 @@
               <input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="0">
             </label>
             <label>
-              Config version
+              New publish version
               <input id="config-version" type="text" placeholder="v1">
             </label>
             <label>
@@ -285,6 +285,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=45"></script>
+    <script src="./dashboard.js?v=46"></script>
   </body>
 </html>

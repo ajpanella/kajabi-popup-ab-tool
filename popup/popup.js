@@ -758,7 +758,7 @@
     return Object.assign({
       timestamp: new Date().toISOString(),
       testId: config.testId || "",
-      configVersion: config.configVersion || "v1",
+      configVersion: variant.trackingVersion || config.configVersion || "v1",
       changeNote: config.changeNote || "",
       variant: variant.id,
       variantLabel: getVariantLabel(),

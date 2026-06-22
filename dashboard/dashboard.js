@@ -15,6 +15,8 @@
   var HIDDEN_HISTORY_KEY = "ll_popup_dashboard_hidden_history";
   var HIDDEN_METRICS_KEY = "ll_popup_dashboard_hidden_metrics";
   var config = loadDraftConfig();
+  var legacyTrackingVariantIds = [];
+  initializeVariantTracking();
   var urlParams = new URLSearchParams(window.location.search);
   var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
   var googleDocUrl = urlParams.get("doc") || "";
@@ -167,6 +169,7 @@
       })
       .then(function (text) {
         rows = parseCsv(text);
+        reconcileLegacyVariantVersions();
         populateFilters();
         updateDashboard();
       })
@@ -495,7 +498,9 @@
       return row.variant;
     }))), "All variants");
 
-    setOptions(els.version, unique(["", LATEST_TWO_VERSIONS, config.configVersion].concat(rows.map(function (row) {
+    setOptions(els.version, unique(["", LATEST_TWO_VERSIONS, config.configVersion].concat(activeVariants().map(function (variant) {
+      return getVariantTrackingVersion(variant);
+    })).concat(rows.map(function (row) {
       return row.configVersion || "unversioned";
     }))), "All versions");
   }
@@ -518,7 +523,7 @@
   }
 
   function optionLabel(value) {
-    if (value === LATEST_TWO_VERSIONS) return "Latest 2 versions";
+    if (value === LATEST_TWO_VERSIONS) return "Current live variants";
     return value;
   }
 
@@ -539,13 +544,13 @@
     var start = els.start.value ? new Date(els.start.value + "T00:00:00") : null;
     var end = els.end.value ? new Date(els.end.value + "T23:59:59") : null;
     var pageNeedle = els.pageUrl.value.trim().toLowerCase();
-    var latestVersions = els.version.value === LATEST_TWO_VERSIONS ? [config.configVersion || "v1"] : null;
+    var liveVersions = els.version.value === LATEST_TWO_VERSIONS ? getLiveVariantVersions() : null;
 
     return data.filter(function (row) {
       var timestamp = row.timestamp ? new Date(row.timestamp) : null;
       if (els.testId.value && row.testId !== els.testId.value) return false;
       if (els.variant.value && row.variant !== els.variant.value) return false;
-      if (latestVersions && latestVersions.indexOf(row.configVersion || "unversioned") === -1) return false;
+      if (liveVersions && (row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
       if (els.version.value && els.version.value !== LATEST_TWO_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
       if (els.device.value && row.deviceType !== els.device.value) return false;
       if (start && timestamp && timestamp < start) return false;
@@ -559,13 +564,13 @@
     var start = els.start.value ? new Date(els.start.value + "T00:00:00") : null;
     var end = els.end.value ? new Date(els.end.value + "T23:59:59") : null;
     var pageNeedle = els.pageUrl.value.trim().toLowerCase();
-    var latestVersions = els.version.value === LATEST_TWO_VERSIONS ? getLatestVersions(data, 2) : null;
+    var liveVersions = els.version.value === LATEST_TWO_VERSIONS ? getLiveVariantVersions() : null;
 
     return data.filter(function (row) {
       var timestamp = row.timestamp ? new Date(row.timestamp) : null;
       if (els.testId.value && row.testId !== els.testId.value) return false;
       if (els.variant.value && row.variant !== els.variant.value) return false;
-      if (latestVersions && latestVersions.indexOf(row.configVersion || "unversioned") === -1) return false;
+      if (liveVersions && (row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
       if (els.version.value && els.version.value !== LATEST_TWO_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
       if (els.device.value && row.deviceType !== els.device.value) return false;
       if (start && timestamp && timestamp < start) return false;
@@ -610,10 +615,11 @@
     var byVariant = {};
 
     variants.forEach(function (variant) {
-      var defaultKey = metricKey(config.configVersion || "v1", variant.id);
+      var liveVersion = getVariantTrackingVersion(variant);
+      var defaultKey = metricKey(liveVersion, variant.id);
       byVariant[defaultKey] = {
         variant: variant.id,
-        configVersion: config.configVersion || "v1",
+        configVersion: liveVersion,
         sessions: new Set(),
         actionSessions: new Set(),
         views: 0,
@@ -693,11 +699,13 @@
     });
 
     var controlRates = {};
+    var liveControl = null;
     result.forEach(function (item) {
       if (item.variant === "A") controlRates[item.configVersion] = item.cvr;
+      if (item.variant === "A" && isLiveMetricRow(item)) liveControl = item;
     });
     result.forEach(function (item) {
-      var controlRate = controlRates[item.configVersion] || 0;
+      var controlRate = controlRates[item.configVersion] || (isLiveMetricRow(item) && liveControl ? liveControl.cvr : 0);
       var comparisonRate = item.cvr;
       item.lift = controlRate > 0 ? (comparisonRate / controlRate) - 1 : 0;
     });
@@ -813,9 +821,9 @@
   }
 
   function isLiveMetricRow(item) {
-    if (!item || item.configVersion !== (config.configVersion || "v1")) return false;
+    if (!item) return false;
     return activeVariants().some(function (variant) {
-      return variant.id === item.variant;
+      return variant.id === item.variant && item.configVersion === getVariantTrackingVersion(variant);
     });
   }
 
@@ -1488,6 +1496,7 @@
     }
 
     var versionMessage = ensureFreshPublishVersion();
+    versionMessage += prepareVariantVersionsForPublish();
     saveDraftConfig();
 
     if (canUseLocalPublisher()) {
@@ -1570,6 +1579,21 @@
     populateFilters();
     els.version.value = LATEST_TWO_VERSIONS;
     updateDashboard();
+  }
+
+  function prepareVariantVersionsForPublish() {
+    var changed = [];
+    activeVariants().forEach(function (variant) {
+      var fingerprint = variantFingerprint(variant);
+      if (variant.trackingFingerprint !== fingerprint) {
+        variant.trackingVersion = config.configVersion || "v1";
+        variant.trackingFingerprint = fingerprint;
+        changed.push(variant.id);
+      }
+    });
+
+    if (!changed.length) return "No variant content changed; existing tracking versions were retained. ";
+    return "Started a new tracking version for Variant " + changed.join(" and ") + "; unchanged variants keep their existing data. ";
   }
 
   function isLiveTrackingEvent(row) {
@@ -1688,7 +1712,7 @@
     return {
       timestamp: new Date().toISOString(),
       testId: config.testId || "",
-      configVersion: config.configVersion || "v1",
+      configVersion: getEventVariantVersion(variant),
       changeNote: config.changeNote || "",
       variant: variant.id || "",
       variantLabel: buildVariantLabel(variant),
@@ -1999,6 +2023,91 @@
       trafficSplit: variant.trafficSplit || "",
       proteinQuiz: cloneConfig(variant.proteinQuiz || {})
     };
+  }
+
+  function initializeVariantTracking() {
+    (config.variants || []).forEach(function (variant) {
+      var originalVariant = (originalConfig.variants || []).find(function (item) {
+        return item.id === variant.id;
+      }) || variant;
+
+      if (!variant.trackingVersion) {
+        legacyTrackingVariantIds.push(variant.id);
+        variant.trackingVersion = originalVariant.trackingVersion || originalConfig.configVersion || config.configVersion || "v1";
+      }
+      if (!variant.trackingFingerprint) {
+        variant.trackingFingerprint = variantFingerprint(originalVariant);
+      }
+    });
+  }
+
+  function reconcileLegacyVariantVersions() {
+    if (!legacyTrackingVariantIds.length || !rows.length) return;
+
+    legacyTrackingVariantIds.slice().forEach(function (variantId) {
+      var variant = activeVariants().find(function (item) {
+        return item.id === variantId;
+      });
+      if (!variant) return;
+
+      var fingerprint = legacyVariantFingerprint(getVariantSnapshot(variant));
+      var matches = rows.filter(function (row) {
+        if (row.variant !== variantId || !row.variantSnapshot) return false;
+        var snapshot = parseVariantSnapshot(row.variantSnapshot);
+        return snapshot && legacyVariantFingerprint(snapshot) === fingerprint;
+      }).sort(function (a, b) {
+        var aTime = parseTimestamp(a.timestamp);
+        var bTime = parseTimestamp(b.timestamp);
+        return (aTime ? aTime.getTime() : 0) - (bTime ? bTime.getTime() : 0);
+      });
+
+      if (matches.length) variant.trackingVersion = matches[0].configVersion || variant.trackingVersion;
+      variant.trackingFingerprint = variantFingerprint(variant);
+    });
+
+    legacyTrackingVariantIds = [];
+    saveDraftConfig();
+  }
+
+  function variantFingerprint(variant) {
+    return JSON.stringify(getVariantSnapshot(variant));
+  }
+
+  function legacyVariantFingerprint(variant) {
+    return JSON.stringify({
+      headline: variant.headline || "",
+      subheadline: variant.subheadline || "",
+      buttonText: variant.buttonText || "",
+      imageUrl: variant.imageUrl || "",
+      imageAlt: variant.imageAlt || "",
+      width: variant.width || "",
+      height: variant.height || "",
+      sizeToImage: Boolean(variant.sizeToImage),
+      backgroundColor: variant.backgroundColor || "",
+      textColor: variant.textColor || "",
+      accentColor: variant.accentColor || "",
+      fontFamily: variant.fontFamily || "",
+      textAlign: variant.textAlign || "",
+      trafficSplit: variant.trafficSplit || ""
+    });
+  }
+
+  function getVariantTrackingVersion(variant) {
+    return variant && variant.trackingVersion || config.configVersion || "v1";
+  }
+
+  function getEventVariantVersion(variant) {
+    if (!variant) return config.configVersion || "v1";
+    return variantFingerprint(variant) === variant.trackingFingerprint
+      ? getVariantTrackingVersion(variant)
+      : config.configVersion || "v1";
+  }
+
+  function getLiveVariantVersions() {
+    return activeVariants().reduce(function (versions, variant) {
+      versions[variant.id] = getVariantTrackingVersion(variant);
+      return versions;
+    }, {});
   }
 
   function labelFromSnapshot(value) {

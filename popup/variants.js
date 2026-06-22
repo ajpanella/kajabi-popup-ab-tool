@@ -14,6 +14,7 @@
     {
       "id": "A",
       "name": "Control",
+      "trackingVersion": "6/18/26",
       "active": true,
       "trafficSplit": 50,
       "headline": "Get Your Exact Daily Protein Target + Custom 7-Day Family Meal Plan (Free Grocery List Included)",
@@ -58,6 +59,7 @@
     {
       "id": "B",
       "name": "Benefit Led",
+      "trackingVersion": "6/22/2026",
       "active": true,
       "trafficSplit": 50,
       "headline": "Get Your Exact Daily Protein Target + Custom 7-Day Family Meal Plan (Free Grocery List Included)",
