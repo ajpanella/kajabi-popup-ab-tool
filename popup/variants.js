@@ -101,7 +101,7 @@
     }
   ],
   "configVersion": "test-202606220933",
-  "changeNote": "Delay to 20 seconds, progress bar, benefit driven",
+  "changeNote": "B - Male and female + calc preview",
   "savedColors": [
     "#111827",
     "#ffffff",
@@ -143,6 +143,6 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-06-22T13:33:35.956Z"
+  "draftSavedAt": "2026-06-22T13:34:00.599Z"
 };
 })();
