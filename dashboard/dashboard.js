@@ -17,6 +17,7 @@
   var config = loadDraftConfig();
   var legacyTrackingVariantIds = [];
   initializeVariantTracking();
+  config.configVersion = formatDateVersion(new Date());
   var urlParams = new URLSearchParams(window.location.search);
   var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
   var googleDocUrl = urlParams.get("doc") || "";
@@ -26,6 +27,7 @@
   var previewMode = "desktop";
   var previewStep = "quiz";
   var lastColorTarget = null;
+  var versionFilterInitialized = false;
 
   var els = {
     csvUrl: document.getElementById("csv-url"),
@@ -503,6 +505,11 @@
     })).concat(rows.map(function (row) {
       return row.configVersion || "unversioned";
     }))), "All versions");
+
+    if (!versionFilterInitialized) {
+      els.version.value = LATEST_TWO_VERSIONS;
+      versionFilterInitialized = true;
+    }
   }
 
   function setOptions(select, values, allLabel) {
@@ -577,36 +584,6 @@
       if (end && timestamp && timestamp > end) return false;
       if (pageNeedle && String(row.pageUrl || "").toLowerCase().indexOf(pageNeedle) === -1) return false;
       return true;
-    });
-  }
-
-  function getLatestVersions(data, count) {
-    var currentVersion = config.configVersion || "v1";
-    var byVersion = {};
-
-    byVersion[currentVersion] = {
-      version: currentVersion,
-      timestamp: Date.now()
-    };
-
-    data.forEach(function (row) {
-      var version = row.configVersion || "unversioned";
-      var timestamp = parseTimestamp(row.timestamp);
-      var time = timestamp ? timestamp.getTime() : 0;
-      if (!byVersion[version] || time > byVersion[version].timestamp) {
-        byVersion[version] = {
-          version: version,
-          timestamp: time
-        };
-      }
-    });
-
-    return Object.keys(byVersion).map(function (key) {
-      return byVersion[key];
-    }).sort(function (a, b) {
-      return b.timestamp - a.timestamp;
-    }).slice(0, count).map(function (item) {
-      return item.version;
     });
   }
 
@@ -1554,25 +1531,9 @@
   }
 
   function ensureFreshPublishVersion() {
-    var currentVersion = config.configVersion || "v1";
-    var hasLiveTraffic = rows.some(function (row) {
-      return (row.configVersion || "unversioned") === currentVersion && isLiveTrackingEvent(row);
-    });
-
-    if (!hasLiveTraffic) return "";
-
-    var nextVersion = createVersionId();
-    config.configVersion = nextVersion;
-    els.configVersion.value = nextVersion;
-
-    if (!config.changeNote) {
-      config.changeNote = "New test version created from dashboard publish.";
-      els.changeNote.value = config.changeNote;
-    }
-
-    populateFilters();
-    updateDashboard();
-    return "Started new tracking version " + nextVersion + ". ";
+    config.configVersion = els.configVersion.value.trim() || formatDateVersion(new Date());
+    els.configVersion.value = config.configVersion;
+    return "";
   }
 
   function showLatestTwoVersions() {
@@ -1594,36 +1555,6 @@
 
     if (!changed.length) return "No variant content changed; existing tracking versions were retained. ";
     return "Started a new tracking version for Variant " + changed.join(" and ") + "; unchanged variants keep their existing data. ";
-  }
-
-  function isLiveTrackingEvent(row) {
-    var type = eventType(row);
-    return [
-      "popup_view",
-      "popup_form_focus",
-      "popup_form_click",
-      "popup_quiz_submit",
-      "popup_submit_attempt",
-      "popup_lead_submit",
-      "kajabi_form_submitted",
-      "popup_close"
-    ].indexOf(type) >= 0;
-  }
-
-  function createVersionId() {
-    var now = new Date();
-    var stamp = [
-      now.getFullYear(),
-      pad2(now.getMonth() + 1),
-      pad2(now.getDate()),
-      pad2(now.getHours()),
-      pad2(now.getMinutes())
-    ].join("");
-    return "test-" + stamp;
-  }
-
-  function pad2(value) {
-    return String(value).padStart(2, "0");
   }
 
   function canUseLocalPublisher() {
@@ -2035,6 +1966,7 @@
         legacyTrackingVariantIds.push(variant.id);
         variant.trackingVersion = originalVariant.trackingVersion || originalConfig.configVersion || config.configVersion || "v1";
       }
+      variant.trackingVersion = normalizeTrackedVersion(variant.trackingVersion);
       if (!variant.trackingFingerprint) {
         variant.trackingFingerprint = variantFingerprint(originalVariant);
       }
@@ -2108,6 +2040,17 @@
       versions[variant.id] = getVariantTrackingVersion(variant);
       return versions;
     }, {});
+  }
+
+  function normalizeTrackedVersion(value) {
+    var version = String(value || "");
+    var automatic = version.match(/^test-(\d{4})(\d{2})(\d{2})(?:\d{4})?$/);
+    if (!automatic) return version || "unversioned";
+    return Number(automatic[2]) + "/" + Number(automatic[3]) + "/" + automatic[1];
+  }
+
+  function formatDateVersion(date) {
+    return (date.getMonth() + 1) + "/" + date.getDate() + "/" + date.getFullYear();
   }
 
   function labelFromSnapshot(value) {
@@ -2192,10 +2135,12 @@
     return lines.filter(function (line) {
       return line.some(Boolean);
     }).map(function (line) {
-      return headers.reduce(function (record, header, index) {
+      var record = headers.reduce(function (record, header, index) {
         record[header.trim()] = (line[index] || "").trim();
         return record;
       }, {});
+      record.configVersion = normalizeTrackedVersion(record.configVersion);
+      return record;
     });
   }
 
