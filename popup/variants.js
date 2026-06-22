@@ -62,7 +62,7 @@
       "trafficSplit": 50,
       "headline": "Get Your Exact Daily Protein Target + Custom 7-Day Family Meal Plan (Free Grocery List Included)",
       "subheadline": "Takes 30 seconds. Backed by 1,000+ hours of Nutrition & Wellness Coaching. Built for busy parents. ",
-      "imageUrl": "https://res.cloudinary.com/dvs4ciaw7/image/upload/v1780612426/protein-plan-hero_ezz3pz.png",
+      "imageUrl": "https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png",
       "width": 560,
       "backgroundColor": "#fbfaf7",
       "textColor": "#1c2520",
@@ -84,9 +84,9 @@
         "progressEnabled": true,
         "progressStepOneLabel": "Step 1 of 2: Quick Calculator",
         "progressStepOneText": "Answer 3 quick questions to calculate your personalized protein target immediately.",
-        "progressStepTwoLabel": "Step 2 of 2: Get Your Plan Delivered",
+        "progressStepTwoLabel": "Step 2 of 2: Send Your Plan",
         "progressStepTwoText": "Your custom plan is almost ready.",
-        "targetPreviewStyle": "box",
+        "targetPreviewStyle": "inline",
         "targetPreviewLabel": "Your Daily Target:",
         "quizButtonText": "Calculate",
         "leadHeadline": "Your Personalized Protein Plan Is Almost Ready",
@@ -100,7 +100,7 @@
       }
     }
   ],
-  "configVersion": "6/18/26",
+  "configVersion": "test-202606220933",
   "changeNote": "Delay to 20 seconds, progress bar, benefit driven",
   "savedColors": [
     "#111827",
@@ -143,6 +143,6 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-06-18T15:20:44.604Z"
+  "draftSavedAt": "2026-06-22T13:33:35.956Z"
 };
 })();
