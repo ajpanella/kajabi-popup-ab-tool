@@ -129,7 +129,7 @@
     }
   ],
   "configVersion": "6/30/2026",
-  "changeNote": "Single step form, couples kitchen image top/bottom tool mo, simple meals focus, orange button",
+  "changeNote": "Single step form (corrected), couples kitchen image top/bottom tool mo, simple meals focus, orange button",
   "savedColors": [
     "#07b00c",
     "#ea8011",
@@ -175,6 +175,6 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-06-30T20:07:47.134Z"
+  "draftSavedAt": "2026-06-30T20:08:13.299Z"
 };
 })();
