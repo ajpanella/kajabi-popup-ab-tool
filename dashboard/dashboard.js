@@ -833,6 +833,7 @@
 
   function renderStats(metrics) {
     var allSingleStep = metrics.length > 0 && metrics.every(isSingleStepMetric);
+    updateMetricLabels(allSingleStep);
     var totals = metrics.reduce(function (sum, item) {
       sum.views += item.views;
       sum.clicks += item.clicks;
@@ -848,6 +849,15 @@
     document.getElementById("stat-quiz-submits").textContent = allSingleStep ? "N/A" : formatNumber(totals.quizSubmits);
     document.getElementById("stat-leads").textContent = formatNumber(totals.fullSubmissions);
     document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.fullSubmissions, totals.views));
+  }
+
+  function updateMetricLabels(allSingleStep) {
+    var quizLabel = document.getElementById("stat-quiz-label");
+    var clicksHeading = document.getElementById("metric-clicks-heading");
+    var clickRateHeading = document.getElementById("metric-click-rate-heading");
+    if (quizLabel) quizLabel.textContent = allSingleStep ? "Quiz completions" : "Quiz completions";
+    if (clicksHeading) clicksHeading.textContent = allSingleStep ? "Submit Clicks" : "Clicks";
+    if (clickRateHeading) clickRateHeading.textContent = allSingleStep ? "Submit Click Rate" : "Click Rate";
   }
 
   function renderTable(metrics) {
