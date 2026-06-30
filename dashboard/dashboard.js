@@ -832,6 +832,7 @@
   }
 
   function renderStats(metrics) {
+    var allSingleStep = metrics.length > 0 && metrics.every(isSingleStepMetric);
     var totals = metrics.reduce(function (sum, item) {
       sum.views += item.views;
       sum.clicks += item.clicks;
@@ -844,7 +845,7 @@
     }, { views: 0, clicks: 0, quizSubmits: 0, leads: 0, fullSubmissions: 0, submits: 0, closes: 0 });
 
     document.getElementById("stat-views").textContent = formatNumber(totals.views);
-    document.getElementById("stat-quiz-submits").textContent = formatNumber(totals.quizSubmits);
+    document.getElementById("stat-quiz-submits").textContent = allSingleStep ? "N/A" : formatNumber(totals.quizSubmits);
     document.getElementById("stat-leads").textContent = formatNumber(totals.fullSubmissions);
     document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.fullSubmissions, totals.views));
   }
@@ -860,6 +861,7 @@
     metrics.forEach(function (item) {
       var row = document.createElement("tr");
       var live = isLiveMetricRow(item);
+      var singleStep = isSingleStepMetric(item);
       [
         { html: escapeHtml(item.variant) + (live ? " <span class=\"dash-live-badge\">Live</span>" : "") },
         item.configVersion,
@@ -868,8 +870,8 @@
         formatPercent(item.viewRate),
         formatNumber(item.clicks),
         formatPercent(item.clickRate),
-        formatNumber(item.quizSubmits),
-        formatPercent(item.quizRate),
+        singleStep ? "N/A" : formatNumber(item.quizSubmits),
+        singleStep ? "N/A" : formatPercent(item.quizRate),
         formatNumber(item.fullSubmissions),
         formatPercent(item.cvr),
         formatNumber(item.closes),
@@ -941,6 +943,15 @@
     });
   }
 
+  function isSingleStepMetric(item) {
+    if (!item) return false;
+    var variant = activeVariants().find(function (candidate) {
+      return candidate.id === item.variant && item.configVersion === getVariantTrackingVersion(candidate);
+    });
+    if (!variant) return false;
+    return getProteinQuizConfig(variant).showQuizStep === false;
+  }
+
   function renderRecommendations(metrics) {
     var messages = [];
     var active = metrics.filter(function (item) {
@@ -954,7 +965,7 @@
     active.forEach(function (item) {
       if (item.views < 100) {
         messages.push("Variant " + item.variant + " / " + item.configVersion + " has " + item.views + " views. Wait for at least 100 views before making a decision.");
-      } else if (item.quizRate > 0.12 && item.cvr < 0.04) {
+      } else if (!isSingleStepMetric(item) && item.quizRate > 0.12 && item.cvr < 0.04) {
         messages.push("Variant " + item.variant + " / " + item.configVersion + " gets quiz completions but few leads. The lead step may need less friction or stronger copy.");
       } else if (item.clickRate > 0.12 && item.cvr < 0.04) {
         messages.push("Variant " + item.variant + " / " + item.configVersion + " gets clicks but few leads. The form or offer may need less friction.");
@@ -973,41 +984,54 @@
       return item.variant + " / " + item.configVersion;
     });
 
-    drawChart("conversion-chart", "bar", labels, [
+    var showQuizDataset = metrics.some(function (item) {
+      return !isSingleStepMetric(item);
+    });
+    var conversionDatasets = [
       {
         label: "Full CVR",
         data: metrics.map(function (item) { return Math.round(item.cvr * 1000) / 10; }),
         backgroundColor: "#06b00b"
-      },
-      {
+      }
+    ];
+    if (showQuizDataset) {
+      conversionDatasets.push({
         label: "Quiz completion rate",
-        data: metrics.map(function (item) { return Math.round(item.quizRate * 1000) / 10; }),
+        data: metrics.map(function (item) { return isSingleStepMetric(item) ? 0 : Math.round(item.quizRate * 1000) / 10; }),
         backgroundColor: "#2563eb"
-      },
+      });
+    }
+    conversionDatasets.push(
       {
         label: "Click-through rate",
         data: metrics.map(function (item) { return Math.round(item.clickRate * 1000) / 10; }),
         backgroundColor: "#0f766e"
       }
-    ]);
+    );
+    drawChart("conversion-chart", "bar", labels, conversionDatasets);
 
-    drawChart("event-chart", "bar", labels, [
+    var eventDatasets = [
       {
         label: "Views",
         data: metrics.map(function (item) { return item.views; }),
         backgroundColor: "#475467"
-      },
-      {
+      }
+    ];
+    if (showQuizDataset) {
+      eventDatasets.push({
         label: "Quiz completions",
-        data: metrics.map(function (item) { return item.quizSubmits; }),
+        data: metrics.map(function (item) { return isSingleStepMetric(item) ? 0 : item.quizSubmits; }),
         backgroundColor: "#2563eb"
-      },
+      });
+    }
+    eventDatasets.push(
       {
         label: "Leads",
         data: metrics.map(function (item) { return item.fullSubmissions; }),
         backgroundColor: "#06b00b"
       }
-    ]);
+    );
+    drawChart("event-chart", "bar", labels, eventDatasets);
   }
 
   function drawChart(id, type, labels, datasets) {
