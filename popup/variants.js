@@ -22,7 +22,7 @@
       "width": 800,
       "backgroundColor": "#ffffff",
       "textColor": "#172026",
-      "accentColor": "#06b00b",
+      "accentColor": "#ea8011",
       "buttonText": "Show My Protein Plan",
       "fontFamily": "Arial, Helvetica, sans-serif",
       "imageAlt": "",
@@ -59,7 +59,7 @@
         "backButtonText": "Back"
       },
       "trackingVersion": "6/30/2026",
-      "trackingFingerprint": "{\"headline\":\"Eat More Protein Without Complicated Meals\",\"headlineHtml\":\"Eat More Protein <i>Without</i> Complicated Meals\",\"headlineFontSize\":40,\"subheadline\":\"Get a free 7-day high-protein meal plan built around your goals.\",\"subheadlineHtml\":\"Get a <b>free 7-day high-protein meal plan</b> built around your goals.\",\"subheadlineFontSize\":32,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":800,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#ffffff\",\"textColor\":\"#172026\",\"accentColor\":\"#06b00b\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"}}",
+      "trackingFingerprint": "{\"headline\":\"Eat More Protein Without Complicated Meals\",\"headlineHtml\":\"Eat More Protein <i>Without</i> Complicated Meals\",\"headlineFontSize\":40,\"subheadline\":\"Get a free 7-day high-protein meal plan built around your goals.\",\"subheadlineHtml\":\"Get a <b>free 7-day high-protein meal plan</b> built around your goals.\",\"subheadlineFontSize\":32,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":800,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#ffffff\",\"textColor\":\"#172026\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"}}",
       "valueLine": "Simple meals, daily protein target, and grocery list included.",
       "headlineHtml": "Eat More Protein <i>Without</i> Complicated Meals",
       "headlineFontSize": 40,
@@ -79,7 +79,7 @@
       "width": 560,
       "backgroundColor": "#fbfaf7",
       "textColor": "#1c2520",
-      "accentColor": "#06b00b",
+      "accentColor": "#ea8011",
       "buttonText": "Show My Protein Plan",
       "fontFamily": "Arial, Helvetica, sans-serif",
       "imageAlt": "",
@@ -116,7 +116,7 @@
         "backButtonText": "Back"
       },
       "trackingVersion": "6/30/2026",
-      "trackingFingerprint": "{\"headline\":\"Eat Enough Protein Without Tracking Every Bite\",\"headlineHtml\":\"Eat Enough Protein <i>Without</i> Tracking Every Bite\",\"headlineFontSize\":40,\"subheadline\":\"Get a free 7-day high-protein meal plan built around your goals.\",\"subheadlineHtml\":\"Get a <b>free 7-day high-protein meal plan</b> built around your goals.\",\"subheadlineFontSize\":32,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782831271/couples_kitchen_mockup_actual_meals_qvvcux.png\",\"imageAlt\":\"\",\"width\":560,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"accentColor\":\"#06b00b\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"}}",
+      "trackingFingerprint": "{\"headline\":\"Eat Enough Protein Without Tracking Every Bite\",\"headlineHtml\":\"Eat Enough Protein <i>Without</i> Tracking Every Bite\",\"headlineFontSize\":40,\"subheadline\":\"Get a free 7-day high-protein meal plan built around your goals.\",\"subheadlineHtml\":\"Get a <b>free 7-day high-protein meal plan</b> built around your goals.\",\"subheadlineFontSize\":32,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782831271/couples_kitchen_mockup_actual_meals_qvvcux.png\",\"imageAlt\":\"\",\"width\":560,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"}}",
       "valueLine": "Simple meals, daily protein target, and grocery list included.",
       "headlineHtml": "Eat Enough Protein <i>Without</i> Tracking Every Bite",
       "headlineFontSize": 40,
@@ -127,12 +127,12 @@
     }
   ],
   "configVersion": "6/30/2026",
-  "changeNote": "Single step form, couples kitchen image top/bottom tool mockup, simple meals focus(it's mak",
+  "changeNote": "Single step form, couples kitchen image top/bottom tool mo, simple meals focus, orange button",
   "savedColors": [
-    "#111827",
-    "#ffffff",
-    "#f8fafc",
-    "#172026",
+    "#07b00c",
+    "#ea8011",
+    "#fcfcfc",
+    "#050505",
     "#1f6feb",
     "#0f766e",
     "#f0782e",
@@ -173,6 +173,6 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-06-30T14:55:16.669Z"
+  "draftSavedAt": "2026-06-30T15:54:10.213Z"
 };
 })();
