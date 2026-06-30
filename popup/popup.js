@@ -49,9 +49,11 @@
     root.style.setProperty("--ll-popup-height", (Number(variant.height) || 640) + "px");
     root.style.setProperty("--ll-popup-bg", variant.backgroundColor || "#ffffff");
     root.style.setProperty("--ll-popup-text", variant.textColor || "#172026");
-    root.style.setProperty("--ll-popup-accent", variant.accentColor || "#1f6feb");
+    root.style.setProperty("--ll-popup-accent", variant.brandAccentColor || "#06b00b");
+    root.style.setProperty("--ll-popup-button-bg", variant.accentColor || "#1f6feb");
     root.style.setProperty("--ll-popup-font", variant.fontFamily || "Arial, Helvetica, sans-serif");
     root.style.setProperty("--ll-popup-align", variant.textAlign || "left");
+    setPopupTextSizeVariables(root, variant);
 
     var overlay = document.createElement("div");
     overlay.className = "ll-popup-overlay";
@@ -93,7 +95,7 @@
     var headline = document.createElement("h2");
     headline.className = "ll-popup-headline";
     headline.id = "ll-popup-headline";
-    headline.textContent = variant.headline || "";
+    headline.innerHTML = sanitizeRichHtml(variant.headlineHtml || escapeHtml(variant.headline || ""));
     headline.style.textAlign = variant.textAlign || "left";
 
     var subheadline = document.createElement("p");
@@ -101,8 +103,15 @@
     subheadline.innerHTML = sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || ""));
     subheadline.style.textAlign = variant.textAlign || "left";
 
+    var valueLine = document.createElement("p");
+    valueLine.className = "ll-popup-value-line";
+    valueLine.innerHTML = sanitizeRichHtml(variant.valueLineHtml || escapeHtml(variant.valueLine || ""));
+    valueLine.style.textAlign = variant.textAlign || "left";
+    if (!variant.valueLine && !variant.valueLineHtml) valueLine.hidden = true;
+
     copy.appendChild(headline);
     copy.appendChild(subheadline);
+    copy.appendChild(valueLine);
     content.appendChild(copy);
 
     var form = document.createElement("div");
@@ -215,17 +224,23 @@
     var root = container.closest(".ll-popup-root");
     var headline = root && root.querySelector(".ll-popup-headline");
     var subheadline = root && root.querySelector(".ll-popup-subheadline");
+    var valueLine = root && root.querySelector(".ll-popup-value-line");
     var initialHeadline = headline ? headline.textContent : "";
     var initialSubheadline = subheadline ? subheadline.innerHTML : "";
 
-    renderQuizStep();
+    if (proteinQuiz.showQuizStep === false) {
+      renderLeadStep(true);
+    } else {
+      renderQuizStep();
+    }
 
     function renderQuizStep() {
       renderProteinTargetPreview(root, proteinQuiz, null);
-      if (headline) headline.textContent = variant.quizHeadline || initialHeadline || "Your Personalized Protein Plan";
+      if (headline) headline.innerHTML = sanitizeRichHtml(variant.quizHeadline || variant.headlineHtml || escapeHtml(initialHeadline || "Your Personalized Protein Plan"));
       if (subheadline) {
         subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || initialSubheadline || "Answer 3 quick questions and get your daily protein target plus a 7-day high-protein week.");
       }
+      setPopupValueLine(valueLine, variant.valueLineHtml || escapeHtml(variant.valueLine || ""));
 
       container.innerHTML = [
         renderProteinProgressHtml(proteinQuiz, 1),
@@ -257,36 +272,37 @@
           proteinTarget: calculateProteinTarget(form.elements.targetWeight.value, form.elements.age.value, form.elements.strengthDays.value)
         };
         trackEvent("popup_quiz_submit", getProteinTrackingFields(quizData));
-        renderLeadStep();
+        renderLeadStep(false);
       });
 
       schedulePopupFit(root);
     }
 
-    function renderLeadStep() {
-      if (headline) headline.textContent = proteinQuiz.leadHeadline;
-      if (subheadline) subheadline.innerHTML = sanitizeRichHtml(proteinQuiz.leadSubheadline);
-      renderProteinTargetPreview(root, proteinQuiz, quizData.proteinTarget);
+    function renderLeadStep(singleStep) {
+      if (headline) headline.innerHTML = singleStep ? sanitizeRichHtml(variant.headlineHtml || escapeHtml(initialHeadline)) : escapeHtml(proteinQuiz.leadHeadline);
+      if (subheadline) subheadline.innerHTML = singleStep ? initialSubheadline : sanitizeRichHtml(proteinQuiz.leadSubheadline);
+      setPopupValueLine(valueLine, singleStep ? (variant.valueLineHtml || escapeHtml(variant.valueLine || "")) : "");
+      renderProteinTargetPreview(root, proteinQuiz, singleStep ? null : quizData.proteinTarget);
 
       container.innerHTML = [
-        "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
-        renderProteinProgressHtml(proteinQuiz, 2),
+        singleStep ? "" : "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
+        singleStep ? renderProteinProgressHtml(proteinQuiz, 1, true) : renderProteinProgressHtml(proteinQuiz, 2),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"lead\">",
-        "<label><span>" + escapeHtml(proteinQuiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.firstNamePlaceholder) + "\" required></label>",
-        "<label><span>" + escapeHtml(proteinQuiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.emailPlaceholder) + "\" required></label>",
+        proteinQuiz.showFirstName === false ? "" : "<label><span>" + escapeHtml(proteinQuiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.firstNamePlaceholder) + "\" required></label>",
+        proteinQuiz.showEmail === false ? "" : "<label><span>" + escapeHtml(proteinQuiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.emailPlaceholder) + "\" required></label>",
         "<button type=\"submit\">" + escapeHtml(proteinQuiz.leadButtonText || variant.buttonText || "Show My Protein Plan") + "</button>",
         "</form>"
       ].join("");
 
       var form = container.querySelector("form");
       var backButton = container.querySelector(".ll-popup-step-back");
-      backButton.addEventListener("click", renderQuizStep);
+      if (backButton) backButton.addEventListener("click", renderQuizStep);
 
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         var payload = {
-          name: form.elements.name.value,
-          email: form.elements.email.value,
+          name: getFormValue(form, "name"),
+          email: getFormValue(form, "email"),
           targetWeightLbs: quizData.targetWeight,
           TargetWeight: quizData.targetWeight,
           age: quizData.age,
@@ -312,6 +328,30 @@
     }
   }
 
+  function getFormValue(form, name) {
+    return form && form.elements && form.elements[name] ? form.elements[name].value : "";
+  }
+
+  function setPopupValueLine(element, text) {
+    if (!element) return;
+    element.innerHTML = sanitizeRichHtml(text || "");
+    element.hidden = !text;
+  }
+
+  function setPopupTextSizeVariables(root, activeVariant) {
+    if (!root || !activeVariant) return;
+    setOptionalPixelVariable(root, "--ll-popup-headline-size", activeVariant.headlineFontSize, 18, 72);
+    setOptionalPixelVariable(root, "--ll-popup-subheadline-size", activeVariant.subheadlineFontSize, 12, 36);
+    setOptionalPixelVariable(root, "--ll-popup-value-line-size", activeVariant.valueLineFontSize, 11, 32);
+    setOptionalPixelVariable(root, "--ll-popup-button-size", activeVariant.buttonFontSize, 12, 28);
+  }
+
+  function setOptionalPixelVariable(root, name, value, min, max) {
+    var number = Number(value);
+    if (!Number.isFinite(number) || number <= 0) return;
+    root.style.setProperty(name, clampNumber(number, min, max) + "px");
+  }
+
   function getProteinQuizConfig(activeVariant) {
     return Object.assign({
       targetWeightLabel: "Target weight in lbs",
@@ -325,8 +365,12 @@
       progressStepOneText: "Answer 3 quick questions to calculate your personalized protein target immediately.",
       progressStepTwoLabel: "Step 2 of 2: Send Your Plan",
       progressStepTwoText: "Your personalized target is ready. Tell us where to send the full plan.",
+      progressSingleStepLabel: "Step 1",
       targetPreviewStyle: "off",
       targetPreviewLabel: "Your Daily Target:",
+      showQuizStep: true,
+      showFirstName: true,
+      showEmail: true,
       quizButtonText: "Continue",
       leadHeadline: "Get your free personalized protein goal + 7-day high-protein meal plan",
       leadSubheadline: "Tell us where to send it, then your plan will open right away.",
@@ -345,7 +389,7 @@
     var copy = root.querySelector(".ll-popup-copy");
     var existing = copy && copy.querySelector(".ll-popup-target-preview");
     if (existing) existing.remove();
-    if (!copy || !target || !proteinQuiz || proteinQuiz.targetPreviewStyle === "off") return;
+    if (!copy || !target || !proteinQuiz || proteinQuiz.showQuizStep === false || proteinQuiz.targetPreviewStyle === "off") return;
 
     var headline = copy.querySelector(".ll-popup-headline");
     var preview = document.createElement("div");
@@ -407,16 +451,17 @@
     return Math.round(value / 5) * 5;
   }
 
-  function renderProteinProgressHtml(proteinQuiz, step) {
+  function renderProteinProgressHtml(proteinQuiz, step, singleStep) {
     if (!proteinQuiz || !proteinQuiz.progressEnabled) return "";
 
-    var label = step === 2 ? proteinQuiz.progressStepTwoLabel : proteinQuiz.progressStepOneLabel;
-    var text = step === 2 ? proteinQuiz.progressStepTwoText : proteinQuiz.progressStepOneText;
-    var percent = step === 2 ? 100 : 50;
+    var label = singleStep ? (proteinQuiz.progressSingleStepLabel || "Step 1") : (step === 2 ? proteinQuiz.progressStepTwoLabel : proteinQuiz.progressStepOneLabel);
+    var text = singleStep ? "" : (step === 2 ? proteinQuiz.progressStepTwoText : proteinQuiz.progressStepOneText);
+    var percent = singleStep ? 50 : (step === 2 ? 100 : 50);
+    var countText = singleStep ? "" : step + "/2";
 
     return [
       "<div class=\"ll-popup-progress\" aria-label=\"" + escapeHtmlAttr(label || ("Step " + step + " of 2")) + "\">",
-      "<div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label || ("Step " + step + " of 2")) + "</span><strong>" + step + "/2</strong></div>",
+      "<div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label || (singleStep ? "Step 1" : ("Step " + step + " of 2"))) + "</span>" + (countText ? "<strong>" + escapeHtml(countText) + "</strong>" : "") + "</div>",
       "<div class=\"ll-popup-progress-track\" role=\"progressbar\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"" + percent + "\"><span style=\"width:" + percent + "%\"></span></div>",
       text ? "<p>" + escapeHtml(text) + "</p>" : "",
       "</div>"
@@ -781,8 +826,16 @@
   function getVariantSnapshot() {
     return JSON.stringify({
       headline: variant.headline || "",
+      headlineHtml: variant.headlineHtml || "",
+      headlineFontSize: variant.headlineFontSize || "",
       subheadline: variant.subheadline || "",
+      subheadlineHtml: variant.subheadlineHtml || "",
+      subheadlineFontSize: variant.subheadlineFontSize || "",
+      valueLine: variant.valueLine || "",
+      valueLineHtml: variant.valueLineHtml || "",
+      valueLineFontSize: variant.valueLineFontSize || "",
       buttonText: variant.buttonText || "",
+      buttonFontSize: variant.buttonFontSize || "",
       imageUrl: variant.imageUrl || "",
       imageAlt: variant.imageAlt || "",
       width: variant.width || "",
@@ -790,18 +843,26 @@
       sizeToImage: Boolean(variant.sizeToImage),
       backgroundColor: variant.backgroundColor || "",
       textColor: variant.textColor || "",
+      brandAccentColor: variant.brandAccentColor || "",
       accentColor: variant.accentColor || "",
       fontFamily: variant.fontFamily || "",
       textAlign: variant.textAlign || "",
-      trafficSplit: variant.trafficSplit || ""
+      trafficSplit: variant.trafficSplit || "",
+      proteinQuiz: cloneConfig(variant.proteinQuiz || {})
     });
   }
 
   function getVariantLabel() {
     var quiz = getProteinQuizConfig(variant);
     return [
+      "Flow: " + (quiz.showQuizStep === false ? "Single-step" : "Quiz + form"),
+      "Fields: " + [
+        quiz.showFirstName === false ? "" : "Name",
+        quiz.showEmail === false ? "" : "Email"
+      ].filter(Boolean).join("+"),
       "CTA: " + (config.leadMagnetMode === "protein_plan" ? quiz.leadButtonText : (variant.buttonText || "Submit")),
       "Button: " + (variant.accentColor || ""),
+      "Accent: " + (variant.brandAccentColor || "#06b00b"),
       "BG: " + (variant.backgroundColor || ""),
       "Width: " + (variant.width || ""),
       variant.height ? "Height: " + variant.height : "",
@@ -810,6 +871,10 @@
       "Align: " + (variant.textAlign || "left"),
       variant.imageUrl ? "Image" : "No image"
     ].filter(Boolean).join(" | ");
+  }
+
+  function cloneConfig(value) {
+    return JSON.parse(JSON.stringify(value || {}));
   }
 
   function getSessionId() {
@@ -846,21 +911,52 @@
   function sanitizeRichHtml(value) {
     var template = document.createElement("template");
     template.innerHTML = String(value || "");
-    var allowed = ["B", "STRONG", "I", "EM", "U", "SPAN", "BR"];
+    var allowed = ["B", "STRONG", "I", "EM", "U", "SPAN", "BR", "FONT"];
 
     Array.prototype.slice.call(template.content.querySelectorAll("*")).forEach(function (node) {
+      if (node.nodeName === "FONT") {
+        var color = normalizeCssColor(node.getAttribute("color"));
+        var span = document.createElement("span");
+        if (color) span.setAttribute("style", "color: " + color + ";");
+        span.innerHTML = node.innerHTML;
+        node.replaceWith(span);
+        return;
+      }
+
       if (allowed.indexOf(node.nodeName) === -1) {
         node.replaceWith(document.createTextNode(node.textContent || ""));
         return;
       }
 
       Array.prototype.slice.call(node.attributes).forEach(function (attr) {
-        if (node.nodeName === "SPAN" && attr.name === "style" && /^color:\s*#[0-9a-f]{3,8};?$/i.test(attr.value.trim())) return;
+        if (node.nodeName === "SPAN" && attr.name === "style") {
+          var color = extractAllowedColor(attr.value);
+          if (color) {
+            node.setAttribute("style", "color: " + color + ";");
+            return;
+          }
+        }
         node.removeAttribute(attr.name);
       });
     });
 
     return template.innerHTML;
+  }
+
+  function extractAllowedColor(value) {
+    var match = String(value || "").match(/color:\s*(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))/i);
+    return normalizeCssColor(match && match[1]);
+  }
+
+  function normalizeCssColor(value) {
+    var color = String(value || "").trim();
+    if (/^#[0-9a-f]{3,8}$/i.test(color)) return color;
+    var rgb = color.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+    if (!rgb) return "";
+    var channels = rgb.slice(1).map(function (channel) {
+      return clampNumber(Number(channel), 0, 255);
+    });
+    return "rgb(" + channels.join(", ") + ")";
   }
 
   function escapeHtml(value) {

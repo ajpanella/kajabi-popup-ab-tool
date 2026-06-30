@@ -199,14 +199,16 @@
       card.className = "dash-editor-card";
       card.innerHTML = [
         "<div class=\"dash-editor-title\"><h3>Variant " + escapeHtml(variant.id) + "</h3><span>" + escapeHtml(label) + "</span></div>",
-        editorInput("headline", index, "Headline", variant.headline || "", "text"),
-        editorRichText("subheadlineHtml", index, "Subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || "")),
-        config.leadMagnetMode === "protein_plan" ? "" : editorInput("buttonText", index, "CTA button text", variant.buttonText || "Submit", "text"),
+        editorRichText("headlineHtml", index, "Headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
+        editorRichText("subheadlineHtml", index, "Subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
+        editorRichText("valueLineHtml", index, "Value Line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
+        config.leadMagnetMode === "protein_plan" ? editorCompactSizeInput("buttonFontSize", index, "Button CTA size", variant.buttonFontSize, 16) : editorTextWithSize("buttonText", "buttonFontSize", index, "CTA button text", variant.buttonText || "Submit", variant.buttonFontSize, 16),
         editorInput("imageUrl", index, "Image URL", variant.imageUrl || "", "url"),
         editorInput("imageAlt", index, "Image alt text", variant.imageAlt || "", "text"),
         "<div class=\"dash-color-row\">",
         editorInput("backgroundColor", index, "Background", variant.backgroundColor || "#ffffff", "color"),
         editorInput("textColor", index, "Text", variant.textColor || "#172026", "color"),
+        editorInput("brandAccentColor", index, "Accent text", variant.brandAccentColor || "#06b00b", "color"),
         editorInput("accentColor", index, "Button", variant.accentColor || "#1f6feb", "color"),
         "</div>",
         editorSelect("fontFamily", index, "Font", variant.fontFamily || "Arial, Helvetica, sans-serif"),
@@ -258,8 +260,12 @@
       progressStepOneText: "Answer 3 quick questions to calculate your personalized protein target immediately.",
       progressStepTwoLabel: "Step 2 of 2: Send Your Plan",
       progressStepTwoText: "Your personalized target is ready. Tell us where to send the full plan.",
+      progressSingleStepLabel: "Step 1",
       targetPreviewStyle: "off",
       targetPreviewLabel: "Your Daily Target:",
+      showQuizStep: true,
+      showFirstName: true,
+      showEmail: true,
       quizButtonText: "Continue",
       leadHeadline: "Get your free personalized protein goal + 7-day high-protein meal plan",
       leadSubheadline: "Tell us where to send it, then your plan will open right away.",
@@ -281,19 +287,39 @@
 
     var key = target.dataset.field;
     var value = target.isContentEditable ? sanitizeRichHtml(target.innerHTML) : (target.type === "checkbox" ? target.checked : target.value);
-    if (key === "width" || key === "height" || key === "trafficSplit") value = value === "" ? "" : Number(value);
+    if (key === "width" || key === "height" || key === "trafficSplit" || key === "headlineFontSize" || key === "subheadlineFontSize" || key === "valueLineFontSize" || key === "buttonFontSize") value = value === "" ? "" : Number(value);
     setNestedValue(variant, key, value);
+    if (key === "headlineHtml") {
+      variant.headline = target.isContentEditable ? (target.textContent || "") : htmlToPlainText(value);
+    }
     if (key === "subheadlineHtml") {
-      variant.subheadline = target.textContent || "";
+      variant.subheadline = target.isContentEditable ? (target.textContent || "") : htmlToPlainText(value);
+    }
+    if (key === "valueLineHtml") {
+      variant.valueLine = target.isContentEditable ? (target.textContent || "") : htmlToPlainText(value);
     }
 
     saveDraftConfig();
-    var label = target.closest(".dash-editor-card").querySelector(".dash-editor-title span");
-    if (label) label.textContent = buildVariantLabel(variant);
+    if (shouldRerenderEditorsForField(key)) {
+      renderEditors();
+    } else {
+      var label = target.closest(".dash-editor-card").querySelector(".dash-editor-title span");
+      if (label) label.textContent = buildVariantLabel(variant);
+    }
     renderPreviews(previewMode);
     renderEmbedCode();
     populateFilters();
     updateDashboard();
+  }
+
+  function shouldRerenderEditorsForField(key) {
+    return [
+      "proteinQuiz.showQuizStep",
+      "proteinQuiz.showFirstName",
+      "proteinQuiz.showEmail",
+      "proteinQuiz.progressEnabled",
+      "proteinQuiz.targetPreviewStyle"
+    ].indexOf(key) >= 0;
   }
 
   function setNestedValue(target, path, value) {
@@ -325,6 +351,18 @@
       return;
     }
 
+    var richColorButton = event.target.closest("[data-rich-color]");
+    if (richColorButton) {
+      applyRichColor(richColorButton);
+      return;
+    }
+
+    var colorButton = event.target.closest("[data-color-swatch-field]");
+    if (colorButton) {
+      applyInlineColor(colorButton);
+      return;
+    }
+
     var button = event.target.closest("[data-save-test]");
     if (!button) return;
 
@@ -344,76 +382,166 @@
 
   function renderProteinFlowEditor(variant, index) {
     var quiz = getProteinQuizConfig(variant);
+    var showQuiz = quiz.showQuizStep !== false;
+    var showProgress = quiz.progressEnabled;
+    var showProgressText = showProgress && showQuiz;
+    var showFirstName = quiz.showFirstName !== false;
+    var showEmail = quiz.showEmail !== false;
     return [
       "<div class=\"dash-flow-editor dash-variant-flow-editor\">",
       "<div class=\"dash-flow-head\"><strong>Protein Quiz Flow</strong><span>Variant-specific quiz labels, placeholders, and step-two copy.</span></div>",
       "<div class=\"dash-global-editor\">",
+      editorCheckbox("proteinQuiz.showQuizStep", index, "Show quiz step before lead form", quiz.showQuizStep !== false),
+      editorCheckbox("proteinQuiz.showFirstName", index, "Show first name field", quiz.showFirstName !== false),
+      editorCheckbox("proteinQuiz.showEmail", index, "Show email field", quiz.showEmail !== false),
       editorCheckbox("proteinQuiz.progressEnabled", index, "Show progress bar and step framing", quiz.progressEnabled),
-      editorInput("proteinQuiz.progressStepOneLabel", index, "Step 1 progress label", quiz.progressStepOneLabel, "text"),
-      editorTextarea("proteinQuiz.progressStepOneText", index, "Step 1 framing text", quiz.progressStepOneText),
-      editorInput("proteinQuiz.targetWeightLabel", index, "Target weight label", quiz.targetWeightLabel, "text"),
-      editorInput("proteinQuiz.targetWeightPlaceholder", index, "Target weight placeholder", quiz.targetWeightPlaceholder, "text"),
-      editorInput("proteinQuiz.strengthDaysLabel", index, "Strength days label", quiz.strengthDaysLabel, "text"),
-      editorInput("proteinQuiz.strengthDaysPlaceholder", index, "Strength dropdown placeholder", quiz.strengthDaysPlaceholder, "text"),
-      editorInput("proteinQuiz.ageLabel", index, "Age label", quiz.ageLabel, "text"),
-      editorInput("proteinQuiz.agePlaceholder", index, "Age placeholder", quiz.agePlaceholder, "text"),
-      editorInput("proteinQuiz.quizButtonText", index, "Quiz button text", quiz.quizButtonText, "text"),
+      showQuiz ? "" : "<div class=\"dash-flow-divider\"><span>Single-step visible copy</span></div>",
+      showQuiz ? "" : editorInput("imageUrl", index, "Single-step hero image URL", variant.imageUrl || "", "url"),
+      showQuiz ? "" : editorRichText("headlineHtml", index, "Single-step headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
+      showQuiz ? "" : editorRichText("subheadlineHtml", index, "Single-step subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
+      showQuiz ? "" : editorRichText("valueLineHtml", index, "Single-step value line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
+      editorInput("proteinQuiz.progressSingleStepLabel", index, "Single-step progress label", quiz.progressSingleStepLabel || "Step 1", "text", !showProgress || showQuiz),
+      editorInput("proteinQuiz.progressStepOneLabel", index, "Step 1 progress label", quiz.progressStepOneLabel, "text", !showProgressText),
+      editorTextarea("proteinQuiz.progressStepOneText", index, "Step 1 framing text", quiz.progressStepOneText, !showProgressText),
+      editorInput("proteinQuiz.targetWeightLabel", index, "Target weight label", quiz.targetWeightLabel, "text", !showQuiz),
+      editorInput("proteinQuiz.targetWeightPlaceholder", index, "Target weight placeholder", quiz.targetWeightPlaceholder, "text", !showQuiz),
+      editorInput("proteinQuiz.strengthDaysLabel", index, "Strength days label", quiz.strengthDaysLabel, "text", !showQuiz),
+      editorInput("proteinQuiz.strengthDaysPlaceholder", index, "Strength dropdown placeholder", quiz.strengthDaysPlaceholder, "text", !showQuiz),
+      editorInput("proteinQuiz.ageLabel", index, "Age label", quiz.ageLabel, "text", !showQuiz),
+      editorInput("proteinQuiz.agePlaceholder", index, "Age placeholder", quiz.agePlaceholder, "text", !showQuiz),
+      editorInput("proteinQuiz.quizButtonText", index, "Quiz button text", quiz.quizButtonText, "text", !showQuiz),
       "<div class=\"dash-flow-divider\"><span>After visitor clicks quiz submit</span></div>",
-      editorProteinTargetPreviewSelect("proteinQuiz.targetPreviewStyle", index, "Step 2 target display", quiz.targetPreviewStyle),
-      editorInput("proteinQuiz.targetPreviewLabel", index, "Target display label", quiz.targetPreviewLabel, "text"),
-      editorInput("proteinQuiz.progressStepTwoLabel", index, "Step 2 progress label", quiz.progressStepTwoLabel, "text"),
-      editorTextarea("proteinQuiz.progressStepTwoText", index, "Step 2 framing text", quiz.progressStepTwoText),
-      editorInput("proteinQuiz.leadHeadline", index, "Lead-step headline", quiz.leadHeadline, "text"),
-      editorTextarea("proteinQuiz.leadSubheadline", index, "Lead-step subheadline", quiz.leadSubheadline),
-      editorInput("proteinQuiz.firstNameLabel", index, "First name label", quiz.firstNameLabel, "text"),
-      editorInput("proteinQuiz.firstNamePlaceholder", index, "First name placeholder", quiz.firstNamePlaceholder, "text"),
-      editorInput("proteinQuiz.emailLabel", index, "Email label", quiz.emailLabel, "text"),
-      editorInput("proteinQuiz.emailPlaceholder", index, "Email placeholder", quiz.emailPlaceholder, "text"),
-      editorInput("proteinQuiz.leadButtonText", index, "Lead button text", quiz.leadButtonText, "text"),
+      editorProteinTargetPreviewSelect("proteinQuiz.targetPreviewStyle", index, "Step 2 target display", quiz.targetPreviewStyle, !showQuiz),
+      editorInput("proteinQuiz.targetPreviewLabel", index, "Target display label", quiz.targetPreviewLabel, "text", !showQuiz || quiz.targetPreviewStyle === "off"),
+      editorInput("proteinQuiz.progressStepTwoLabel", index, "Step 2 progress label", quiz.progressStepTwoLabel, "text", !showProgressText),
+      editorTextarea("proteinQuiz.progressStepTwoText", index, "Step 2 framing text", quiz.progressStepTwoText, !showProgressText),
+      editorInput("proteinQuiz.leadHeadline", index, "Lead-step headline", quiz.leadHeadline, "text", !showQuiz),
+      editorTextarea("proteinQuiz.leadSubheadline", index, "Lead-step subheadline", quiz.leadSubheadline, !showQuiz),
+      editorInput("proteinQuiz.firstNameLabel", index, "First name label", quiz.firstNameLabel, "text", !showFirstName),
+      editorInput("proteinQuiz.firstNamePlaceholder", index, "First name placeholder", quiz.firstNamePlaceholder, "text", !showFirstName),
+      editorInput("proteinQuiz.emailLabel", index, "Email label", quiz.emailLabel, "text", !showEmail),
+      editorInput("proteinQuiz.emailPlaceholder", index, "Email placeholder", quiz.emailPlaceholder, "text", !showEmail),
+      editorTextWithSize("proteinQuiz.leadButtonText", "buttonFontSize", index, showQuiz ? "Lead button text" : "Button CTA", quiz.leadButtonText, variant.buttonFontSize, 16),
       "</div>",
       "</div>"
     ].join("");
   }
 
-  function editorInput(field, index, label, value, type) {
-    return "<label>" + escapeHtml(label) + "<input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"" + type + "\" value=\"" + escapeHtmlAttr(value) + "\"></label>";
+  function editorInput(field, index, label, value, type, disabled) {
+    if (type === "color") return editorColorInput(field, index, label, value, disabled);
+    return "<label" + disabledFieldClass(disabled) + ">" + escapeHtml(label) + "<input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"" + type + "\" value=\"" + escapeHtmlAttr(value) + "\"" + disabledAttr(disabled) + "></label>";
+  }
+
+  function editorColorInput(field, index, label, value, disabled) {
+    return [
+      "<label" + disabledFieldClass(disabled) + ">",
+      escapeHtml(label),
+      "<div class=\"dash-color-control-row\">",
+      "<input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"color\" value=\"" + escapeHtmlAttr(value) + "\"" + disabledAttr(disabled) + ">",
+      renderSavedColorButtons("data-color-swatch-field=\"" + escapeHtmlAttr(field) + "\" data-variant-index=\"" + index + "\"", disabled),
+      "</div>",
+      "</label>"
+    ].join("");
+  }
+
+  function editorTextWithSize(textField, sizeField, index, label, textValue, sizeValue, defaultSize, disabled) {
+    return [
+      "<label" + disabledFieldClass(disabled) + ">",
+      escapeHtml(label),
+      "<div class=\"dash-inline-size-row\">",
+      "<input data-variant-index=\"" + index + "\" data-field=\"" + textField + "\" type=\"text\" value=\"" + escapeHtmlAttr(textValue) + "\"" + disabledAttr(disabled) + ">",
+      renderInlineSizeInput(sizeField, index, sizeValue, defaultSize, disabled, label + " size"),
+      "</div>",
+      "</label>"
+    ].join("");
+  }
+
+  function editorCompactSizeInput(field, index, label, value, defaultValue, disabled) {
+    return [
+      "<label" + disabledFieldClass(disabled) + ">",
+      escapeHtml(label),
+      renderInlineSizeInput(field, index, value, defaultValue, disabled, label),
+      "</label>"
+    ].join("");
   }
 
   function editorCheckbox(field, index, label, checked) {
     return "<label class=\"dash-checkbox-label\"><input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"checkbox\"" + (checked ? " checked" : "") + "><span>" + escapeHtml(label) + "</span></label>";
   }
 
-  function editorTextarea(field, index, label, value) {
-    return "<label>" + escapeHtml(label) + "<textarea data-variant-index=\"" + index + "\" data-field=\"" + field + "\">" + escapeHtml(value) + "</textarea></label>";
+  function editorTextarea(field, index, label, value, disabled) {
+    return "<label" + disabledFieldClass(disabled) + ">" + escapeHtml(label) + "<textarea data-variant-index=\"" + index + "\" data-field=\"" + field + "\"" + disabledAttr(disabled) + ">" + escapeHtml(value) + "</textarea></label>";
   }
 
-  function editorRichText(field, index, label, value) {
+  function htmlToPlainText(value) {
+    var template = document.createElement("template");
+    template.innerHTML = sanitizeRichHtml(value || "");
+    return template.content.textContent || "";
+  }
+
+  function editorRichText(field, index, label, value, disabled, sizeField, sizeValue, defaultSize, colorValue) {
+    var pickerColor = richTextInputColor(value, colorValue || "#172026");
     return [
-      "<div class=\"dash-rich-field\">",
+      "<div class=\"dash-rich-field" + (disabled ? " dash-disabled-field" : "") + "\">",
       "<span>" + escapeHtml(label) + "</span>",
       "<div class=\"dash-rich-toolbar\">",
-      "<button type=\"button\" data-rich-command=\"bold\">B</button>",
-      "<button type=\"button\" data-rich-command=\"italic\">I</button>",
-      "<button type=\"button\" data-rich-command=\"underline\">U</button>",
-      "<input type=\"color\" data-rich-command=\"foreColor\" value=\"#c2410c\" aria-label=\"Subheadline text color\">",
+      "<button type=\"button\" data-rich-command=\"bold\"" + disabledAttr(disabled) + ">B</button>",
+      "<button type=\"button\" data-rich-command=\"italic\"" + disabledAttr(disabled) + ">I</button>",
+      "<button type=\"button\" data-rich-command=\"underline\"" + disabledAttr(disabled) + ">U</button>",
+      "<input type=\"color\" data-rich-command=\"foreColor\" value=\"" + escapeHtmlAttr(pickerColor) + "\" aria-label=\"" + escapeHtmlAttr(label) + " text color\"" + disabledAttr(disabled) + ">",
+      renderSavedColorButtons("data-rich-color=\"true\"", disabled),
+      sizeField ? renderInlineSizeInput(sizeField, index, sizeValue, defaultSize, disabled, label + " size") : "",
       "</div>",
-      "<div class=\"dash-rich-editor\" contenteditable=\"true\" data-variant-index=\"" + index + "\" data-field=\"" + field + "\">" + sanitizeRichHtml(value) + "</div>",
+      "<div class=\"dash-rich-editor\" contenteditable=\"" + (disabled ? "false" : "true") + "\" data-variant-index=\"" + index + "\" data-field=\"" + field + "\">" + sanitizeRichHtml(value) + "</div>",
       "</div>"
     ].join("");
   }
 
+  function renderInlineSizeInput(field, index, value, defaultValue, disabled, label) {
+    var visibleValue = value || defaultValue || "";
+    return "<span class=\"dash-size-control\"><input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"number\" min=\"8\" max=\"96\" step=\"1\" value=\"" + escapeHtmlAttr(visibleValue) + "\" aria-label=\"" + escapeHtmlAttr(label || "Text size") + "\"" + disabledAttr(disabled) + "><em>px</em></span>";
+  }
+
   function applyRichCommand(control) {
-    var card = control.closest(".dash-editor-card");
-    var editor = card && card.querySelector(".dash-rich-editor");
+    var field = control.closest(".dash-rich-field");
+    var editor = field && field.querySelector(".dash-rich-editor");
     if (!editor) return;
 
     editor.focus();
     if (control.dataset.richCommand === "foreColor") {
+      document.execCommand("styleWithCSS", false, true);
       document.execCommand("foreColor", false, control.value);
     } else {
       document.execCommand(control.dataset.richCommand, false, null);
     }
     editor.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function applyRichColor(button) {
+    var field = button.closest(".dash-rich-field");
+    var colorInput = field && field.querySelector("input[data-rich-command=\"foreColor\"]");
+    if (!colorInput) return;
+    colorInput.value = button.dataset.color || colorInput.value;
+    applyRichCommand(colorInput);
+  }
+
+  function applyInlineColor(button) {
+    var card = button.closest(".dash-editor-card");
+    var input = card && card.querySelector("input[data-field=\"" + cssEscape(button.dataset.colorSwatchField || "") + "\"][data-variant-index=\"" + cssEscape(button.dataset.variantIndex || "") + "\"]");
+    if (!input) return;
+    input.value = button.dataset.color || input.value;
+    input.dispatchEvent(new Event("input", { bubbles: true }));
+  }
+
+  function renderSavedColorButtons(attributes, disabled) {
+    return "<span class=\"dash-inline-swatches\">" + getSavedColors().slice(0, 4).map(function (color) {
+      return "<button type=\"button\" " + attributes + " data-color=\"" + escapeHtmlAttr(color) + "\" style=\"background:" + escapeHtmlAttr(color) + "\" aria-label=\"Apply saved color " + escapeHtmlAttr(color) + "\"" + disabledAttr(disabled) + "></button>";
+    }).join("") + "</span>";
+  }
+
+  function cssEscape(value) {
+    if (window.CSS && window.CSS.escape) return window.CSS.escape(String(value || ""));
+    return String(value || "").replace(/["\\]/g, "\\$&");
   }
 
   function editorSelect(field, index, label, value) {
@@ -439,15 +567,23 @@
     }).join("") + "</select></label>";
   }
 
-  function editorProteinTargetPreviewSelect(field, index, label, value) {
+  function editorProteinTargetPreviewSelect(field, index, label, value, disabled) {
     var options = [
       { label: "Off", value: "off" },
       { label: "Inline text", value: "inline" },
       { label: "Calculator box", value: "box" }
     ];
-    return "<label>" + escapeHtml(label) + "<select data-variant-index=\"" + index + "\" data-field=\"" + field + "\">" + options.map(function (option) {
+    return "<label" + disabledFieldClass(disabled) + ">" + escapeHtml(label) + "<select data-variant-index=\"" + index + "\" data-field=\"" + field + "\"" + disabledAttr(disabled) + ">" + options.map(function (option) {
       return "<option value=\"" + escapeHtmlAttr(option.value) + "\"" + (option.value === value ? " selected" : "") + ">" + escapeHtml(option.label) + "</option>";
     }).join("") + "</select></label>";
+  }
+
+  function disabledFieldClass(disabled) {
+    return disabled ? " class=\"dash-disabled-field\"" : "";
+  }
+
+  function disabledAttr(disabled) {
+    return disabled ? " disabled aria-disabled=\"true\"" : "";
   }
 
   function renderPalette() {
@@ -470,7 +606,8 @@
     colors[Number(target.dataset.paletteIndex)] = target.value;
     config.savedColors = colors;
     saveDraftConfig();
-    renderPalette();
+    renderEditors();
+    renderPreviews(previewMode);
   }
 
   function onPaletteClick(event) {
@@ -920,9 +1057,11 @@
     root.style.setProperty("--ll-popup-height", (Number(variant.height) || 640) + "px");
     root.style.setProperty("--ll-popup-bg", variant.backgroundColor || "#ffffff");
     root.style.setProperty("--ll-popup-text", variant.textColor || "#172026");
-    root.style.setProperty("--ll-popup-accent", variant.accentColor || "#1f6feb");
+    root.style.setProperty("--ll-popup-accent", variant.brandAccentColor || "#06b00b");
+    root.style.setProperty("--ll-popup-button-bg", variant.accentColor || "#1f6feb");
     root.style.setProperty("--ll-popup-font", variant.fontFamily || "Arial, Helvetica, sans-serif");
     root.style.setProperty("--ll-popup-align", variant.textAlign || "left");
+    setPopupTextSizeVariables(root, variant);
 
     var modal = document.createElement("div");
     modal.className = "ll-popup-modal";
@@ -955,20 +1094,24 @@
     var copy = document.createElement("div");
     copy.className = "ll-popup-copy";
     copy.style.textAlign = variant.textAlign || "left";
-    var targetPreview = step === "lead" && config.leadMagnetMode === "protein_plan"
+    var isProteinPlan = config.leadMagnetMode === "protein_plan";
+    var isSingleStep = isProteinPlan && quiz.showQuizStep === false;
+    var targetPreview = step === "lead" && isProteinPlan && !isSingleStep
       ? renderProteinTargetPreviewHtml(quiz, getSampleProteinTarget(quiz))
       : "";
-    copy.innerHTML = step === "lead" && config.leadMagnetMode === "protein_plan"
+    copy.innerHTML = step === "lead" && isProteinPlan && !isSingleStep
       ? targetPreview + "<h2 class=\"ll-popup-headline\">" + escapeHtml(quiz.leadHeadline) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(quiz.leadSubheadline) + "</p>"
-      : "<h2 class=\"ll-popup-headline\">" + escapeHtml(variant.headline || "") + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || "")) + "</p>";
+      : "<h2 class=\"ll-popup-headline\">" + sanitizeRichHtml(variant.headlineHtml || escapeHtml(variant.headline || "")) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || "")) + "</p>" + (variant.valueLineHtml || variant.valueLine ? "<p class=\"ll-popup-value-line\">" + sanitizeRichHtml(variant.valueLineHtml || escapeHtml(variant.valueLine || "")) + "</p>" : "");
     copy.querySelector(".ll-popup-headline").style.textAlign = variant.textAlign || "left";
     copy.querySelector(".ll-popup-subheadline").style.textAlign = variant.textAlign || "left";
+    var valueLine = copy.querySelector(".ll-popup-value-line");
+    if (valueLine) valueLine.style.textAlign = variant.textAlign || "left";
 
     var form = document.createElement("div");
     form.className = "ll-popup-form";
-    form.innerHTML = config.leadMagnetMode === "protein_plan" && step === "lead"
-      ? "<button class=\"ll-popup-step-back\" type=\"button\" aria-label=\"Back\">&#8592;</button>" + renderProteinProgressHtml(quiz, 2) + "<div class=\"dash-fake-field\">" + escapeHtml(quiz.firstNameLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.emailLabel) + "</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.leadButtonText) + "</button>"
-      : config.leadMagnetMode === "protein_plan"
+    form.innerHTML = isProteinPlan && (step === "lead" || isSingleStep)
+      ? (isSingleStep ? renderProteinProgressHtml(quiz, 1, true) : "<button class=\"ll-popup-step-back\" type=\"button\" aria-label=\"Back\">&#8592;</button>" + renderProteinProgressHtml(quiz, 2)) + (quiz.showFirstName === false ? "" : "<div class=\"dash-fake-field\">" + escapeHtml(quiz.firstNameLabel) + "</div>") + (quiz.showEmail === false ? "" : "<div class=\"dash-fake-field\">" + escapeHtml(quiz.emailLabel) + "</div>") + "<button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.leadButtonText) + "</button>"
+      : isProteinPlan
       ? renderProteinProgressHtml(quiz, 1) + "<div class=\"dash-fake-field\">" + escapeHtml(quiz.targetWeightLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.strengthDaysLabel) + "</div><div class=\"dash-fake-field\">" + escapeHtml(quiz.ageLabel) + "</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(quiz.quizButtonText) + "</button>"
       : "<div class=\"dash-fake-field\">First Name</div><div class=\"dash-fake-field\">Email</div><button class=\"dash-fake-button\" type=\"button\">" + escapeHtml(variant.buttonText || "Submit") + "</button>";
 
@@ -984,7 +1127,7 @@
     var existing = document.querySelector(".dash-dashboard-test-popup");
     if (existing) existing.remove();
 
-    var root = buildPreview(variant);
+    var root = buildPreview(variant, previewStep);
     root.classList.add("dash-dashboard-test-popup");
 
     var overlay = document.createElement("div");
@@ -995,7 +1138,7 @@
     var form = root.querySelector(".ll-popup-form");
 
     if (config.leadMagnetMode === "protein_plan") {
-      renderProteinPlanPreviewForm(form, variant);
+      renderProteinPlanPreviewForm(form, variant, previewStep);
     } else if (config.kajabiFormEmbed && config.kajabiFormEmbed.indexOf("YOUR_FORM_ID") === -1) {
       form.innerHTML = "";
       injectKajabiForm(form);
@@ -1081,13 +1224,30 @@
     var root = container.closest(".ll-popup-root");
     var headline = root && root.querySelector(".ll-popup-headline");
     var subheadline = root && root.querySelector(".ll-popup-subheadline");
+    var valueLine = root && root.querySelector(".ll-popup-value-line");
     var quiz = getProteinQuizConfig(variant);
-    renderQuizStep();
+    if (quiz.showQuizStep === false || previewStep === "lead") {
+      if (quiz.showQuizStep !== false) {
+        quizData = {
+          targetWeightLbs: "155",
+          TargetWeight: "155",
+          age: "48",
+          Age: "48",
+          strengthDays: "3",
+          StrengthDays: "3",
+          proteinTarget: getSampleProteinTarget()
+        };
+      }
+      renderLeadStep(quiz.showQuizStep === false);
+    } else {
+      renderQuizStep();
+    }
 
     function renderQuizStep() {
       renderProteinTargetPreview(root, quiz, null);
-      if (headline) headline.textContent = variant.quizHeadline || variant.headline || "";
+      if (headline) headline.innerHTML = sanitizeRichHtml(variant.quizHeadline || variant.headlineHtml || escapeHtml(variant.headline || ""));
       if (subheadline) subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || escapeHtml(variant.subheadline || ""));
+      setPopupValueLine(valueLine, variant.valueLineHtml || escapeHtml(variant.valueLine || ""));
       container.innerHTML = [
         renderProteinProgressHtml(quiz, 1),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"quiz\">",
@@ -1125,27 +1285,29 @@
       schedulePopupFit(container.closest(".ll-popup-root"));
     }
 
-    function renderLeadStep() {
-      if (headline) headline.textContent = quiz.leadHeadline;
-      if (subheadline) subheadline.innerHTML = sanitizeRichHtml(quiz.leadSubheadline);
-      renderProteinTargetPreview(root, quiz, quizData.proteinTarget);
+    function renderLeadStep(singleStep) {
+      if (headline) headline.innerHTML = singleStep ? sanitizeRichHtml(variant.headlineHtml || escapeHtml(variant.headline || "")) : escapeHtml(quiz.leadHeadline);
+      if (subheadline) subheadline.innerHTML = singleStep ? sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || "")) : sanitizeRichHtml(quiz.leadSubheadline);
+      setPopupValueLine(valueLine, singleStep ? (variant.valueLineHtml || escapeHtml(variant.valueLine || "")) : "");
+      renderProteinTargetPreview(root, quiz, singleStep ? null : quizData.proteinTarget);
       container.innerHTML = [
-        "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
-        renderProteinProgressHtml(quiz, 2),
+        singleStep ? "" : "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
+        singleStep ? renderProteinProgressHtml(quiz, 1, true) : renderProteinProgressHtml(quiz, 2),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"lead\">",
-        "<label><span>" + escapeHtml(quiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(quiz.firstNamePlaceholder) + "\" required></label>",
-        "<label><span>" + escapeHtml(quiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(quiz.emailPlaceholder) + "\" required></label>",
+        quiz.showFirstName === false ? "" : "<label><span>" + escapeHtml(quiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(quiz.firstNamePlaceholder) + "\" required></label>",
+        quiz.showEmail === false ? "" : "<label><span>" + escapeHtml(quiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(quiz.emailPlaceholder) + "\" required></label>",
         "<button type=\"submit\">" + escapeHtml(quiz.leadButtonText || variant.buttonText || "Show My Protein Plan") + "</button>",
         "</form>"
       ].join("");
 
       var form = container.querySelector("form");
-      container.querySelector(".ll-popup-step-back").addEventListener("click", renderQuizStep);
+      var backButton = container.querySelector(".ll-popup-step-back");
+      if (backButton) backButton.addEventListener("click", renderQuizStep);
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         sendLeadPayload(config.leadWebhookUrl, {
-          name: form.elements.name.value,
-          email: form.elements.email.value,
+          name: getFormValue(form, "name"),
+          email: getFormValue(form, "email"),
           targetWeightLbs: quizData.targetWeightLbs,
           TargetWeight: quizData.TargetWeight || quizData.targetWeightLbs,
           age: quizData.age,
@@ -1166,16 +1328,41 @@
     }
   }
 
-  function renderProteinProgressHtml(quiz, step) {
+  function getFormValue(form, name) {
+    return form && form.elements && form.elements[name] ? form.elements[name].value : "";
+  }
+
+  function setPopupValueLine(element, text) {
+    if (!element) return;
+    element.innerHTML = sanitizeRichHtml(text || "");
+    element.hidden = !text;
+  }
+
+  function setPopupTextSizeVariables(root, variant) {
+    if (!root || !variant) return;
+    setOptionalPixelVariable(root, "--ll-popup-headline-size", variant.headlineFontSize, 18, 72);
+    setOptionalPixelVariable(root, "--ll-popup-subheadline-size", variant.subheadlineFontSize, 12, 36);
+    setOptionalPixelVariable(root, "--ll-popup-value-line-size", variant.valueLineFontSize, 11, 32);
+    setOptionalPixelVariable(root, "--ll-popup-button-size", variant.buttonFontSize, 12, 28);
+  }
+
+  function setOptionalPixelVariable(root, name, value, min, max) {
+    var number = Number(value);
+    if (!Number.isFinite(number) || number <= 0) return;
+    root.style.setProperty(name, clampNumber(number, min, max) + "px");
+  }
+
+  function renderProteinProgressHtml(quiz, step, singleStep) {
     if (!quiz || !quiz.progressEnabled) return "";
 
-    var label = step === 2 ? quiz.progressStepTwoLabel : quiz.progressStepOneLabel;
-    var text = step === 2 ? quiz.progressStepTwoText : quiz.progressStepOneText;
-    var percent = step === 2 ? 100 : 50;
+    var label = singleStep ? (quiz.progressSingleStepLabel || "Step 1") : (step === 2 ? quiz.progressStepTwoLabel : quiz.progressStepOneLabel);
+    var text = singleStep ? "" : (step === 2 ? quiz.progressStepTwoText : quiz.progressStepOneText);
+    var percent = singleStep ? 50 : (step === 2 ? 100 : 50);
+    var countText = singleStep ? "" : step + "/2";
 
     return [
       "<div class=\"ll-popup-progress\" aria-label=\"" + escapeHtmlAttr(label || ("Step " + step + " of 2")) + "\">",
-      "<div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label || ("Step " + step + " of 2")) + "</span><strong>" + step + "/2</strong></div>",
+      "<div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label || (singleStep ? "Step 1" : ("Step " + step + " of 2"))) + "</span>" + (countText ? "<strong>" + escapeHtml(countText) + "</strong>" : "") + "</div>",
       "<div class=\"ll-popup-progress-track\" role=\"progressbar\" aria-valuemin=\"0\" aria-valuemax=\"100\" aria-valuenow=\"" + percent + "\"><span style=\"width:" + percent + "%\"></span></div>",
       text ? "<p>" + escapeHtml(text) + "</p>" : "",
       "</div>"
@@ -1205,7 +1392,7 @@
   }
 
   function renderProteinTargetPreviewHtml(quiz, target) {
-    if (!quiz || !target || quiz.targetPreviewStyle === "off") return "";
+    if (!quiz || quiz.showQuizStep === false || !target || quiz.targetPreviewStyle === "off") return "";
     return [
       "<div class=\"ll-popup-target-preview ll-popup-target-preview-" + (quiz.targetPreviewStyle === "box" ? "box" : "inline") + "\">",
       "<span>" + escapeHtml(quiz.targetPreviewLabel || "Your Daily Target:") + "</span>",
@@ -1324,18 +1511,26 @@
   function sizePreviewToImage(root, image, variant) {
     if (!root || !variant || !variant.sizeToImage || !image || !image.naturalWidth || !image.naturalHeight) return;
 
-    var viewportWidth = Math.max(320, window.innerWidth || document.documentElement.clientWidth || 1024);
-    var viewportHeight = Math.max(420, window.innerHeight || document.documentElement.clientHeight || 768);
-    var horizontalPadding = 96;
-    var verticalReserve = 320;
-    var maxImageWidth = viewportWidth - horizontalPadding;
-    var maxImageHeight = Math.max(180, viewportHeight - verticalReserve);
+    var stage = root.closest(".dash-preview-stage");
+    var isCompare = stage && stage.classList.contains("is-compare");
+    var isMobile = stage && stage.classList.contains("is-mobile");
+    var stageWidth = stage ? stage.clientWidth : 0;
+    var stageHeight = stage ? stage.clientHeight : 0;
+    var previewWidth = (isCompare || isMobile) && stageWidth ? stageWidth : (window.innerWidth || document.documentElement.clientWidth || 1024);
+    var previewHeight = isMobile && stageHeight ? stageHeight : (window.innerHeight || document.documentElement.clientHeight || 768);
+    var viewportWidth = Math.max(320, previewWidth);
+    var viewportHeight = Math.max(420, previewHeight);
+    var availableWidth = isMobile ? Math.min(360, Math.max(280, viewportWidth - 24)) : (isCompare ? Math.max(280, viewportWidth - 24) : viewportWidth - 32);
+    var horizontalPadding = isMobile ? 48 : (isCompare ? 48 : 96);
+    var verticalReserve = isMobile ? 360 : (isCompare ? 280 : 320);
+    var maxImageWidth = isMobile ? Math.max(220, availableWidth - horizontalPadding) : viewportWidth - horizontalPadding;
+    var maxImageHeight = Math.max(isMobile ? 120 : 180, viewportHeight - verticalReserve);
     var scale = Math.min(1, maxImageWidth / image.naturalWidth, maxImageHeight / image.naturalHeight);
     var imageWidth = Math.round(image.naturalWidth * scale);
     var imageHeight = Math.round(image.naturalHeight * scale);
     var modalWidth = Math.max(Number(variant.width) || 560, imageWidth + 64);
 
-    root.style.setProperty("--ll-popup-width", Math.min(modalWidth, viewportWidth - 32) + "px");
+    root.style.setProperty("--ll-popup-width", Math.min(modalWidth, availableWidth) + "px");
     root.style.setProperty("--ll-popup-image-max-height", imageHeight + "px");
     image.style.maxWidth = imageWidth + "px";
     image.style.maxHeight = imageHeight + "px";
@@ -1922,8 +2117,14 @@
   function buildVariantLabel(variant) {
     var quiz = getProteinQuizConfig(variant);
     var parts = [
+      "Flow: " + (quiz.showQuizStep === false ? "Single-step" : "Quiz + form"),
+      "Fields: " + [
+        quiz.showFirstName === false ? "" : "Name",
+        quiz.showEmail === false ? "" : "Email"
+      ].filter(Boolean).join("+"),
       "CTA: " + (config.leadMagnetMode === "protein_plan" ? quiz.leadButtonText : (variant.buttonText || "Submit")),
       "Button: " + (variant.accentColor || ""),
+      "Accent: " + (variant.brandAccentColor || "#06b00b"),
       "BG: " + (variant.backgroundColor || ""),
       "Width: " + (variant.width || ""),
       variant.height ? "Height: " + variant.height : "",
@@ -1938,9 +2139,16 @@
   function getVariantSnapshot(variant) {
     return {
       headline: variant.headline || "",
+      headlineHtml: variant.headlineHtml || "",
+      headlineFontSize: variant.headlineFontSize || "",
       subheadline: variant.subheadline || "",
       subheadlineHtml: variant.subheadlineHtml || "",
+      subheadlineFontSize: variant.subheadlineFontSize || "",
+      valueLine: variant.valueLine || "",
+      valueLineHtml: variant.valueLineHtml || "",
+      valueLineFontSize: variant.valueLineFontSize || "",
       buttonText: variant.buttonText || "",
+      buttonFontSize: variant.buttonFontSize || "",
       imageUrl: variant.imageUrl || "",
       imageAlt: variant.imageAlt || "",
       width: variant.width || "",
@@ -1948,6 +2156,7 @@
       sizeToImage: Boolean(variant.sizeToImage),
       backgroundColor: variant.backgroundColor || "",
       textColor: variant.textColor || "",
+      brandAccentColor: variant.brandAccentColor || "",
       accentColor: variant.accentColor || "",
       fontFamily: variant.fontFamily || "",
       textAlign: variant.textAlign || "",
@@ -2017,6 +2226,7 @@
       sizeToImage: Boolean(variant.sizeToImage),
       backgroundColor: variant.backgroundColor || "",
       textColor: variant.textColor || "",
+      brandAccentColor: variant.brandAccentColor || "",
       accentColor: variant.accentColor || "",
       fontFamily: variant.fontFamily || "",
       textAlign: variant.textAlign || "",
@@ -2065,21 +2275,76 @@
   function sanitizeRichHtml(value) {
     var template = document.createElement("template");
     template.innerHTML = String(value || "");
-    var allowed = ["B", "STRONG", "I", "EM", "U", "SPAN", "BR"];
+    var allowed = ["B", "STRONG", "I", "EM", "U", "SPAN", "BR", "FONT"];
 
     Array.prototype.slice.call(template.content.querySelectorAll("*")).forEach(function (node) {
+      if (node.nodeName === "FONT") {
+        var color = normalizeCssColor(node.getAttribute("color"));
+        var span = document.createElement("span");
+        if (color) span.setAttribute("style", "color: " + color + ";");
+        span.innerHTML = node.innerHTML;
+        node.replaceWith(span);
+        return;
+      }
+
       if (allowed.indexOf(node.nodeName) === -1) {
         node.replaceWith(document.createTextNode(node.textContent || ""));
         return;
       }
 
       Array.prototype.slice.call(node.attributes).forEach(function (attr) {
-        if (node.nodeName === "SPAN" && attr.name === "style" && /^color:\s*#[0-9a-f]{3,8};?$/i.test(attr.value.trim())) return;
+        if (node.nodeName === "SPAN" && attr.name === "style") {
+          var color = extractAllowedColor(attr.value);
+          if (color) {
+            node.setAttribute("style", "color: " + color + ";");
+            return;
+          }
+        }
         node.removeAttribute(attr.name);
       });
     });
 
     return template.innerHTML;
+  }
+
+  function extractAllowedColor(value) {
+    var match = String(value || "").match(/color:\s*(#[0-9a-f]{3,8}|rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\))/i);
+    return normalizeCssColor(match && match[1]);
+  }
+
+  function richTextInputColor(value, fallback) {
+    var template = document.createElement("template");
+    template.innerHTML = sanitizeRichHtml(value || "");
+    var styled = template.content.querySelector("span[style*='color']");
+    if (styled) {
+      var explicitColor = cssColorToInputHex(extractAllowedColor(styled.getAttribute("style")));
+      if (explicitColor) return explicitColor;
+    }
+    return cssColorToInputHex(fallback) || "#172026";
+  }
+
+  function cssColorToInputHex(value) {
+    var color = String(value || "").trim();
+    if (/^#[0-9a-f]{6}$/i.test(color)) return color.toLowerCase();
+    if (/^#[0-9a-f]{3}$/i.test(color)) {
+      return ("#" + color[1] + color[1] + color[2] + color[2] + color[3] + color[3]).toLowerCase();
+    }
+    var rgb = color.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+    if (!rgb) return "";
+    return "#" + rgb.slice(1).map(function (channel) {
+      return clampNumber(Number(channel), 0, 255).toString(16).padStart(2, "0");
+    }).join("");
+  }
+
+  function normalizeCssColor(value) {
+    var color = String(value || "").trim();
+    if (/^#[0-9a-f]{3,8}$/i.test(color)) return color;
+    var rgb = color.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/i);
+    if (!rgb) return "";
+    var channels = rgb.slice(1).map(function (channel) {
+      return clampNumber(Number(channel), 0, 255);
+    });
+    return "rgb(" + channels.join(", ") + ")";
   }
 
   function getDashboardSessionId() {
@@ -2196,7 +2461,15 @@
       variant.textAlign = variant.textAlign || originalVariant.textAlign || "left";
       variant.height = variant.height || originalVariant.height || "";
       variant.sizeToImage = Boolean(variant.sizeToImage || originalVariant.sizeToImage);
+      variant.brandAccentColor = variant.brandAccentColor || originalVariant.brandAccentColor || "#06b00b";
+      variant.headlineHtml = variant.headlineHtml || originalVariant.headlineHtml || escapeHtml(variant.headline || "");
+      variant.headlineFontSize = variant.headlineFontSize || originalVariant.headlineFontSize || "";
       variant.subheadlineHtml = variant.subheadlineHtml || originalVariant.subheadlineHtml || escapeHtml(variant.subheadline || "");
+      variant.subheadlineFontSize = variant.subheadlineFontSize || originalVariant.subheadlineFontSize || "";
+      variant.valueLine = variant.valueLine || originalVariant.valueLine || "";
+      variant.valueLineHtml = variant.valueLineHtml || originalVariant.valueLineHtml || escapeHtml(variant.valueLine || "");
+      variant.valueLineFontSize = variant.valueLineFontSize || originalVariant.valueLineFontSize || "";
+      variant.buttonFontSize = variant.buttonFontSize || originalVariant.buttonFontSize || "";
       variant.imageAlt = variant.imageAlt || "";
       variant.proteinQuiz = Object.assign(getProteinQuizDefaults(), value.proteinQuiz || {}, originalVariant.proteinQuiz || {}, variant.proteinQuiz || {});
     });

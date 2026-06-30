@@ -104,7 +104,7 @@
 .ll-popup-headline {
   margin: 0;
   color: inherit;
-  font-size: 32px;
+  font-size: var(--ll-popup-headline-effective-size, var(--ll-popup-headline-size, 32px));
   line-height: 1.12;
   letter-spacing: 0;
 }
@@ -112,9 +112,17 @@
 .ll-popup-subheadline {
   margin: 0;
   color: inherit;
-  font-size: 17px;
+  font-size: var(--ll-popup-subheadline-effective-size, var(--ll-popup-subheadline-size, 17px));
   line-height: 1.48;
   opacity: 0.86;
+}
+
+.ll-popup-value-line {
+  margin: 0;
+  color: var(--ll-popup-accent);
+  font-size: var(--ll-popup-value-line-effective-size, var(--ll-popup-value-line-size, 15px));
+  font-weight: 800;
+  line-height: 1.35;
 }
 
 .ll-popup-target-preview {
@@ -182,7 +190,7 @@
 }
 
 .ll-popup-form {
-  --kjb-accent-color: var(--ll-popup-accent, #1f6feb);
+  --kjb-accent-color: var(--ll-popup-button-bg, #1f6feb);
 }
 
 .ll-popup-zapier-form {
@@ -272,9 +280,9 @@
   border-radius: 6px;
   padding: 12px;
   color: #ffffff;
-  background: var(--ll-popup-accent, #1f6feb);
+  background: var(--ll-popup-button-bg, #1f6feb);
   font-family: inherit;
-  font-size: 16px;
+  font-size: var(--ll-popup-button-effective-size, var(--ll-popup-button-size, 16px));
   font-weight: 800;
   line-height: 1.25;
   cursor: pointer;
@@ -320,7 +328,7 @@
 .ll-popup-form button,
 .ll-popup-form input[type="submit"],
 .ll-popup-form .form-btn {
-  background-color: var(--ll-popup-accent, #1f6feb) !important;
+  background-color: var(--ll-popup-button-bg, #1f6feb) !important;
 }
 
 .ll-popup-form .ll-popup-step-back {
@@ -359,11 +367,19 @@ body.ll-popup-lock-scroll {
     max-height: min(26vh, 220px);
   }
 
-  .ll-popup-headline {
-    font-size: 25px;
+  .ll-popup-root {
+    --ll-popup-headline-effective-size: clamp(24px, calc(var(--ll-popup-headline-size, 32px) * 0.78), 36px);
+    --ll-popup-subheadline-effective-size: clamp(14px, calc(var(--ll-popup-subheadline-size, 17px) * 0.92), 18px);
+    --ll-popup-value-line-effective-size: clamp(13px, calc(var(--ll-popup-value-line-size, 15px) * 0.92), 17px);
+    --ll-popup-button-effective-size: clamp(14px, calc(var(--ll-popup-button-size, 16px) * 0.92), 20px);
   }
+}
 
-  .ll-popup-subheadline {
-    font-size: 16px;
+@media (min-width: 641px) and (max-width: 900px) {
+  .ll-popup-root {
+    --ll-popup-headline-effective-size: clamp(28px, calc(var(--ll-popup-headline-size, 32px) * 0.88), 44px);
+    --ll-popup-subheadline-effective-size: clamp(15px, calc(var(--ll-popup-subheadline-size, 17px) * 0.96), 22px);
+    --ll-popup-value-line-effective-size: clamp(13px, calc(var(--ll-popup-value-line-size, 15px) * 0.96), 20px);
+    --ll-popup-button-effective-size: clamp(15px, calc(var(--ll-popup-button-size, 16px) * 0.96), 22px);
   }
 }
