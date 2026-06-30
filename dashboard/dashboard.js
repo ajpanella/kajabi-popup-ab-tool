@@ -2075,6 +2075,7 @@
     els.history.innerHTML = history.map(function (item) {
       var uniqueImpressions = item.sessions.size || item.views;
       var fullSubmissions = fullSubmissionCount(item.leads, item.submits);
+      var isSingleStep = item.label.indexOf("Flow: Single-step") >= 0;
       return [
         "<article class=\"dash-history-card\" data-history-key=\"" + escapeHtmlAttr(item.key) + "\">",
         "<button class=\"dash-history-remove\" type=\"button\" data-history-remove=\"" + escapeHtmlAttr(item.key) + "\" aria-label=\"Hide historical variation\">&times;</button>",
@@ -2084,8 +2085,8 @@
         "<div><dt>Views</dt><dd>" + formatNumber(item.views) + "</dd></div>",
         "<div><dt>Click rate</dt><dd>" + formatPercent(rate(item.clicks, item.views)) + "</dd></div>",
         "<div><dt>Full CVR</dt><dd>" + formatPercent(rate(fullSubmissions, item.views)) + "</dd></div>",
-        "<div><dt>Quiz CVR</dt><dd>" + formatPercent(rate(item.quizSubmits, item.views)) + "</dd></div>",
-        "<div><dt>Lead-step CVR</dt><dd>" + formatPercent(rate(fullSubmissions, item.quizSubmits)) + "</dd></div>",
+        "<div><dt>Quiz CVR</dt><dd>" + (isSingleStep ? "N/A" : formatPercent(rate(item.quizSubmits, item.views))) + "</dd></div>",
+        "<div><dt>Lead-step CVR</dt><dd>" + (isSingleStep ? "N/A" : formatPercent(rate(fullSubmissions, item.quizSubmits))) + "</dd></div>",
         "</dl>",
         item.changeNote ? "<p>" + escapeHtml(item.changeNote) + "</p>" : "",
         item.saves ? "<small>Saved/tested " + formatNumber(item.saves) + " time" + (item.saves === 1 ? "" : "s") + "</small>" : "",
