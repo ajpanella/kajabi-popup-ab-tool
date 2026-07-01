@@ -44,7 +44,7 @@
 .ll-popup-close {
   position: absolute;
   top: 12px;
-  right: 12px;
+  left: 12px;
   width: 36px;
   height: 36px;
   border: 0;
@@ -290,7 +290,7 @@
 
 .ll-popup-step-back {
   position: absolute;
-  top: 12px;
+  top: 52px;
   left: 12px;
   z-index: 2;
   width: 36px;
