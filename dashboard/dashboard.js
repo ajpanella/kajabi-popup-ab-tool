@@ -1181,16 +1181,21 @@
     var modal = root && root.querySelector(".ll-popup-modal");
     if (!stage || !modal || stage.classList.contains("is-mobile")) return;
 
+    stage.classList.remove("has-scaled-preview");
+    stage.style.removeProperty("--dash-preview-stage-height");
     root.style.setProperty("--dash-preview-scale", "1");
     var stageStyles = window.getComputedStyle(stage);
     var availableWidth = stage.clientWidth - parseFloat(stageStyles.paddingLeft || 0) - parseFloat(stageStyles.paddingRight || 0);
-    var availableHeight = stage.clientHeight - parseFloat(stageStyles.paddingTop || 0) - parseFloat(stageStyles.paddingBottom || 0);
+    var minStageHeight = stage.classList.contains("is-compare") ? 520 : 620;
+    var availableHeight = minStageHeight - parseFloat(stageStyles.paddingTop || 0) - parseFloat(stageStyles.paddingBottom || 0);
     var modalWidth = modal.scrollWidth || modal.offsetWidth || modal.getBoundingClientRect().width;
     var modalHeight = modal.scrollHeight || modal.offsetHeight || modal.getBoundingClientRect().height;
     if (!availableWidth || !availableHeight || !modalWidth || !modalHeight) return;
 
     var scale = Math.min(1, availableWidth / modalWidth, availableHeight / modalHeight);
     root.style.setProperty("--dash-preview-scale", Math.max(0.01, scale).toFixed(3));
+    stage.style.setProperty("--dash-preview-stage-height", Math.max(minStageHeight, Math.ceil((modalHeight * scale) + parseFloat(stageStyles.paddingTop || 0) + parseFloat(stageStyles.paddingBottom || 0))) + "px");
+    stage.classList.add("has-scaled-preview");
   }
 
   function showDashboardTestPopup(variant) {
@@ -1584,7 +1589,6 @@
     if (!root || !variant || !variant.sizeToImage || !image || !image.naturalWidth || !image.naturalHeight) return;
 
     var stage = root.closest(".dash-preview-stage");
-    var isCompare = stage && stage.classList.contains("is-compare");
     var isMobile = stage && stage.classList.contains("is-mobile");
     var stageWidth = stage ? stage.clientWidth : 0;
     var stageHeight = stage ? stage.clientHeight : 0;
@@ -1594,15 +1598,16 @@
     var viewportHeight = Math.max(420, previewHeight);
     var availableWidth = isMobile ? Math.min(360, Math.max(280, viewportWidth - 24)) : Math.max(280, viewportWidth - 24);
     var horizontalPadding = isMobile ? 48 : 48;
-    var verticalReserve = isMobile ? 360 : (isCompare ? 280 : 320);
-    var maxImageWidth = isMobile ? Math.max(220, availableWidth - horizontalPadding) : viewportWidth - horizontalPadding;
+    var baseModalWidth = Number(variant.width) || 560;
+    var verticalReserve = isMobile ? 360 : 320;
+    var maxImageWidth = isMobile ? Math.max(220, availableWidth - horizontalPadding) : Math.max(220, baseModalWidth - horizontalPadding);
     var maxImageHeight = Math.max(isMobile ? 120 : 180, viewportHeight - verticalReserve);
     var scale = Math.min(1, maxImageWidth / image.naturalWidth, maxImageHeight / image.naturalHeight);
     var imageWidth = Math.round(image.naturalWidth * scale);
     var imageHeight = Math.round(image.naturalHeight * scale);
-    var modalWidth = Math.max(Number(variant.width) || 560, imageWidth + 64);
+    var modalWidth = Math.max(baseModalWidth, imageWidth + 64);
 
-    root.style.setProperty("--ll-popup-width", Math.min(modalWidth, availableWidth) + "px");
+    root.style.setProperty("--ll-popup-width", (isMobile ? Math.min(modalWidth, availableWidth) : modalWidth) + "px");
     root.style.setProperty("--ll-popup-image-max-height", imageHeight + "px");
     image.style.maxWidth = imageWidth + "px";
     image.style.maxHeight = imageHeight + "px";
