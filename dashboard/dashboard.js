@@ -17,7 +17,6 @@
   var config = loadDraftConfig();
   var legacyTrackingVariantIds = [];
   initializeVariantTracking();
-  config.configVersion = formatDateVersion(new Date());
   var urlParams = new URLSearchParams(window.location.search);
   var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
   var googleDocUrl = urlParams.get("doc") || "";
@@ -637,7 +636,9 @@
       return row.variant;
     }))), "All variants");
 
-    setOptions(els.version, unique(["", LATEST_TWO_VERSIONS, config.configVersion].concat(activeVariants().map(function (variant) {
+    setOptions(els.version, unique(["", LATEST_TWO_VERSIONS, originalConfig.configVersion, config.configVersion].concat(publishedActiveVariants().map(function (variant) {
+      return getVariantTrackingVersion(variant);
+    })).concat(activeVariants().map(function (variant) {
       return getVariantTrackingVersion(variant);
     })).concat(rows.map(function (row) {
       return row.configVersion || "unversioned";
@@ -725,7 +726,7 @@
   }
 
   function buildMetrics(data) {
-    var variants = activeVariants();
+    var variants = publishedActiveVariants();
     var byVariant = {};
 
     variants.forEach(function (variant) {
@@ -948,14 +949,14 @@
 
   function isLiveMetricRow(item) {
     if (!item) return false;
-    return activeVariants().some(function (variant) {
+    return publishedActiveVariants().some(function (variant) {
       return variant.id === item.variant && item.configVersion === getVariantTrackingVersion(variant);
     });
   }
 
   function isSingleStepMetric(item) {
     if (!item) return false;
-    var variant = activeVariants().find(function (candidate) {
+    var variant = publishedActiveVariants().find(function (candidate) {
       return candidate.id === item.variant && item.configVersion === getVariantTrackingVersion(candidate);
     });
     if (!variant) return false;
@@ -2281,7 +2282,7 @@
   }
 
   function getLiveVariantVersions() {
-    return activeVariants().reduce(function (versions, variant) {
+    return publishedActiveVariants().reduce(function (versions, variant) {
       versions[variant.id] = getVariantTrackingVersion(variant);
       return versions;
     }, {});
@@ -2446,6 +2447,12 @@
 
   function activeVariants() {
     return config.variants.filter(function (variant) {
+      return variant.active !== false;
+    });
+  }
+
+  function publishedActiveVariants() {
+    return (originalConfig.variants || []).filter(function (variant) {
       return variant.active !== false;
     });
   }
