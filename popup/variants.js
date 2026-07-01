@@ -130,7 +130,7 @@
       "brandAccentColor": "#06b00b"
     }
   ],
-  "configVersion": "6/30/2026",
+  "configVersion": "7/1/2026",
   "changeNote": "Single step form, orange button, no 3rd line of text",
   "savedColors": [
     "#07b00c",
@@ -178,6 +178,6 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-07-01T19:54:55.536Z"
+  "draftSavedAt": "2026-07-01T19:55:20.152Z"
 };
 })();
