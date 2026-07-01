@@ -1169,10 +1169,35 @@
   function scheduleDashboardPreviewFit(root) {
     if (!root || !root.closest(".dash-preview-stage")) return;
     window.requestAnimationFrame(function () {
-      fitDashboardPreviewToStage(root);
+      fitDashboardPreviewGroup(root);
       window.requestAnimationFrame(function () {
-        fitDashboardPreviewToStage(root);
+        fitDashboardPreviewGroup(root);
       });
+    });
+  }
+
+  function fitDashboardPreviewGroup(root) {
+    var stage = root && root.closest(".dash-preview-stage");
+    if (!stage || stage.classList.contains("is-mobile")) return;
+    if (!stage.classList.contains("is-compare")) {
+      fitDashboardPreviewToStage(root);
+      return;
+    }
+
+    var grid = stage.closest(".dash-preview-grid");
+    var roots = grid ? Array.from(grid.querySelectorAll(".dash-preview-stage.is-compare .ll-popup-root")) : [root];
+    var scale = roots.reduce(function (currentScale, previewRoot) {
+      var previewStage = previewRoot.closest(".dash-preview-stage");
+      var modal = previewRoot.querySelector(".ll-popup-modal");
+      var availableWidth = getPreviewStageAvailableWidth(previewStage);
+      var modalWidth = getPreviewModalWidth(modal);
+      if (!availableWidth || !modalWidth) return currentScale;
+      return Math.min(currentScale, availableWidth / modalWidth);
+    }, 1);
+
+    scale = Math.max(0.01, Math.min(1, scale));
+    roots.forEach(function (previewRoot) {
+      applyDashboardPreviewScale(previewRoot, scale);
     });
   }
 
@@ -1181,21 +1206,39 @@
     var modal = root && root.querySelector(".ll-popup-modal");
     if (!stage || !modal || stage.classList.contains("is-mobile")) return;
 
+    var availableWidth = getPreviewStageAvailableWidth(stage);
+    var modalWidth = getPreviewModalWidth(modal);
+    if (!availableWidth || !modalWidth) return;
+
+    applyDashboardPreviewScale(root, Math.max(0.01, Math.min(1, availableWidth / modalWidth)));
+  }
+
+  function applyDashboardPreviewScale(root, scale) {
+    var stage = root && root.closest(".dash-preview-stage");
+    var modal = root && root.querySelector(".ll-popup-modal");
+    if (!stage || !modal) return;
+
     stage.classList.remove("has-scaled-preview");
     stage.style.removeProperty("--dash-preview-stage-height");
     root.style.setProperty("--dash-preview-scale", "1");
-    var stageStyles = window.getComputedStyle(stage);
-    var availableWidth = stage.clientWidth - parseFloat(stageStyles.paddingLeft || 0) - parseFloat(stageStyles.paddingRight || 0);
-    var minStageHeight = stage.classList.contains("is-compare") ? 520 : 620;
-    var availableHeight = minStageHeight - parseFloat(stageStyles.paddingTop || 0) - parseFloat(stageStyles.paddingBottom || 0);
-    var modalWidth = modal.scrollWidth || modal.offsetWidth || modal.getBoundingClientRect().width;
-    var modalHeight = modal.scrollHeight || modal.offsetHeight || modal.getBoundingClientRect().height;
-    if (!availableWidth || !availableHeight || !modalWidth || !modalHeight) return;
 
-    var scale = Math.min(1, availableWidth / modalWidth, availableHeight / modalHeight);
-    root.style.setProperty("--dash-preview-scale", Math.max(0.01, scale).toFixed(3));
-    stage.style.setProperty("--dash-preview-stage-height", Math.max(minStageHeight, Math.ceil((modalHeight * scale) + parseFloat(stageStyles.paddingTop || 0) + parseFloat(stageStyles.paddingBottom || 0))) + "px");
+    var stageStyles = window.getComputedStyle(stage);
+    var modalHeight = modal.scrollHeight || modal.offsetHeight || modal.getBoundingClientRect().height;
+    if (!modalHeight) return;
+
+    root.style.setProperty("--dash-preview-scale", scale.toFixed(3));
+    stage.style.setProperty("--dash-preview-stage-height", Math.ceil((modalHeight * scale) + parseFloat(stageStyles.paddingTop || 0) + parseFloat(stageStyles.paddingBottom || 0)) + "px");
     stage.classList.add("has-scaled-preview");
+  }
+
+  function getPreviewStageAvailableWidth(stage) {
+    if (!stage) return 0;
+    var stageStyles = window.getComputedStyle(stage);
+    return stage.clientWidth - parseFloat(stageStyles.paddingLeft || 0) - parseFloat(stageStyles.paddingRight || 0);
+  }
+
+  function getPreviewModalWidth(modal) {
+    return modal ? (modal.scrollWidth || modal.offsetWidth || modal.getBoundingClientRect().width) : 0;
   }
 
   function showDashboardTestPopup(variant) {
