@@ -260,6 +260,7 @@
       progressStepTwoLabel: "Step 2 of 2: Send Your Plan",
       progressStepTwoText: "Your personalized target is ready. Tell us where to send the full plan.",
       progressSingleStepLabel: "Step 1",
+      progressSingleStepLabelFontSize: "",
       targetPreviewStyle: "off",
       targetPreviewLabel: "Your Daily Target:",
       showQuizStep: true,
@@ -399,7 +400,7 @@
       showQuiz ? "" : editorRichText("headlineHtml", index, "Single-step headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
       showQuiz ? "" : editorRichText("subheadlineHtml", index, "Single-step subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
       showQuiz ? "" : editorRichText("valueLineHtml", index, "Single-step value line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
-      editorInput("proteinQuiz.progressSingleStepLabel", index, "Single-step progress label", quiz.progressSingleStepLabel || "Step 1", "text", !showProgress || showQuiz),
+      editorTextWithSize("proteinQuiz.progressSingleStepLabel", "proteinQuiz.progressSingleStepLabelFontSize", index, "Single-step progress label", quiz.progressSingleStepLabel || "Step 1", quiz.progressSingleStepLabelFontSize, 12, !showProgress || showQuiz),
       editorInput("proteinQuiz.progressStepOneLabel", index, "Step 1 progress label", quiz.progressStepOneLabel, "text", !showProgressText),
       editorTextarea("proteinQuiz.progressStepOneText", index, "Step 1 framing text", quiz.progressStepOneText, !showProgressText),
       editorInput("proteinQuiz.targetWeightLabel", index, "Target weight label", quiz.targetWeightLabel, "text", !showQuiz),
@@ -1131,6 +1132,7 @@
     copy.style.textAlign = variant.textAlign || "left";
     var isProteinPlan = config.leadMagnetMode === "protein_plan";
     var isSingleStep = isProteinPlan && quiz.showQuizStep === false;
+    if (isSingleStep) root.classList.add("ll-popup-single-step");
     var targetPreview = step === "lead" && isProteinPlan && !isSingleStep
       ? renderProteinTargetPreviewHtml(quiz, getSampleProteinTarget(quiz))
       : "";
@@ -1375,10 +1377,12 @@
 
   function setPopupTextSizeVariables(root, variant) {
     if (!root || !variant) return;
+    var quiz = getProteinQuizConfig(variant);
     setOptionalPixelVariable(root, "--ll-popup-headline-size", variant.headlineFontSize, 18, 72);
     setOptionalPixelVariable(root, "--ll-popup-subheadline-size", variant.subheadlineFontSize, 12, 36);
     setOptionalPixelVariable(root, "--ll-popup-value-line-size", variant.valueLineFontSize, 11, 32);
     setOptionalPixelVariable(root, "--ll-popup-button-size", variant.buttonFontSize, 12, 28);
+    setOptionalPixelVariable(root, "--ll-popup-progress-label-size", quiz.progressSingleStepLabelFontSize, 9, 28);
   }
 
   function setOptionalPixelVariable(root, name, value, min, max) {
@@ -1551,12 +1555,12 @@
     var isMobile = stage && stage.classList.contains("is-mobile");
     var stageWidth = stage ? stage.clientWidth : 0;
     var stageHeight = stage ? stage.clientHeight : 0;
-    var previewWidth = (isCompare || isMobile) && stageWidth ? stageWidth : (window.innerWidth || document.documentElement.clientWidth || 1024);
-    var previewHeight = isMobile && stageHeight ? stageHeight : (window.innerHeight || document.documentElement.clientHeight || 768);
+    var previewWidth = stageWidth || (window.innerWidth || document.documentElement.clientWidth || 1024);
+    var previewHeight = stageHeight || (window.innerHeight || document.documentElement.clientHeight || 768);
     var viewportWidth = Math.max(320, previewWidth);
     var viewportHeight = Math.max(420, previewHeight);
-    var availableWidth = isMobile ? Math.min(360, Math.max(280, viewportWidth - 24)) : (isCompare ? Math.max(280, viewportWidth - 24) : viewportWidth - 32);
-    var horizontalPadding = isMobile ? 48 : (isCompare ? 48 : 96);
+    var availableWidth = isMobile ? Math.min(360, Math.max(280, viewportWidth - 24)) : Math.max(280, viewportWidth - 24);
+    var horizontalPadding = isMobile ? 48 : 48;
     var verticalReserve = isMobile ? 360 : (isCompare ? 280 : 320);
     var maxImageWidth = isMobile ? Math.max(220, availableWidth - horizontalPadding) : viewportWidth - horizontalPadding;
     var maxImageHeight = Math.max(isMobile ? 120 : 180, viewportHeight - verticalReserve);

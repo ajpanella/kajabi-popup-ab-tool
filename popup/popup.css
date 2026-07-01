@@ -62,6 +62,10 @@
   outline-offset: 2px;
 }
 
+.ll-popup-single-step .ll-popup-step-back {
+  display: none !important;
+}
+
 .ll-popup-content {
   display: grid;
   gap: var(--ll-popup-content-gap, 18px);
@@ -211,7 +215,7 @@
   justify-content: space-between;
   gap: 10px;
   color: var(--ll-popup-text, #172026);
-  font-size: 12px;
+  font-size: var(--ll-popup-progress-label-size, 12px);
   font-weight: 900;
   line-height: 1.25;
 }

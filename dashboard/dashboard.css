@@ -838,6 +838,11 @@ body {
   overflow: auto;
 }
 
+.dash-preview-stage:not(.is-mobile):not(.is-compare) .ll-popup-root {
+  width: min(100%, var(--ll-popup-width, 560px));
+  max-width: 100%;
+}
+
 .dash-preview-stage.is-compare .ll-popup-root {
   width: min(100%, var(--ll-popup-width, 560px));
   max-width: 100%;

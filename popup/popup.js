@@ -42,6 +42,7 @@
     root.className = "ll-popup-root";
     if (Number(variant.height) > 0) root.classList.add("ll-popup-has-height");
     if (variant.sizeToImage) root.classList.add("ll-popup-size-to-image");
+    if (config.leadMagnetMode === "protein_plan" && getProteinQuizConfig(variant).showQuizStep === false) root.classList.add("ll-popup-single-step");
     root.setAttribute("role", "dialog");
     root.setAttribute("aria-modal", "true");
     root.setAttribute("aria-labelledby", "ll-popup-headline");
@@ -340,10 +341,12 @@
 
   function setPopupTextSizeVariables(root, activeVariant) {
     if (!root || !activeVariant) return;
+    var quiz = getProteinQuizConfig(activeVariant);
     setOptionalPixelVariable(root, "--ll-popup-headline-size", activeVariant.headlineFontSize, 18, 72);
     setOptionalPixelVariable(root, "--ll-popup-subheadline-size", activeVariant.subheadlineFontSize, 12, 36);
     setOptionalPixelVariable(root, "--ll-popup-value-line-size", activeVariant.valueLineFontSize, 11, 32);
     setOptionalPixelVariable(root, "--ll-popup-button-size", activeVariant.buttonFontSize, 12, 28);
+    setOptionalPixelVariable(root, "--ll-popup-progress-label-size", quiz.progressSingleStepLabelFontSize, 9, 28);
   }
 
   function setOptionalPixelVariable(root, name, value, min, max) {
@@ -366,6 +369,7 @@
       progressStepTwoLabel: "Step 2 of 2: Send Your Plan",
       progressStepTwoText: "Your personalized target is ready. Tell us where to send the full plan.",
       progressSingleStepLabel: "Step 1",
+      progressSingleStepLabelFontSize: "",
       targetPreviewStyle: "off",
       targetPreviewLabel: "Your Daily Target:",
       showQuizStep: true,
