@@ -2440,9 +2440,26 @@
         record[header.trim()] = (line[index] || "").trim();
         return record;
       }, {});
-      record.configVersion = normalizeTrackedVersion(record.configVersion);
+      record.configVersion = normalizeRowConfigVersion(record);
       return record;
     });
+  }
+
+  function normalizeRowConfigVersion(record) {
+    var version = normalizeTrackedVersion(record && record.configVersion);
+    if (version === "6/30/2026" && isCorrectedSingleStepRow(record)) {
+      return "6/30/2026 Single Step";
+    }
+    return version;
+  }
+
+  function isCorrectedSingleStepRow(record) {
+    var label = String(record && record.variantLabel || "");
+    var snapshot = String(record && record.variantSnapshot || "");
+    var note = String(record && record.changeNote || "");
+    return label.indexOf("Flow: Single-step") >= 0
+      || snapshot.indexOf("\"showQuizStep\":false") >= 0
+      || note.indexOf("Single step form (corrected)") >= 0;
   }
 
   function activeVariants() {
