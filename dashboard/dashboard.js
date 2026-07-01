@@ -1074,11 +1074,15 @@
 
       var stage = document.createElement("div");
       stage.className = "dash-preview-stage" + (mode === "mobile" ? " is-mobile" : "") + (mode === "compare" ? " is-compare" : "");
-      stage.appendChild(buildPreview(variant, previewStep));
+      var preview = buildPreview(variant, previewStep);
+      stage.appendChild(preview);
 
       card.appendChild(title);
       card.appendChild(stage);
       els.previews.appendChild(card);
+      var previewImage = preview.querySelector(".ll-popup-image");
+      if (previewImage && previewImage.complete) sizePreviewToImage(preview, previewImage, variant);
+      scheduleDashboardPreviewFit(preview);
     });
   }
 
@@ -1117,12 +1121,14 @@
       image.alt = variant.imageAlt || "";
       image.addEventListener("load", function () {
         sizePreviewToImage(root, image, variant);
+        scheduleDashboardPreviewFit(root);
         schedulePopupFit(root, variant);
       });
       image.src = variant.imageUrl;
       content.appendChild(image);
       if (image.complete) {
         sizePreviewToImage(root, image, variant);
+        scheduleDashboardPreviewFit(root);
         schedulePopupFit(root, variant);
       }
     }
@@ -1158,6 +1164,33 @@
     modal.appendChild(content);
     root.appendChild(modal);
     return root;
+  }
+
+  function scheduleDashboardPreviewFit(root) {
+    if (!root || !root.closest(".dash-preview-stage")) return;
+    window.requestAnimationFrame(function () {
+      fitDashboardPreviewToStage(root);
+      window.requestAnimationFrame(function () {
+        fitDashboardPreviewToStage(root);
+      });
+    });
+  }
+
+  function fitDashboardPreviewToStage(root) {
+    var stage = root && root.closest(".dash-preview-stage");
+    var modal = root && root.querySelector(".ll-popup-modal");
+    if (!stage || !modal || stage.classList.contains("is-mobile")) return;
+
+    root.style.setProperty("--dash-preview-scale", "1");
+    var stageStyles = window.getComputedStyle(stage);
+    var availableWidth = stage.clientWidth - parseFloat(stageStyles.paddingLeft || 0) - parseFloat(stageStyles.paddingRight || 0);
+    var availableHeight = stage.clientHeight - parseFloat(stageStyles.paddingTop || 0) - parseFloat(stageStyles.paddingBottom || 0);
+    var modalWidth = modal.scrollWidth || modal.offsetWidth || modal.getBoundingClientRect().width;
+    var modalHeight = modal.scrollHeight || modal.offsetHeight || modal.getBoundingClientRect().height;
+    if (!availableWidth || !availableHeight || !modalWidth || !modalHeight) return;
+
+    var scale = Math.min(1, availableWidth / modalWidth, availableHeight / modalHeight);
+    root.style.setProperty("--dash-preview-scale", Math.max(0.01, scale).toFixed(3));
   }
 
   function showDashboardTestPopup(variant) {

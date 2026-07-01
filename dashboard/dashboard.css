@@ -815,7 +815,7 @@ body {
   place-items: center;
   min-height: 620px;
   padding: 24px;
-  overflow: auto;
+  overflow: hidden;
   border: 1px dashed var(--dash-line);
   border-radius: 8px;
   background: #eef1f5;
@@ -835,7 +835,7 @@ body {
   min-height: 520px;
   padding: 12px;
   place-items: start center;
-  overflow: auto;
+  overflow: hidden;
 }
 
 .dash-preview-stage:not(.is-mobile):not(.is-compare) .ll-popup-root {
@@ -879,6 +879,8 @@ body {
   max-width: var(--ll-popup-width, 560px);
   padding: 0;
   font-family: var(--ll-popup-font, Arial, Helvetica, sans-serif);
+  transform: scale(var(--dash-preview-scale, 1));
+  transform-origin: top center;
 }
 
 .dash-preview-stage .ll-popup-overlay {
