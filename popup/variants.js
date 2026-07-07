@@ -4,6 +4,7 @@
   "webhookUrl": "https://script.google.com/macros/s/AKfycbzZmjBOkq6JYxFEeMzemDozYiUOuAYZjkBAw5-0afFO_JLb1-riB9jeAIfWn40nlDqVnQ/exec",
   "kajabiFormEmbed": "<script src=https://www.longevitylifestyle.me/forms/2148823405/embed.js></script>",
   "cooldownDaysAfterClose": 7,
+  "reopenAfterCloseSeconds": 35,
   "cooldownDaysAfterSubmitAttempt": 90,
   "assignmentDays": 30,
   "triggers": {

@@ -61,6 +61,7 @@
     leadWebhookUrl: document.getElementById("lead-webhook-url"),
     proteinPlanUrl: document.getElementById("protein-plan-url"),
     delaySeconds: document.getElementById("delay-seconds"),
+    reopenAfterCloseSeconds: document.getElementById("reopen-after-close-seconds"),
     scrollDepth: document.getElementById("scroll-depth"),
     configVersion: document.getElementById("config-version"),
     changeNote: document.getElementById("change-note"),
@@ -99,7 +100,7 @@
   [els.testId, els.variant, els.version, els.start, els.end, els.pageUrl, els.device].forEach(function (element) {
     element.addEventListener("input", updateDashboard);
   });
-  [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
+  [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.reopenAfterCloseSeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
     element.addEventListener("input", onGlobalConfigInput);
   });
   els.editors.addEventListener("input", onEditorInput);
@@ -188,6 +189,7 @@
     var delayMs = Number(config.triggers && config.triggers.delayMs);
     var scrollDepth = Number(config.triggers && config.triggers.scrollDepth);
     els.delaySeconds.value = Math.round((Number.isFinite(delayMs) ? delayMs : 35000) / 1000);
+    els.reopenAfterCloseSeconds.value = Math.max(0, Number(config.reopenAfterCloseSeconds || 0));
     els.scrollDepth.value = Math.round((Number.isFinite(scrollDepth) ? scrollDepth : 0.5) * 100);
     els.configVersion.value = config.configVersion || "v1";
     els.changeNote.value = config.changeNote || "";
@@ -232,6 +234,7 @@
     config.proteinPlanUrl = els.proteinPlanUrl.value.trim();
     config.triggers = config.triggers || {};
     config.triggers.delayMs = Math.max(0, Number(els.delaySeconds.value || 0)) * 1000;
+    config.reopenAfterCloseSeconds = Math.max(0, Number(els.reopenAfterCloseSeconds.value || 0));
     config.triggers.scrollDepth = Math.min(1, Math.max(0, Number(els.scrollDepth.value || 0) / 100));
     config.configVersion = els.configVersion.value.trim() || "v1";
     config.changeNote = els.changeNote.value.trim();
@@ -2589,6 +2592,8 @@
     value.leadMagnetMode = value.leadMagnetMode || originalConfig.leadMagnetMode || "";
     value.leadWebhookUrl = value.leadWebhookUrl || originalConfig.leadWebhookUrl || "";
     value.proteinPlanUrl = value.proteinPlanUrl || originalConfig.proteinPlanUrl || "";
+    value.reopenAfterCloseSeconds = Number(value.reopenAfterCloseSeconds);
+    if (!Number.isFinite(value.reopenAfterCloseSeconds)) value.reopenAfterCloseSeconds = Number(originalConfig.reopenAfterCloseSeconds || 0);
     value.proteinQuiz = Object.assign(getProteinQuizDefaults(), originalConfig.proteinQuiz || {}, value.proteinQuiz || {});
     value.triggers = value.triggers || originalConfig.triggers || {};
     value.triggers.delayMs = Number(value.triggers.delayMs);

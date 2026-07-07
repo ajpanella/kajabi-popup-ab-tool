@@ -9,6 +9,7 @@
   var ASSIGNMENT_KEY = STORAGE_PREFIX + "assignment_" + sanitizeKey(config.configVersion || "v1");
   var COOLDOWN_KEY = STORAGE_PREFIX + "cooldown_until";
   var hasShown = false;
+  var closeReopenCount = 0;
   var variant = getAssignedVariant();
 
   if (!variant || isInCooldown()) return;
@@ -143,7 +144,7 @@
       root.classList.remove("ll-popup-is-visible");
       document.body.classList.remove("ll-popup-lock-scroll");
       window.removeEventListener("resize", onResize);
-      setCooldown(config.cooldownDaysAfterClose || 7);
+      scheduleCloseReopenOrCooldown();
       trackEvent("popup_close");
       window.setTimeout(function () {
         if (root.parentNode) root.parentNode.removeChild(root);
@@ -154,6 +155,20 @@
       sizeToImage(root, root.querySelector(".ll-popup-image"));
       schedulePopupFit(root);
     }
+  }
+
+  function scheduleCloseReopenOrCooldown() {
+    var reopenSeconds = Number(config.reopenAfterCloseSeconds);
+    if (Number.isFinite(reopenSeconds) && reopenSeconds > 0 && closeReopenCount < 1) {
+      closeReopenCount += 1;
+      window.setTimeout(function () {
+        hasShown = false;
+        showPopup();
+      }, reopenSeconds * 1000);
+      return;
+    }
+
+    setCooldown(config.cooldownDaysAfterClose || 7);
   }
 
   function injectKajabiForm(container) {
