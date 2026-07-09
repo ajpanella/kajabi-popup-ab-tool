@@ -2459,16 +2459,23 @@
       return map;
     }, {});
     var groups = {};
+    var baseToSnapshotKey = {};
 
     data.forEach(function (row) {
       var snapshot = parseVariantSnapshot(row.variantSnapshot);
-      var snapshotKey = row.variantSnapshot || "";
-      var key = [
-        row.testId || "",
-        row.configVersion || "unversioned",
-        row.variant || "Unknown",
-        snapshotKey || row.variantLabel || ""
-      ].join("::");
+      if (!snapshot && !row.variantLabel) return;
+      var key = fullHistoryGroupKey(row, snapshot);
+      var baseKey = fullHistoryBaseKey(row);
+
+      if (!groups[key]) groups[key] = createFullHistoryItem(row, snapshot);
+      if (snapshot && !baseToSnapshotKey[baseKey]) baseToSnapshotKey[baseKey] = key;
+    });
+
+    data.forEach(function (row) {
+      var snapshot = parseVariantSnapshot(row.variantSnapshot);
+      var key = snapshot || row.variantLabel
+        ? fullHistoryGroupKey(row, snapshot)
+        : baseToSnapshotKey[fullHistoryBaseKey(row)] || fullHistoryGroupKey(row, snapshot);
 
       if (!groups[key]) groups[key] = createFullHistoryItem(row, snapshot);
       updateFullHistoryItem(groups[key], row, snapshot);
@@ -2502,6 +2509,21 @@
       if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
       return (b.lastSeen ? b.lastSeen.getTime() : 0) - (a.lastSeen ? a.lastSeen.getTime() : 0);
     });
+  }
+
+  function fullHistoryBaseKey(row) {
+    return [
+      row.testId || "",
+      row.configVersion || "unversioned",
+      row.variant || "Unknown"
+    ].join("::");
+  }
+
+  function fullHistoryGroupKey(row, snapshot) {
+    return [
+      fullHistoryBaseKey(row),
+      snapshot ? row.variantSnapshot : row.variantLabel || ""
+    ].join("::");
   }
 
   function createFullHistoryItem(row, snapshot) {
