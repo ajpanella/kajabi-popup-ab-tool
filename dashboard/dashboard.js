@@ -2429,7 +2429,7 @@
     updateFullHistorySortHeaders();
 
     if (!history.length) {
-      els.fullHistoryBody.innerHTML = "<tr><td colspan=\"14\">No matching historical variants yet.</td></tr>";
+      els.fullHistoryBody.innerHTML = "<tr><td colspan=\"15\">No matching historical variants yet.</td></tr>";
       return;
     }
 
@@ -2453,6 +2453,7 @@
         "<td>" + formatNumber(item.fullSubmissions) + "</td>",
         "<td>" + formatPercent(item.cvr) + "</td>",
         "<td>" + matchHtml + "</td>",
+        "<td>" + renderPatternTags(item) + "</td>",
         "<td class=\"dash-history-text-cell\">" + escapeHtml(item.uniqueAttributes) + "</td>",
         "<td>" + snapshotHtml + "</td>",
         "</tr>"
@@ -2475,6 +2476,17 @@
       escapeHtml(Math.round(Number(item.liveMatchScore || 0) * 100) + "% vs Live " + item.liveMatchVariant),
       "</small>",
       details
+    ].join("");
+  }
+
+  function renderPatternTags(item) {
+    if (!item.patternTags || !item.patternTags.length) return "<span class=\"dash-match-muted\">-</span>";
+    return [
+      "<ul class=\"dash-pattern-tags\">",
+      item.patternTags.map(function (tag) {
+        return "<li class=\"dash-pattern-tag dash-pattern-tag-" + escapeHtmlAttr(tag.tone) + "\">" + escapeHtml(tag.label) + "</li>";
+      }).join(""),
+      "</ul>"
     ].join("");
   }
 
@@ -2510,6 +2522,7 @@
     if (key === "fullSubmissions") return item.fullSubmissions;
     if (key === "cvr") return item.cvr;
     if (key === "liveMatchScore") return item.liveMatchScore;
+    if (key === "patternTagsText") return item.patternTagsText;
     if (key === "status") return item.status;
     if (key === "flow") return item.flowLabel;
     if (key === "buttonColor") return item.buttonColor;
@@ -2591,6 +2604,8 @@
       item.liveMatchLevel = item.liveMatch.level;
       item.liveMatchLabel = item.liveMatch.label;
       item.liveMatchDetails = item.liveMatch.details;
+      item.patternTags = buildPatternTags(item);
+      item.patternTagsText = item.patternTags.map(function (tag) { return tag.label; }).join(", ");
       item.status = item.isLive ? "live" : "archived";
       item.searchText = [
         item.status,
@@ -2603,6 +2618,7 @@
         item.cta,
         item.flowLabel,
         item.buttonColor,
+        item.patternTagsText,
         item.uniqueAttributes
       ].join(" ").toLowerCase();
       return item;
@@ -2688,6 +2704,49 @@
     var submits = Number(item.submits || 0);
     if (leads > 0) return leads;
     return submits;
+  }
+
+  function buildPatternTags(item) {
+    var snapshot = item.snapshot || {};
+    var quiz = snapshot.proteinQuiz || {};
+    var tags = [];
+
+    addPatternTag(tags, item.isLive ? "Live test" : "Archived", item.isLive ? "live" : "neutral");
+
+    if (item.views >= 100) {
+      if (item.cvr >= 0.05) addPatternTag(tags, "High CVR", "good");
+      else if (item.cvr >= 0.025) addPatternTag(tags, "Mid CVR", "neutral");
+      else addPatternTag(tags, "Low CVR", "bad");
+    } else if (item.views > 0) {
+      addPatternTag(tags, "Needs more views", "warn");
+    } else {
+      addPatternTag(tags, "No views yet", "muted");
+    }
+
+    if (item.fullSubmissions > 0) addPatternTag(tags, item.fullSubmissions + " lead" + (item.fullSubmissions === 1 ? "" : "s"), "good");
+    if (item.flow === "single") addPatternTag(tags, "Email-only", "neutral");
+    else addPatternTag(tags, "Quiz-first", "neutral");
+    if (quiz.showFirstName === false) addPatternTag(tags, "No first name", "neutral");
+    if (quiz.progressEnabled) addPatternTag(tags, "Progress bar", "neutral");
+    if (snapshot.sizeToImage) addPatternTag(tags, "Image-sized", "neutral");
+    if (snapshot.accentColor) addPatternTag(tags, colorNameTag(snapshot.accentColor) + " CTA", "neutral");
+    if (snapshot.imageUrl) addPatternTag(tags, imageAttributeLabel(snapshot.imageUrl), "neutral");
+
+    return tags.slice(0, 8);
+  }
+
+  function addPatternTag(tags, label, tone) {
+    if (!label || tags.some(function (tag) { return tag.label === label; })) return;
+    tags.push({ label: label, tone: tone || "neutral" });
+  }
+
+  function colorNameTag(color) {
+    var value = String(color || "").toLowerCase();
+    if (value === "#ea8011" || value.indexOf("orange") >= 0) return "Orange";
+    if (value === "#06b00b" || value === "#07b00c" || value.indexOf("green") >= 0) return "Green";
+    if (value === "#050505" || value === "#000000" || value.indexOf("black") >= 0) return "Black";
+    if (value === "#ffffff" || value === "#fcfcfc" || value.indexOf("white") >= 0) return "White";
+    return value ? value.toUpperCase() : "Custom";
   }
 
   function buildLiveComparisonItems() {

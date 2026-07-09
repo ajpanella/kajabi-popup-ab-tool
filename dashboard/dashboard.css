@@ -890,7 +890,7 @@ body {
 }
 
 .dash-full-history-table {
-  min-width: 1440px;
+  min-width: 1580px;
 }
 
 .dash-sort-button {
@@ -980,11 +980,16 @@ body {
 .dash-live-match-detail,
 .dash-match-muted {
   display: block;
-  margin-top: 4px;
-  color: var(--dash-muted);
-  font-size: 11px;
-  font-weight: 800;
+  margin-top: 6px;
+  color: #047908;
+  font-size: 14px;
+  font-weight: 950;
   white-space: nowrap;
+}
+
+.dash-match-muted {
+  color: var(--dash-muted);
+  font-size: 12px;
 }
 
 .dash-live-match-list {
@@ -1021,6 +1026,53 @@ body {
 .dash-live-match-item-different {
   color: #b42318;
   background: rgba(180, 35, 24, 0.12);
+}
+
+.dash-pattern-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  max-width: 280px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-pattern-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 10px;
+  font-weight: 950;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dash-pattern-tag-good,
+.dash-pattern-tag-live {
+  color: #067647;
+  background: #dcfae6;
+}
+
+.dash-pattern-tag-warn {
+  color: #9a3412;
+  background: #ffead5;
+}
+
+.dash-pattern-tag-bad {
+  color: #b42318;
+  background: #fee4e2;
+}
+
+.dash-pattern-tag-muted {
+  color: #667085;
+  background: #eef1f5;
+}
+
+.dash-pattern-tag-neutral {
+  color: #344054;
+  background: #f2f4f7;
 }
 
 .dash-archive-badge {
