@@ -1036,6 +1036,13 @@ td {
   font-weight: 900;
 }
 
+.dash-submetric-variant {
+  display: inline-flex;
+  min-width: 18px;
+  color: #172026;
+  font-weight: 900;
+}
+
 .dash-live-badge {
   display: inline-flex;
   align-items: center;

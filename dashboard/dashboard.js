@@ -978,7 +978,7 @@
     row.className = "dash-submetric-row";
     var singleStep = isSingleStepMetric(item);
     [
-      { html: "<span class=\"dash-submetric-label\">" + escapeHtml(item.sinceLabel || "Since last update") + "</span>" },
+      { html: "<span class=\"dash-submetric-variant\">" + escapeHtml(item.variant) + "</span> <span class=\"dash-submetric-label\">" + escapeHtml(item.sinceLabel || "Since last update") + "</span>" },
       item.configVersion,
       formatNumber(item.sessions),
       formatNumber(item.views),
