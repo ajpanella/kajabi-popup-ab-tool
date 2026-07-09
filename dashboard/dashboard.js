@@ -83,6 +83,7 @@
     body: document.getElementById("performance-body"),
     fullHistoryBody: document.getElementById("full-history-body"),
     fullHistoryInsights: document.getElementById("full-history-insights"),
+    conversionCoach: document.getElementById("conversion-coach"),
     fullHistoryTable: document.querySelector(".dash-full-history-table"),
     historySearch: document.getElementById("history-search"),
     historyStatus: document.getElementById("history-status"),
@@ -2429,6 +2430,7 @@
     var history = sortFullVariantHistory(applyFullHistoryFilters(buildFullVariantHistory(data)));
     updateFullHistorySortHeaders();
     renderFullHistoryInsights(history);
+    renderConversionCoach(history);
 
     if (!history.length) {
       els.fullHistoryBody.innerHTML = "<tr><td colspan=\"15\">No matching historical variants yet.</td></tr>";
@@ -2475,6 +2477,98 @@
         "</article>"
       ].join("");
     }).join("");
+  }
+
+  function renderConversionCoach(history) {
+    if (!els.conversionCoach) return;
+    var recommendation = buildConversionCoachRecommendation(history);
+    var actions = recommendation.actions.map(function (action) {
+      return "<li>" + escapeHtml(action) + "</li>";
+    }).join("");
+    var keep = recommendation.keep.map(function (item) {
+      return "<li>" + escapeHtml(item) + "</li>";
+    }).join("");
+
+    els.conversionCoach.innerHTML = [
+      "<div class=\"dash-coach-head\">",
+      "<span>Conversion Coach</span>",
+      "<strong>" + escapeHtml(recommendation.title) + "</strong>",
+      "<p>" + escapeHtml(recommendation.summary) + "</p>",
+      "</div>",
+      "<div class=\"dash-coach-grid\">",
+      "<section><h3>Next Move</h3><ul>" + actions + "</ul></section>",
+      "<section><h3>Keep Stable</h3><ul>" + keep + "</ul></section>",
+      "<section><h3>Why</h3><p>" + escapeHtml(recommendation.why) + "</p></section>",
+      "</div>"
+    ].join("");
+  }
+
+  function buildConversionCoachRecommendation(history) {
+    var qualified = history.filter(function (item) { return item.views > 0; });
+    var live = qualified.filter(function (item) { return item.isLive; }).sort(function (a, b) { return b.cvr - a.cvr; });
+    var patternGroups = aggregatePatternGroups(qualified).filter(function (group) { return group.views >= 50; }).sort(function (a, b) { return b.cvr - a.cvr; });
+    var strongest = patternGroups[0] || null;
+    var weakest = patternGroups.length ? patternGroups.slice().sort(function (a, b) { return a.cvr - b.cvr; })[0] : null;
+
+    if (!qualified.length) {
+      return {
+        title: "Load data to generate a next-test brief",
+        summary: "Once the dashboard has event rows, the coach will identify the lower-performing live variant and suggest one clean change.",
+        actions: ["Load published CSV data.", "Keep each A/B test limited to one meaningful change.", "Publish only when Variant A and Variant B are clearly named."],
+        keep: ["Current tracking setup", "One-variable testing discipline", "Current live embed"],
+        why: "The coach needs views and leads before it can compare variants responsibly."
+      };
+    }
+
+    if (live.length < 2) {
+      return {
+        title: "Let both live variants collect data",
+        summary: "The coach sees traffic, but it needs both live variants represented before recommending which one to edit.",
+        actions: ["Confirm both live variants are active.", "Wait until each live variant has meaningful views.", strongest ? "Watch whether " + strongest.label + " continues leading." : "Avoid interpreting isolated rows too aggressively."],
+        keep: ["Current live winner", "Current traffic split", "Current tracking version names"],
+        why: "A true A/B test needs a live comparison, not just historical pattern data."
+      };
+    }
+
+    var winner = live[0];
+    var loser = live[live.length - 1];
+    var cvrGap = winner.cvr - loser.cvr;
+    var targetPattern = strongest ? strongest.label : "the strongest-performing pattern";
+    var weakPattern = weakest && weakest.label !== targetPattern ? weakest.label : "";
+    var action = coachActionForPattern(loser, strongest, weakest);
+
+    return {
+      title: "Edit Live " + loser.variant + " next",
+      summary: "Live " + winner.variant + " is ahead at " + formatPercent(winner.cvr) + " vs Live " + loser.variant + " at " + formatPercent(loser.cvr) + ".",
+      actions: [
+        action,
+        "Keep the test to one major change so the next read is clean.",
+        "Name the new version with the changed attribute, then Save & Publish."
+      ],
+      keep: [
+        "Keep Live " + winner.variant + " unchanged as the current control.",
+        "Keep the same traffic split until the new test has enough views.",
+        weakPattern ? "Avoid stacking multiple fixes for " + weakPattern + " in one publish." : "Avoid changing headline, image, and CTA all at once."
+      ],
+      why: cvrGap > 0
+        ? "The live gap is " + formatPercent(cvrGap) + ". Historical tags currently point toward " + targetPattern + " as the clearest pattern to borrow."
+        : "The live variants are close. A small single-variable change toward " + targetPattern + " is the cleanest way to learn without muddying the test."
+    };
+  }
+
+  function coachActionForPattern(loser, strongest, weakest) {
+    var pattern = strongest && strongest.label || "";
+    var weak = weakest && weakest.label || "";
+    var variantLabel = "Live " + loser.variant;
+
+    if (pattern.indexOf("CTA") >= 0) return "Change " + variantLabel + " button color/text toward " + pattern + ".";
+    if (pattern === "Email-only") return "Keep " + variantLabel + " as a single-step email opt-in and test copy or image only.";
+    if (pattern === "Quiz-first") return "Test whether " + variantLabel + " should reintroduce the quiz step before email capture.";
+    if (pattern === "No first name") return "Remove first name from " + variantLabel + " so email is the only required field.";
+    if (pattern === "Progress bar") return "Add or keep the progress bar on " + variantLabel + " while changing no other structural field.";
+    if (pattern.indexOf("visual") >= 0 || pattern === "Image-sized") return "Change only the image treatment on " + variantLabel + " toward " + pattern + ".";
+    if (weak) return "Move " + variantLabel + " away from " + weak + " and toward " + pattern + ".";
+    return "Change one high-visibility element on " + variantLabel + ", preferably headline or image, while keeping the rest stable.";
   }
 
   function renderLiveMatchBadge(item) {

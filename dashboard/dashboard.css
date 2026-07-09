@@ -939,6 +939,75 @@ body {
   color: #344054;
 }
 
+.dash-conversion-coach {
+  display: grid;
+  gap: 14px;
+  border: 1px solid rgba(6, 176, 11, 0.26);
+  border-radius: 10px;
+  padding: 16px;
+  background: linear-gradient(135deg, rgba(6, 176, 11, 0.10), rgba(255, 255, 255, 0.94));
+}
+
+.dash-coach-head {
+  display: grid;
+  gap: 6px;
+}
+
+.dash-coach-head span {
+  color: #06b00b;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.dash-coach-head strong {
+  color: #172026;
+  font-size: 20px;
+  line-height: 1.15;
+}
+
+.dash-coach-head p,
+.dash-coach-grid p {
+  margin: 0;
+  color: #475467;
+  font-size: 14px;
+  font-weight: 650;
+  line-height: 1.45;
+}
+
+.dash-coach-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.dash-coach-grid section {
+  border: 1px solid rgba(217, 222, 231, 0.9);
+  border-radius: 8px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.dash-coach-grid h3 {
+  margin: 0 0 8px;
+  color: #172026;
+  font-size: 13px;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.dash-coach-grid ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
 .dash-history-compare-button {
   height: 48px;
   align-self: end;
@@ -1208,6 +1277,10 @@ body {
 }
 
 @media (max-width: 980px) {
+  .dash-coach-grid {
+    grid-template-columns: 1fr;
+  }
+
   .dash-preview-grid.is-compare {
     grid-template-columns: 1fr;
   }
