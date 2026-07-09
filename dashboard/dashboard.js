@@ -2454,28 +2454,19 @@
 
   function buildFullVariantHistory(data) {
     var liveVersions = getLiveVariantVersions();
-    var liveFingerprints = publishedActiveVariants().reduce(function (map, variant) {
-      map[variant.id] = variantFingerprint(variant);
-      return map;
-    }, {});
     var groups = {};
-    var baseToSnapshotKey = {};
 
     data.forEach(function (row) {
       var snapshot = parseVariantSnapshot(row.variantSnapshot);
       if (!snapshot && !row.variantLabel) return;
-      var key = fullHistoryGroupKey(row, snapshot);
-      var baseKey = fullHistoryBaseKey(row);
+      var key = fullHistoryBaseKey(row);
 
       if (!groups[key]) groups[key] = createFullHistoryItem(row, snapshot);
-      if (snapshot && !baseToSnapshotKey[baseKey]) baseToSnapshotKey[baseKey] = key;
     });
 
     data.forEach(function (row) {
       var snapshot = parseVariantSnapshot(row.variantSnapshot);
-      var key = snapshot || row.variantLabel
-        ? fullHistoryGroupKey(row, snapshot)
-        : baseToSnapshotKey[fullHistoryBaseKey(row)] || fullHistoryGroupKey(row, snapshot);
+      var key = fullHistoryBaseKey(row);
 
       if (!groups[key]) groups[key] = createFullHistoryItem(row, snapshot);
       updateFullHistoryItem(groups[key], row, snapshot);
@@ -2489,7 +2480,7 @@
       item.cvr = rate(item.fullSubmissions, item.views);
       item.closeRate = rate(item.closes, item.views);
       item.uniqueAttributes = describeVariantAttributes(item.snapshot, item.label);
-      item.isLive = item.configVersion === liveVersions[item.variant] && (!item.snapshot || variantFingerprint(item.snapshot) === liveFingerprints[item.variant]);
+      item.isLive = item.configVersion === liveVersions[item.variant];
       item.status = item.isLive ? "live" : "archived";
       item.searchText = [
         item.status,
@@ -2516,13 +2507,6 @@
       row.testId || "",
       row.configVersion || "unversioned",
       row.variant || "Unknown"
-    ].join("::");
-  }
-
-  function fullHistoryGroupKey(row, snapshot) {
-    return [
-      fullHistoryBaseKey(row),
-      snapshot ? row.variantSnapshot : row.variantLabel || ""
     ].join("::");
   }
 
