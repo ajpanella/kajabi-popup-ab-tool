@@ -2476,7 +2476,11 @@
       var item = groups[key];
       item.publishedLabel = item.firstSeen ? shortDateTime(item.firstSeen) : "";
       item.daysLabel = item.firstSeen && item.lastSeen ? String(Math.max(1, Math.ceil((item.lastSeen - item.firstSeen) / (24 * 60 * 60 * 1000)))) : "";
-      item.fullSubmissions = fullSubmissionCount(item.leads, item.submits);
+      item.actionSessions.forEach(function (sessionId) {
+        if (!item.sessions.has(sessionId)) item.sessions.add(sessionId);
+      });
+      item.views = Math.max(item.views, item.sessions.size, item.quizSubmits, item.leads, item.submits);
+      item.fullSubmissions = fullHistorySubmissionCount(item);
       item.cvr = rate(item.fullSubmissions, item.views);
       item.closeRate = rate(item.closes, item.views);
       item.uniqueAttributes = describeVariantAttributes(item.snapshot, item.label);
@@ -2530,6 +2534,7 @@
       firstSeen: null,
       lastSeen: null,
       sessions: new Set(),
+      actionSessions: new Set(),
       views: 0,
       clicks: 0,
       quizSubmits: 0,
@@ -2555,6 +2560,9 @@
     if (!item.snapshot && snapshot) item.snapshot = snapshot;
     if (!item.changeNote && row.changeNote) item.changeNote = row.changeNote;
     var type = eventType(row);
+    if (row.sessionId && (type === "popup_quiz_submit" || type === "popup_lead_submit" || type === "kajabi_form_submitted" || type === "popup_submit_attempt")) {
+      item.actionSessions.add(row.sessionId);
+    }
     if (type === "popup_view") {
       if (row.sessionId) item.sessions.add(row.sessionId);
       item.views += 1;
@@ -2564,6 +2572,13 @@
     if (type === "popup_lead_submit" || type === "kajabi_form_submitted") item.leads += 1;
     if (type === "popup_submit_attempt" || type === "popup_lead_submit" || type === "kajabi_form_submitted") item.submits += 1;
     if (type === "popup_close") item.closes += 1;
+  }
+
+  function fullHistorySubmissionCount(item) {
+    var leads = Number(item.leads || 0);
+    var submits = Number(item.submits || 0);
+    if (leads > 0) return leads;
+    return submits;
   }
 
   function applyFullHistoryFilters(history) {
