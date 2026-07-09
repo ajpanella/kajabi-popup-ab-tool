@@ -80,10 +80,12 @@
     body: document.getElementById("performance-body"),
     fullHistoryBody: document.getElementById("full-history-body"),
     historySearch: document.getElementById("history-search"),
-    historyVariant: document.getElementById("history-variant"),
     historyStatus: document.getElementById("history-status"),
     historyFlow: document.getElementById("history-flow"),
-    historyMinViews: document.getElementById("history-min-views")
+    historyMinViews: document.getElementById("history-min-views"),
+    historyMinLeads: document.getElementById("history-min-leads"),
+    historyMinCvr: document.getElementById("history-min-cvr"),
+    historyMaxCvr: document.getElementById("history-max-cvr")
   };
 
   els.csvUrl.value = defaultCsvUrl;
@@ -106,7 +108,7 @@
   [els.testId, els.variant, els.version, els.start, els.end, els.pageUrl, els.device].forEach(function (element) {
     element.addEventListener("input", updateDashboard);
   });
-  [els.historySearch, els.historyVariant, els.historyStatus, els.historyFlow, els.historyMinViews].forEach(function (element) {
+  [els.historySearch, els.historyStatus, els.historyFlow, els.historyMinViews, els.historyMinLeads, els.historyMinCvr, els.historyMaxCvr].forEach(function (element) {
     element.addEventListener("input", updateDashboard);
   });
   [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.reopenAfterCloseSeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
@@ -644,12 +646,6 @@
     }))), "All tests");
 
     setOptions(els.variant, unique([""].concat(config.variants.map(function (variant) {
-      return variant.id;
-    })).concat(rows.map(function (row) {
-      return row.variant;
-    }))), "All variants");
-
-    setOptions(els.historyVariant, unique([""].concat(config.variants.map(function (variant) {
       return variant.id;
     })).concat(rows.map(function (row) {
       return row.variant;
@@ -2366,7 +2362,7 @@
     var history = applyFullHistoryFilters(buildFullVariantHistory(data));
 
     if (!history.length) {
-      els.fullHistoryBody.innerHTML = "<tr><td colspan=\"15\">No matching historical variants yet.</td></tr>";
+      els.fullHistoryBody.innerHTML = "<tr><td colspan=\"13\">No matching historical variants yet.</td></tr>";
       return;
     }
 
@@ -2377,7 +2373,6 @@
       return [
         "<tr>",
         "<td>" + (item.isLive ? "<span class=\"dash-live-badge\">Live</span>" : "<span class=\"dash-archive-badge\">Archived</span>") + "</td>",
-        "<td>" + escapeHtml(item.variant) + "</td>",
         "<td>" + escapeHtml(item.configVersion) + "</td>",
         "<td>" + escapeHtml(item.publishedLabel) + "</td>",
         "<td>" + escapeHtml(item.daysLabel) + "</td>",
@@ -2388,7 +2383,6 @@
         "<td>" + formatNumber(item.views) + "</td>",
         "<td>" + formatNumber(item.fullSubmissions) + "</td>",
         "<td>" + formatPercent(item.cvr) + "</td>",
-        "<td>" + formatPercent(item.closeRate) + "</td>",
         "<td class=\"dash-history-text-cell\">" + escapeHtml(item.uniqueAttributes) + "</td>",
         "<td>" + snapshotHtml + "</td>",
         "</tr>"
@@ -2506,17 +2500,23 @@
 
   function applyFullHistoryFilters(history) {
     var search = String(els.historySearch && els.historySearch.value || "").trim().toLowerCase();
-    var variant = els.historyVariant ? els.historyVariant.value : "";
     var status = els.historyStatus ? els.historyStatus.value : "";
     var flow = els.historyFlow ? els.historyFlow.value : "";
     var minViews = Math.max(0, Number(els.historyMinViews && els.historyMinViews.value || 0));
+    var minLeads = Math.max(0, Number(els.historyMinLeads && els.historyMinLeads.value || 0));
+    var minCvrValue = Number(els.historyMinCvr && els.historyMinCvr.value);
+    var maxCvrValue = Number(els.historyMaxCvr && els.historyMaxCvr.value);
+    var minCvr = Number.isFinite(minCvrValue) ? minCvrValue / 100 : null;
+    var maxCvr = Number.isFinite(maxCvrValue) ? maxCvrValue / 100 : null;
 
     return history.filter(function (item) {
       if (search && item.searchText.indexOf(search) === -1) return false;
-      if (variant && item.variant !== variant) return false;
       if (status && item.status !== status) return false;
       if (flow && item.flow !== flow) return false;
       if (minViews && item.views < minViews) return false;
+      if (minLeads && item.fullSubmissions < minLeads) return false;
+      if (minCvr !== null && item.cvr < minCvr) return false;
+      if (maxCvr !== null && item.cvr > maxCvr) return false;
       return true;
     });
   }

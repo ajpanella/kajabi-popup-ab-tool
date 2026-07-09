@@ -811,13 +811,13 @@ body {
 
 .dash-history-filters {
   display: grid;
-  grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr));
+  grid-template-columns: minmax(220px, 2fr) repeat(6, minmax(120px, 1fr));
   gap: 12px;
   margin-top: 16px;
 }
 
 .dash-full-history-table {
-  min-width: 1500px;
+  min-width: 1320px;
 }
 
 .dash-history-text-cell {

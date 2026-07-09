@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=27">
-    <link rel="stylesheet" href="./dashboard.css?v=40">
+    <link rel="stylesheet" href="./dashboard.css?v=41">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js"></script>
   </head>
@@ -302,12 +302,6 @@
                 <input id="history-search" type="search" placeholder="Headline, CTA, note, version...">
               </label>
               <label>
-                Variant
-                <select id="history-variant">
-                  <option value="">All variants</option>
-                </select>
-              </label>
-              <label>
                 Status
                 <select id="history-status">
                   <option value="">All statuses</option>
@@ -327,13 +321,24 @@
                 Min views
                 <input id="history-min-views" type="number" min="0" step="10" placeholder="0">
               </label>
+              <label>
+                Min leads
+                <input id="history-min-leads" type="number" min="0" step="1" placeholder="0">
+              </label>
+              <label>
+                Min CVR %
+                <input id="history-min-cvr" type="number" min="0" max="100" step="0.1" placeholder="0">
+              </label>
+              <label>
+                Max CVR %
+                <input id="history-max-cvr" type="number" min="0" max="100" step="0.1" placeholder="100">
+              </label>
             </div>
             <div class="dash-table-wrap">
               <table class="dash-full-history-table">
                 <thead>
                   <tr>
                     <th>Status</th>
-                    <th>Variant</th>
                     <th>Version</th>
                     <th>Published</th>
                     <th>Days</th>
@@ -344,7 +349,6 @@
                     <th>Views</th>
                     <th>Leads</th>
                     <th>CVR</th>
-                    <th>Close Rate</th>
                     <th>Unique Attributes</th>
                     <th>Details</th>
                   </tr>
@@ -357,6 +361,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=72"></script>
+    <script src="./dashboard.js?v=73"></script>
   </body>
 </html>
