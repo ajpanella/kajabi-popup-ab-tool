@@ -987,6 +987,42 @@ body {
   white-space: nowrap;
 }
 
+.dash-live-match-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  max-width: 260px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.dash-live-match-item {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 7px;
+  font-size: 10px;
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.dash-live-match-item-same {
+  color: #067647;
+  background: rgba(6, 176, 11, 0.14);
+}
+
+.dash-live-match-item-close {
+  color: #9a3412;
+  background: rgba(234, 128, 17, 0.16);
+}
+
+.dash-live-match-item-different {
+  color: #b42318;
+  background: rgba(180, 35, 24, 0.12);
+}
+
 .dash-archive-badge {
   display: inline-flex;
   align-items: center;

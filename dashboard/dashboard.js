@@ -2462,13 +2462,19 @@
 
   function renderLiveMatchBadge(item) {
     if (!item.liveMatchLabel) return "<span class=\"dash-match-muted\">-</span>";
+    var details = compareFullHistoryToLive && item.liveMatchDetails && item.liveMatchDetails.length
+      ? "<ul class=\"dash-live-match-list\">" + item.liveMatchDetails.map(function (detail) {
+        return "<li class=\"dash-live-match-item dash-live-match-item-" + escapeHtmlAttr(detail.status) + "\">" + escapeHtml(detail.label) + "</li>";
+      }).join("") + "</ul>"
+      : "";
     return [
       "<span class=\"dash-live-match dash-live-match-" + escapeHtmlAttr(item.liveMatchLevel) + "\">",
       escapeHtml(item.liveMatchLabel),
       "</span>",
       "<small class=\"dash-live-match-detail\">",
       escapeHtml(Math.round(Number(item.liveMatchScore || 0) * 100) + "% vs Live " + item.liveMatchVariant),
-      "</small>"
+      "</small>",
+      details
     ].join("");
   }
 
@@ -2584,6 +2590,7 @@
       item.liveMatchVariant = item.liveMatch.variant;
       item.liveMatchLevel = item.liveMatch.level;
       item.liveMatchLabel = item.liveMatch.label;
+      item.liveMatchDetails = item.liveMatch.details;
       item.status = item.isLive ? "live" : "archived";
       item.searchText = [
         item.status,
@@ -2702,11 +2709,11 @@
   }
 
   function compareHistoryItemToLive(item, liveItems) {
-    if (!liveItems.length) return { score: 0, variant: "", level: "low", label: "Different" };
+    if (!liveItems.length) return { score: 0, variant: "", level: "low", label: "Different", details: [] };
 
     var best = liveItems.reduce(function (best, live) {
       var score = liveSimilarityScore(item, live);
-      return !best || score > best.score ? { score: score, variant: live.variant } : best;
+      return !best || score > best.score ? { score: score, variant: live.variant, live: live } : best;
     }, null);
 
     var level = best.score >= 0.85 ? "high" : best.score >= 0.55 ? "medium" : "low";
@@ -2715,8 +2722,85 @@
       score: best.score,
       variant: best.variant,
       level: level,
-      label: label
+      label: label,
+      details: liveDifferenceDetails(item, best.live).slice(0, 6)
     };
+  }
+
+  function liveDifferenceDetails(item, live) {
+    var snapshot = item.snapshot || {};
+    var comparisons = [
+      {
+        name: "Flow",
+        score: item.flow === live.flow ? 1 : 0,
+        same: "Same flow",
+        close: "Similar flow",
+        different: "Different flow"
+      },
+      {
+        name: "Headline",
+        score: textSimilarity(item.headline || cleanHistoryText(snapshot.headlineHtml || snapshot.headline || ""), live.headline),
+        same: "Same headline",
+        close: "Similar headline",
+        different: "Different headline"
+      },
+      {
+        name: "CTA",
+        score: textSimilarity(item.cta || liveSnapshotCta(snapshot), live.cta),
+        same: "Same CTA",
+        close: "Similar CTA",
+        different: "Different CTA"
+      },
+      {
+        name: "Image",
+        score: exactSimilarity(snapshot.imageUrl, live.imageUrl),
+        same: "Same image",
+        close: "Similar image",
+        different: "Different image"
+      },
+      {
+        name: "Button",
+        score: exactSimilarity(item.buttonColor || snapshot.accentColor, live.buttonColor),
+        same: "Same button color",
+        close: "Similar button color",
+        different: "Different button color"
+      },
+      {
+        name: "Background",
+        score: exactSimilarity(snapshot.backgroundColor, live.backgroundColor),
+        same: "Same background",
+        close: "Similar background",
+        different: "Different background"
+      },
+      {
+        name: "Fields",
+        score: exactSimilarity(Boolean(snapshot.proteinQuiz && snapshot.proteinQuiz.showFirstName === false), Boolean(live.snapshot.proteinQuiz && live.snapshot.proteinQuiz.showFirstName === false)),
+        same: "Same fields",
+        close: "Similar fields",
+        different: "Different fields"
+      },
+      {
+        name: "Progress",
+        score: exactSimilarity(Boolean(snapshot.proteinQuiz && snapshot.proteinQuiz.progressEnabled), Boolean(live.snapshot.proteinQuiz && live.snapshot.proteinQuiz.progressEnabled)),
+        same: "Same progress",
+        close: "Similar progress",
+        different: "Different progress"
+      }
+    ];
+
+    return comparisons.map(function (item) {
+      var status = item.score >= 0.85 ? "same" : item.score >= 0.45 ? "close" : "different";
+      return {
+        name: item.name,
+        status: status,
+        score: item.score,
+        label: status === "same" ? item.same : status === "close" ? item.close : item.different
+      };
+    }).sort(function (a, b) {
+      var order = { different: 0, close: 1, same: 2 };
+      if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
+      return a.name.localeCompare(b.name);
+    });
   }
 
   function liveSimilarityScore(item, live) {
