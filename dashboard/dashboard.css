@@ -777,6 +777,97 @@ body {
   font-weight: 800;
 }
 
+.dash-full-history {
+  display: grid;
+  gap: 14px;
+}
+
+.dash-full-history summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.dash-full-history summary::-webkit-details-marker {
+  display: none;
+}
+
+.dash-full-history summary strong,
+.dash-full-history summary small {
+  display: block;
+}
+
+.dash-full-history summary strong {
+  font-size: 20px;
+}
+
+.dash-full-history summary small {
+  color: var(--dash-muted);
+  font-size: 13px;
+}
+
+.dash-history-filters {
+  display: grid;
+  grid-template-columns: minmax(220px, 2fr) repeat(4, minmax(130px, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.dash-full-history-table {
+  min-width: 1500px;
+}
+
+.dash-history-text-cell {
+  max-width: 260px;
+  white-space: normal;
+  line-height: 1.35;
+}
+
+.dash-archive-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  color: #475467;
+  background: #eef1f5;
+  font-size: 11px;
+  font-weight: 900;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.dash-color-pill {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  margin-right: 6px;
+  border: 1px solid var(--dash-line);
+  border-radius: 999px;
+  background: var(--pill-color, #ffffff);
+  vertical-align: -1px;
+}
+
+.dash-history-details summary {
+  color: var(--dash-green);
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.dash-history-details pre {
+  max-width: 360px;
+  max-height: 260px;
+  margin: 8px 0 0;
+  padding: 10px;
+  overflow: auto;
+  border: 1px solid var(--dash-line);
+  border-radius: 6px;
+  background: #f8fafc;
+  white-space: pre-wrap;
+}
+
 .dash-empty-state {
   margin: 0;
   color: var(--dash-muted);
@@ -1090,6 +1181,10 @@ td {
   .dash-chart-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+
+  .dash-history-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 640px) {
@@ -1110,6 +1205,10 @@ td {
 
   .dash-metrics,
   .dash-chart-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dash-history-filters {
     grid-template-columns: 1fr;
   }
 }

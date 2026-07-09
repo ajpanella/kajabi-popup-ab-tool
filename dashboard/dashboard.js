@@ -77,7 +77,13 @@
     warning: document.getElementById("sample-warning"),
     hiddenMetricsStatus: document.getElementById("hidden-metrics-status"),
     showHiddenMetrics: document.getElementById("show-hidden-metrics"),
-    body: document.getElementById("performance-body")
+    body: document.getElementById("performance-body"),
+    fullHistoryBody: document.getElementById("full-history-body"),
+    historySearch: document.getElementById("history-search"),
+    historyVariant: document.getElementById("history-variant"),
+    historyStatus: document.getElementById("history-status"),
+    historyFlow: document.getElementById("history-flow"),
+    historyMinViews: document.getElementById("history-min-views")
   };
 
   els.csvUrl.value = defaultCsvUrl;
@@ -98,6 +104,9 @@
 
   els.loadData.addEventListener("click", loadCsv);
   [els.testId, els.variant, els.version, els.start, els.end, els.pageUrl, els.device].forEach(function (element) {
+    element.addEventListener("input", updateDashboard);
+  });
+  [els.historySearch, els.historyVariant, els.historyStatus, els.historyFlow, els.historyMinViews].forEach(function (element) {
     element.addEventListener("input", updateDashboard);
   });
   [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.reopenAfterCloseSeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
@@ -640,6 +649,12 @@
       return row.variant;
     }))), "All variants");
 
+    setOptions(els.historyVariant, unique([""].concat(config.variants.map(function (variant) {
+      return variant.id;
+    })).concat(rows.map(function (row) {
+      return row.variant;
+    }))), "All variants");
+
     setOptions(els.version, unique(["", LATEST_TWO_VERSIONS, originalConfig.configVersion, config.configVersion].concat(publishedActiveVariants().map(function (variant) {
       return getVariantTrackingVersion(variant);
     })).concat(activeVariants().map(function (variant) {
@@ -679,6 +694,7 @@
   function updateDashboard() {
     var filtered = applyFilters(rows);
     var historyFiltered = applyHistoryFilters(rows);
+    var fullHistoryFiltered = applyFullHistoryBaseFilters(rows);
     var builtMetrics = buildMetrics(filtered);
     var metrics = getVisibleMetrics(builtMetrics);
     var sinceLastUpdateMetrics = buildUnchangedSinceLastUpdateMetrics(filtered, metrics);
@@ -688,6 +704,7 @@
     renderCharts(metrics);
     renderRecommendations(metrics);
     renderVariationHistory(historyFiltered);
+    renderFullVariantHistory(fullHistoryFiltered);
   }
 
   function applyFilters(data) {
@@ -722,6 +739,22 @@
       if (els.variant.value && row.variant !== els.variant.value) return false;
       if (liveVersions && (row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
       if (els.version.value && els.version.value !== LATEST_TWO_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
+      if (els.device.value && row.deviceType !== els.device.value) return false;
+      if (start && timestamp && timestamp < start) return false;
+      if (end && timestamp && timestamp > end) return false;
+      if (pageNeedle && String(row.pageUrl || "").toLowerCase().indexOf(pageNeedle) === -1) return false;
+      return true;
+    });
+  }
+
+  function applyFullHistoryBaseFilters(data) {
+    var start = els.start.value ? new Date(els.start.value + "T00:00:00") : null;
+    var end = els.end.value ? new Date(els.end.value + "T23:59:59") : null;
+    var pageNeedle = els.pageUrl.value.trim().toLowerCase();
+
+    return data.filter(function (row) {
+      var timestamp = row.timestamp ? new Date(row.timestamp) : null;
+      if (els.testId.value && row.testId !== els.testId.value) return false;
       if (els.device.value && row.deviceType !== els.device.value) return false;
       if (start && timestamp && timestamp < start) return false;
       if (end && timestamp && timestamp > end) return false;
@@ -2326,6 +2359,208 @@
     if (hidden.indexOf(key) < 0) hidden.push(key);
     localStorage.setItem(HIDDEN_HISTORY_KEY, JSON.stringify(hidden));
     updateDashboard();
+  }
+
+  function renderFullVariantHistory(data) {
+    if (!els.fullHistoryBody) return;
+    var history = applyFullHistoryFilters(buildFullVariantHistory(data));
+
+    if (!history.length) {
+      els.fullHistoryBody.innerHTML = "<tr><td colspan=\"15\">No matching historical variants yet.</td></tr>";
+      return;
+    }
+
+    els.fullHistoryBody.innerHTML = history.map(function (item) {
+      var snapshotHtml = item.snapshot
+        ? "<details class=\"dash-history-details\"><summary>View</summary><pre>" + escapeHtml(JSON.stringify(item.snapshot, null, 2)) + "</pre></details>"
+        : "";
+      return [
+        "<tr>",
+        "<td>" + (item.isLive ? "<span class=\"dash-live-badge\">Live</span>" : "<span class=\"dash-archive-badge\">Archived</span>") + "</td>",
+        "<td>" + escapeHtml(item.variant) + "</td>",
+        "<td>" + escapeHtml(item.configVersion) + "</td>",
+        "<td>" + escapeHtml(item.publishedLabel) + "</td>",
+        "<td>" + escapeHtml(item.daysLabel) + "</td>",
+        "<td class=\"dash-history-text-cell\">" + escapeHtml(item.headline) + "</td>",
+        "<td class=\"dash-history-text-cell\">" + escapeHtml(item.cta) + "</td>",
+        "<td>" + escapeHtml(item.flowLabel) + "</td>",
+        "<td><span class=\"dash-color-pill\" style=\"--pill-color:" + escapeHtmlAttr(item.buttonColor) + "\"></span>" + escapeHtml(item.buttonColor) + "</td>",
+        "<td>" + formatNumber(item.views) + "</td>",
+        "<td>" + formatNumber(item.fullSubmissions) + "</td>",
+        "<td>" + formatPercent(item.cvr) + "</td>",
+        "<td>" + formatPercent(item.closeRate) + "</td>",
+        "<td class=\"dash-history-text-cell\">" + escapeHtml(item.uniqueAttributes) + "</td>",
+        "<td>" + snapshotHtml + "</td>",
+        "</tr>"
+      ].join("");
+    }).join("");
+  }
+
+  function buildFullVariantHistory(data) {
+    var liveVersions = getLiveVariantVersions();
+    var liveFingerprints = publishedActiveVariants().reduce(function (map, variant) {
+      map[variant.id] = variantFingerprint(variant);
+      return map;
+    }, {});
+    var groups = {};
+
+    data.forEach(function (row) {
+      var snapshot = parseVariantSnapshot(row.variantSnapshot);
+      var snapshotKey = row.variantSnapshot || "";
+      var key = [
+        row.testId || "",
+        row.configVersion || "unversioned",
+        row.variant || "Unknown",
+        snapshotKey || row.variantLabel || ""
+      ].join("::");
+
+      if (!groups[key]) groups[key] = createFullHistoryItem(row, snapshot);
+      updateFullHistoryItem(groups[key], row, snapshot);
+    });
+
+    return Object.keys(groups).map(function (key) {
+      var item = groups[key];
+      item.publishedLabel = item.firstSeen ? shortDateTime(item.firstSeen) : "";
+      item.daysLabel = item.firstSeen && item.lastSeen ? String(Math.max(1, Math.ceil((item.lastSeen - item.firstSeen) / (24 * 60 * 60 * 1000)))) : "";
+      item.fullSubmissions = fullSubmissionCount(item.leads, item.submits);
+      item.cvr = rate(item.fullSubmissions, item.views);
+      item.closeRate = rate(item.closes, item.views);
+      item.uniqueAttributes = describeVariantAttributes(item.snapshot, item.label);
+      item.isLive = item.configVersion === liveVersions[item.variant] && (!item.snapshot || variantFingerprint(item.snapshot) === liveFingerprints[item.variant]);
+      item.status = item.isLive ? "live" : "archived";
+      item.searchText = [
+        item.status,
+        item.variant,
+        item.configVersion,
+        item.changeNote,
+        item.label,
+        item.headline,
+        item.subheadline,
+        item.cta,
+        item.flowLabel,
+        item.buttonColor,
+        item.uniqueAttributes
+      ].join(" ").toLowerCase();
+      return item;
+    }).sort(function (a, b) {
+      if (a.isLive !== b.isLive) return a.isLive ? -1 : 1;
+      return (b.lastSeen ? b.lastSeen.getTime() : 0) - (a.lastSeen ? a.lastSeen.getTime() : 0);
+    });
+  }
+
+  function createFullHistoryItem(row, snapshot) {
+    var label = row.variantLabel || labelFromSnapshot(row.variantSnapshot) || "";
+    var source = snapshot || {};
+    var quiz = source.proteinQuiz || {};
+    var isSingleStep = quiz.showQuizStep === false || label.indexOf("Flow: Single-step") >= 0;
+    return {
+      variant: row.variant || "Unknown",
+      configVersion: row.configVersion || "unversioned",
+      label: label || [row.variant || "Unknown", row.configVersion || "unversioned"].join(" / "),
+      snapshot: snapshot,
+      changeNote: row.changeNote || "",
+      headline: cleanHistoryText(source.headlineHtml || source.headline || headlineFromLabel(label) || ""),
+      subheadline: cleanHistoryText(source.subheadlineHtml || source.subheadline || ""),
+      cta: quiz.leadButtonText || source.buttonText || "",
+      flow: isSingleStep ? "single" : "quiz",
+      flowLabel: isSingleStep ? "Single-step" : "Quiz + lead form",
+      buttonColor: source.accentColor || "",
+      firstSeen: null,
+      lastSeen: null,
+      sessions: new Set(),
+      views: 0,
+      clicks: 0,
+      quizSubmits: 0,
+      leads: 0,
+      submits: 0,
+      closes: 0,
+      fullSubmissions: 0,
+      cvr: 0,
+      closeRate: 0,
+      isLive: false,
+      status: "archived",
+      uniqueAttributes: "",
+      searchText: ""
+    };
+  }
+
+  function updateFullHistoryItem(item, row, snapshot) {
+    var timestamp = parseTimestamp(row.timestamp);
+    if (timestamp) {
+      if (!item.firstSeen || timestamp < item.firstSeen) item.firstSeen = timestamp;
+      if (!item.lastSeen || timestamp > item.lastSeen) item.lastSeen = timestamp;
+    }
+    if (!item.snapshot && snapshot) item.snapshot = snapshot;
+    if (!item.changeNote && row.changeNote) item.changeNote = row.changeNote;
+    var type = eventType(row);
+    if (type === "popup_view") {
+      if (row.sessionId) item.sessions.add(row.sessionId);
+      item.views += 1;
+    }
+    if (type === "popup_form_click") item.clicks += 1;
+    if (type === "popup_quiz_submit") item.quizSubmits += 1;
+    if (type === "popup_lead_submit" || type === "kajabi_form_submitted") item.leads += 1;
+    if (type === "popup_submit_attempt" || type === "popup_lead_submit" || type === "kajabi_form_submitted") item.submits += 1;
+    if (type === "popup_close") item.closes += 1;
+  }
+
+  function applyFullHistoryFilters(history) {
+    var search = String(els.historySearch && els.historySearch.value || "").trim().toLowerCase();
+    var variant = els.historyVariant ? els.historyVariant.value : "";
+    var status = els.historyStatus ? els.historyStatus.value : "";
+    var flow = els.historyFlow ? els.historyFlow.value : "";
+    var minViews = Math.max(0, Number(els.historyMinViews && els.historyMinViews.value || 0));
+
+    return history.filter(function (item) {
+      if (search && item.searchText.indexOf(search) === -1) return false;
+      if (variant && item.variant !== variant) return false;
+      if (status && item.status !== status) return false;
+      if (flow && item.flow !== flow) return false;
+      if (minViews && item.views < minViews) return false;
+      return true;
+    });
+  }
+
+  function describeVariantAttributes(snapshot, label) {
+    if (!snapshot) return cleanHistoryText(label || "");
+    var quiz = snapshot.proteinQuiz || {};
+    var parts = [];
+    parts.push(quiz.showQuizStep === false ? "Email-only single step" : "Quiz first");
+    if (quiz.progressEnabled) parts.push("Progress bar");
+    if (quiz.showFirstName === false) parts.push("No first name");
+    if (quiz.showEmail !== false) parts.push("Email field");
+    if (snapshot.sizeToImage) parts.push("Image-sized");
+    if (snapshot.width) parts.push(String(snapshot.width) + "px wide");
+    if (snapshot.textAlign) parts.push(String(snapshot.textAlign) + " aligned");
+    if (snapshot.imageUrl) parts.push(imageAttributeLabel(snapshot.imageUrl));
+    return unique(parts).join(", ");
+  }
+
+  function imageAttributeLabel(url) {
+    var value = String(url || "").toLowerCase();
+    if (value.indexOf("mockup") >= 0 || value.indexOf("preview") >= 0) return "Mockup visual";
+    if (value.indexOf("female") >= 0 || value.indexOf("male") >= 0 || value.indexOf("people") >= 0) return "People visual";
+    return "Image visual";
+  }
+
+  function cleanHistoryText(value) {
+    return stripHtml(String(value || "")).replace(/\s+/g, " ").trim();
+  }
+
+  function stripHtml(value) {
+    var div = document.createElement("div");
+    div.innerHTML = value;
+    return div.textContent || div.innerText || "";
+  }
+
+  function headlineFromLabel(label) {
+    var match = String(label || "").match(/CTA:\s*([^|]+)/i);
+    return match ? match[1].trim() : "";
+  }
+
+  function shortDateTime(date) {
+    if (!date) return "";
+    return (date.getMonth() + 1) + "/" + date.getDate() + "/" + String(date.getFullYear()).slice(-2);
   }
 
   function getHiddenHistoryKeys() {

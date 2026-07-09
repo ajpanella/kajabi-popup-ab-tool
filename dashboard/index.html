@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=27">
-    <link rel="stylesheet" href="./dashboard.css?v=39">
+    <link rel="stylesheet" href="./dashboard.css?v=40">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js"></script>
   </head>
@@ -286,9 +286,77 @@
             <canvas id="event-chart" height="220"></canvas>
           </div>
         </section>
+
+        <section class="dash-panel dash-wide-panel">
+          <details class="dash-full-history" open>
+            <summary>
+              <span>
+                <span class="dash-eyebrow">Deep History</span>
+                <strong>Full Variant History</strong>
+              </span>
+              <small>Every tracked variant snapshot, attributes, and performance</small>
+            </summary>
+            <div class="dash-history-filters">
+              <label>
+                Search
+                <input id="history-search" type="search" placeholder="Headline, CTA, note, version...">
+              </label>
+              <label>
+                Variant
+                <select id="history-variant">
+                  <option value="">All variants</option>
+                </select>
+              </label>
+              <label>
+                Status
+                <select id="history-status">
+                  <option value="">All statuses</option>
+                  <option value="live">Live</option>
+                  <option value="archived">Archived</option>
+                </select>
+              </label>
+              <label>
+                Flow
+                <select id="history-flow">
+                  <option value="">All flows</option>
+                  <option value="single">Single-step</option>
+                  <option value="quiz">Quiz + lead form</option>
+                </select>
+              </label>
+              <label>
+                Min views
+                <input id="history-min-views" type="number" min="0" step="10" placeholder="0">
+              </label>
+            </div>
+            <div class="dash-table-wrap">
+              <table class="dash-full-history-table">
+                <thead>
+                  <tr>
+                    <th>Status</th>
+                    <th>Variant</th>
+                    <th>Version</th>
+                    <th>Published</th>
+                    <th>Days</th>
+                    <th>Headline</th>
+                    <th>CTA</th>
+                    <th>Flow</th>
+                    <th>Button</th>
+                    <th>Views</th>
+                    <th>Leads</th>
+                    <th>CVR</th>
+                    <th>Close Rate</th>
+                    <th>Unique Attributes</th>
+                    <th>Details</th>
+                  </tr>
+                </thead>
+                <tbody id="full-history-body"></tbody>
+              </table>
+            </div>
+          </details>
+        </section>
       </section>
     </main>
 
-    <script src="./dashboard.js?v=71"></script>
+    <script src="./dashboard.js?v=72"></script>
   </body>
 </html>
