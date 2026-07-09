@@ -82,6 +82,7 @@
     showHiddenMetrics: document.getElementById("show-hidden-metrics"),
     body: document.getElementById("performance-body"),
     fullHistoryBody: document.getElementById("full-history-body"),
+    fullHistoryInsights: document.getElementById("full-history-insights"),
     fullHistoryTable: document.querySelector(".dash-full-history-table"),
     historySearch: document.getElementById("history-search"),
     historyStatus: document.getElementById("history-status"),
@@ -2427,6 +2428,7 @@
     if (!els.fullHistoryBody) return;
     var history = sortFullVariantHistory(applyFullHistoryFilters(buildFullVariantHistory(data)));
     updateFullHistorySortHeaders();
+    renderFullHistoryInsights(history);
 
     if (!history.length) {
       els.fullHistoryBody.innerHTML = "<tr><td colspan=\"15\">No matching historical variants yet.</td></tr>";
@@ -2461,6 +2463,20 @@
     }).join("");
   }
 
+  function renderFullHistoryInsights(history) {
+    if (!els.fullHistoryInsights) return;
+    var insights = buildFullHistoryInsights(history);
+    els.fullHistoryInsights.innerHTML = insights.map(function (insight) {
+      return [
+        "<article class=\"dash-history-insight dash-history-insight-" + escapeHtmlAttr(insight.tone) + "\">",
+        "<span>" + escapeHtml(insight.label) + "</span>",
+        "<strong>" + escapeHtml(insight.title) + "</strong>",
+        "<p>" + escapeHtml(insight.body) + "</p>",
+        "</article>"
+      ].join("");
+    }).join("");
+  }
+
   function renderLiveMatchBadge(item) {
     if (!item.liveMatchLabel) return "<span class=\"dash-match-muted\">-</span>";
     var details = compareFullHistoryToLive && item.liveMatchDetails && item.liveMatchDetails.length
@@ -2488,6 +2504,135 @@
       }).join(""),
       "</ul>"
     ].join("");
+  }
+
+  function buildFullHistoryInsights(history) {
+    var qualified = history.filter(function (item) {
+      return item.views > 0;
+    });
+    var totalViews = qualified.reduce(function (sum, item) { return sum + item.views; }, 0);
+
+    if (!qualified.length) {
+      return [{
+        tone: "neutral",
+        label: "Pattern Read",
+        title: "Load data to unlock recommendations",
+        body: "Once the sheet has views and leads, this section will summarize which popup attributes appear to help or hurt conversion."
+      }];
+    }
+
+    if (totalViews < 100) {
+      return [{
+        tone: "warn",
+        label: "Sample Size",
+        title: formatNumber(totalViews) + " total views in this slice",
+        body: "Early signals are visible, but wait for at least 100 views before treating pattern recommendations as decision-grade."
+      }].concat(bestLiveInsight(qualified));
+    }
+
+    var groups = aggregatePatternGroups(qualified);
+    var eligible = groups.filter(function (group) {
+      return group.views >= 50;
+    }).sort(function (a, b) {
+      return b.cvr - a.cvr;
+    });
+
+    if (!eligible.length) {
+      return [{
+        tone: "warn",
+        label: "Pattern Read",
+        title: "Not enough repeated pattern data yet",
+        body: "You have traffic, but no individual pattern has enough views to compare confidently. Keep tests simple so the next few variants create cleaner signals."
+      }].concat(bestLiveInsight(qualified));
+    }
+
+    var best = eligible[0];
+    var weakest = eligible.slice().sort(function (a, b) { return a.cvr - b.cvr; })[0];
+    var insights = [{
+      tone: "good",
+      label: "Working Pattern",
+      title: best.label + " is leading",
+      body: formatPercent(best.cvr) + " CVR across " + formatNumber(best.views) + " views and " + formatNumber(best.leads) + " leads."
+    }];
+
+    if (weakest && weakest.label !== best.label && best.cvr - weakest.cvr >= 0.01) {
+      insights.push({
+        tone: "bad",
+        label: "Weak Pattern",
+        title: weakest.label + " is lagging",
+        body: formatPercent(weakest.cvr) + " CVR across " + formatNumber(weakest.views) + " views. Consider changing this attribute before retesting."
+      });
+    }
+
+    insights.push(nextTestInsight(best, weakest, qualified));
+    return insights.concat(bestLiveInsight(qualified)).slice(0, 4);
+  }
+
+  function aggregatePatternGroups(history) {
+    var groups = {};
+    history.forEach(function (item) {
+      (item.patternTags || []).forEach(function (tag) {
+        if (["Live test", "Archived", "Needs more views", "No views yet"].indexOf(tag.label) >= 0) return;
+        if (!groups[tag.label]) {
+          groups[tag.label] = { label: tag.label, views: 0, leads: 0, rows: 0, cvr: 0 };
+        }
+        groups[tag.label].views += item.views;
+        groups[tag.label].leads += item.fullSubmissions;
+        groups[tag.label].rows += 1;
+      });
+    });
+
+    return Object.keys(groups).map(function (key) {
+      var group = groups[key];
+      group.cvr = rate(group.leads, group.views);
+      return group;
+    });
+  }
+
+  function nextTestInsight(best, weakest, history) {
+    var liveRows = history.filter(function (item) { return item.isLive; });
+    var liveWithViews = liveRows.filter(function (item) { return item.views > 0; }).sort(function (a, b) { return b.cvr - a.cvr; });
+
+    if (liveWithViews.length >= 2 && liveWithViews[0].cvr > liveWithViews[1].cvr) {
+      return {
+        tone: "neutral",
+        label: "Next Test",
+        title: "Change the lower performer first",
+        body: "Keep Live " + liveWithViews[0].variant + " stable and test one change on Live " + liveWithViews[1].variant + ", preferably toward the strongest pattern: " + best.label + "."
+      };
+    }
+
+    if (weakest && weakest.label !== best.label) {
+      return {
+        tone: "neutral",
+        label: "Next Test",
+        title: "Test toward " + best.label,
+        body: "Your cleanest next experiment is to keep most copy/design stable and swap one weaker attribute toward the stronger pattern."
+      };
+    }
+
+    return {
+      tone: "neutral",
+      label: "Next Test",
+      title: "Keep isolating one change",
+      body: "The history is starting to form patterns. Keep each new variant limited to one major change so recommendations get sharper."
+    };
+  }
+
+  function bestLiveInsight(history) {
+    var live = history.filter(function (item) {
+      return item.isLive && item.views > 0;
+    }).sort(function (a, b) {
+      return b.cvr - a.cvr;
+    });
+
+    if (!live.length) return [];
+    return [{
+      tone: "neutral",
+      label: "Live Read",
+      title: "Live " + live[0].variant + " is currently ahead",
+      body: formatPercent(live[0].cvr) + " CVR across " + formatNumber(live[0].views) + " views. Use this as directional until both live variants have enough traffic."
+    }];
   }
 
   function onFullHistoryTableClick(event) {

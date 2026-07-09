@@ -869,6 +869,76 @@ body {
   outline: 3px solid rgba(6, 176, 11, 0.15);
 }
 
+.dash-history-insights {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 10px;
+}
+
+.dash-history-insight {
+  display: grid;
+  gap: 6px;
+  border: 1px solid var(--dash-line);
+  border-radius: 8px;
+  padding: 12px;
+  background: #ffffff;
+}
+
+.dash-history-insight span {
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dash-history-insight strong {
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.dash-history-insight p {
+  margin: 0;
+  color: #475467;
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.dash-history-insight-good {
+  border-color: rgba(6, 176, 11, 0.28);
+  background: rgba(6, 176, 11, 0.07);
+}
+
+.dash-history-insight-good span,
+.dash-history-insight-good strong {
+  color: #067647;
+}
+
+.dash-history-insight-warn {
+  border-color: rgba(234, 128, 17, 0.28);
+  background: rgba(234, 128, 17, 0.08);
+}
+
+.dash-history-insight-warn span,
+.dash-history-insight-warn strong {
+  color: #9a3412;
+}
+
+.dash-history-insight-bad {
+  border-color: rgba(180, 35, 24, 0.25);
+  background: rgba(180, 35, 24, 0.07);
+}
+
+.dash-history-insight-bad span,
+.dash-history-insight-bad strong {
+  color: #b42318;
+}
+
+.dash-history-insight-neutral span,
+.dash-history-insight-neutral strong {
+  color: #344054;
+}
+
 .dash-history-compare-button {
   height: 48px;
   align-self: end;
