@@ -2467,6 +2467,7 @@
     var key = fullHistorySort.key || "published";
     var direction = fullHistorySort.direction === "asc" ? 1 : -1;
     return history.slice().sort(function (a, b) {
+      if (key === "published" && a.isLive !== b.isLive) return a.isLive ? -1 : 1;
       var comparison = compareFullHistoryValues(sortFullHistoryValue(a, key), sortFullHistoryValue(b, key));
       if (comparison === 0) comparison = compareFullHistoryValues(sortFullHistoryValue(a, "published"), sortFullHistoryValue(b, "published"));
       return comparison * direction;
@@ -2510,6 +2511,19 @@
   function buildFullVariantHistory(data) {
     var liveVersions = getLiveVariantVersions();
     var groups = {};
+
+    publishedActiveVariants().forEach(function (variant) {
+      var version = getVariantTrackingVersion(variant);
+      var key = fullHistoryKey(originalConfig.testId || config.testId || "", version, variant.id);
+      var snapshot = getVariantSnapshot(variant);
+      if (!groups[key]) groups[key] = createFullHistoryItem({
+        testId: originalConfig.testId || config.testId || "",
+        variant: variant.id,
+        configVersion: version,
+        variantLabel: buildVariantLabel(snapshot),
+        variantSnapshot: JSON.stringify(snapshot)
+      }, snapshot);
+    });
 
     data.forEach(function (row) {
       var snapshot = parseVariantSnapshot(row.variantSnapshot);
@@ -2562,10 +2576,13 @@
   }
 
   function fullHistoryBaseKey(row) {
+    return fullHistoryKey(row.testId || "", row.configVersion || "unversioned", row.variant || "Unknown");
+  }
+
+  function fullHistoryKey(testId, version, variant) {
     return [
-      row.testId || "",
-      row.configVersion || "unversioned",
-      row.variant || "Unknown"
+      version || "unversioned",
+      variant || "Unknown"
     ].join("::");
   }
 
