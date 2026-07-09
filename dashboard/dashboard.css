@@ -1021,6 +1021,21 @@ td {
   font-size: 14px;
 }
 
+.dash-submetric-row td {
+  background: #f8fafc;
+  color: #667085;
+  font-size: 13px;
+}
+
+.dash-submetric-row td:first-child {
+  padding-left: 28px;
+}
+
+.dash-submetric-label {
+  color: #344054;
+  font-weight: 900;
+}
+
 .dash-live-badge {
   display: inline-flex;
   align-items: center;

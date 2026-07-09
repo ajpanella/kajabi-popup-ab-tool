@@ -681,9 +681,10 @@
     var historyFiltered = applyHistoryFilters(rows);
     var builtMetrics = buildMetrics(filtered);
     var metrics = getVisibleMetrics(builtMetrics);
+    var sinceLastUpdateMetrics = buildUnchangedSinceLastUpdateMetrics(filtered, metrics);
     renderHiddenMetricsNotice(builtMetrics.length - metrics.length);
     renderStats(metrics);
-    renderTable(metrics);
+    renderTable(metrics, sinceLastUpdateMetrics);
     renderCharts(metrics);
     renderRecommendations(metrics);
     renderVariationHistory(historyFiltered);
@@ -729,8 +730,8 @@
     });
   }
 
-  function buildMetrics(data) {
-    var variants = publishedActiveVariants();
+  function buildMetrics(data, seedVariants) {
+    var variants = seedVariants || publishedActiveVariants();
     var byVariant = {};
 
     variants.forEach(function (variant) {
@@ -832,6 +833,65 @@
     return result;
   }
 
+  function buildUnchangedSinceLastUpdateMetrics(filteredRows, visibleMetrics) {
+    if (els.version.value !== LATEST_TWO_VERSIONS) return [];
+
+    var publishVersion = originalConfig.configVersion || config.configVersion || "";
+    if (!publishVersion) return [];
+
+    var liveVariants = publishedActiveVariants();
+    var changedVariants = liveVariants.filter(function (variant) {
+      return getVariantTrackingVersion(variant) === publishVersion;
+    });
+    var unchangedVariants = liveVariants.filter(function (variant) {
+      return getVariantTrackingVersion(variant) !== publishVersion;
+    });
+
+    if (!changedVariants.length || !unchangedVariants.length) return [];
+
+    var changedIds = changedVariants.map(function (variant) {
+      return variant.id;
+    });
+    var unchangedIds = unchangedVariants.map(function (variant) {
+      return variant.id;
+    });
+    var liveVersions = getLiveVariantVersions();
+    var boundary = filteredRows.reduce(function (earliest, row) {
+      if (changedIds.indexOf(row.variant) < 0) return earliest;
+      if ((row.configVersion || "unversioned") !== publishVersion) return earliest;
+      var timestamp = parseRowTimestamp(row);
+      if (!timestamp) return earliest;
+      return earliest && earliest < timestamp ? earliest : timestamp;
+    }, null);
+
+    if (!boundary) return [];
+
+    var subsetRows = filteredRows.filter(function (row) {
+      if (unchangedIds.indexOf(row.variant) < 0) return false;
+      if ((row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
+      var timestamp = parseRowTimestamp(row);
+      return timestamp && timestamp >= boundary;
+    });
+
+    var visibleKeys = (visibleMetrics || []).reduce(function (keys, item) {
+      keys[metricRowKey(item)] = true;
+      return keys;
+    }, {});
+
+    return buildMetrics(subsetRows, unchangedVariants).filter(function (item) {
+      return visibleKeys[metricRowKey(item)];
+    }).map(function (item) {
+      item.isSinceLastUpdate = true;
+      item.sinceLabel = "Since " + publishVersion + " update";
+      return item;
+    });
+  }
+
+  function parseRowTimestamp(row) {
+    var timestamp = row && row.timestamp ? new Date(row.timestamp) : null;
+    return timestamp && !Number.isNaN(timestamp.getTime()) ? timestamp : null;
+  }
+
   function eventType(row) {
     return String(row && row.eventType || "").trim().toLowerCase();
   }
@@ -865,13 +925,18 @@
     if (clickRateHeading) clickRateHeading.textContent = allSingleStep ? "Submit Click Rate" : "Click Rate";
   }
 
-  function renderTable(metrics) {
+  function renderTable(metrics, sinceLastUpdateMetrics) {
     els.body.innerHTML = "";
     els.warning.hidden = !metrics.some(function (item) {
       return activeVariants().some(function (variant) {
         return variant.id === item.variant;
       }) && item.views > 0 && item.views < 100;
     });
+
+    var sinceByVariant = (sinceLastUpdateMetrics || []).reduce(function (map, item) {
+      map[item.variant] = item;
+      return map;
+    }, {});
 
     metrics.forEach(function (item) {
       var row = document.createElement("tr");
@@ -902,7 +967,41 @@
         row.appendChild(cell);
       });
       els.body.appendChild(row);
+      if (live && sinceByVariant[item.variant]) {
+        els.body.appendChild(buildSinceLastUpdateRow(sinceByVariant[item.variant]));
+      }
     });
+  }
+
+  function buildSinceLastUpdateRow(item) {
+    var row = document.createElement("tr");
+    row.className = "dash-submetric-row";
+    var singleStep = isSingleStepMetric(item);
+    [
+      { html: "<span class=\"dash-submetric-label\">" + escapeHtml(item.sinceLabel || "Since last update") + "</span>" },
+      item.configVersion,
+      formatNumber(item.sessions),
+      formatNumber(item.views),
+      formatPercent(item.viewRate),
+      formatNumber(item.clicks),
+      formatPercent(item.clickRate),
+      singleStep ? "N/A" : formatNumber(item.quizSubmits),
+      singleStep ? "N/A" : formatPercent(item.quizRate),
+      formatNumber(item.fullSubmissions),
+      formatPercent(item.cvr),
+      formatNumber(item.closes),
+      item.variant === "A" ? "Control" : formatPercent(item.lift, true),
+      ""
+    ].forEach(function (value) {
+      var cell = document.createElement("td");
+      if (value && typeof value === "object" && value.html) {
+        cell.innerHTML = value.html;
+      } else {
+        cell.textContent = value;
+      }
+      row.appendChild(cell);
+    });
+    return row;
   }
 
   function getVisibleMetrics(metrics) {
