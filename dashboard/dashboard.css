@@ -812,8 +812,45 @@ body {
 .dash-history-filters {
   display: grid;
   grid-template-columns: minmax(220px, 2fr) repeat(6, minmax(120px, 1fr));
+  align-items: end;
   gap: 12px;
   margin-top: 16px;
+}
+
+.dash-history-filters label {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 8px;
+  min-width: 0;
+  color: var(--dash-muted);
+  font-size: 13px;
+  font-weight: 900;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.dash-history-filters input,
+.dash-history-filters select {
+  width: 100%;
+  height: 48px;
+  min-width: 0;
+  border: 1px solid var(--dash-line);
+  border-radius: 10px;
+  padding: 0 14px;
+  color: var(--dash-text);
+  background: #ffffff;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 48px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+}
+
+.dash-history-filters input:focus,
+.dash-history-filters select:focus {
+  border-color: var(--dash-green);
+  outline: 3px solid rgba(6, 176, 11, 0.15);
 }
 
 .dash-full-history-table {
