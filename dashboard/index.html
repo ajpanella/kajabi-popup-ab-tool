@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=27">
-    <link rel="stylesheet" href="./dashboard.css?v=43">
+    <link rel="stylesheet" href="./dashboard.css?v=44">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js"></script>
   </head>
@@ -28,6 +28,7 @@
           <input id="csv-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
         </label>
         <button id="load-data" type="button">Load Data</button>
+        <p id="csv-load-status" class="dash-load-status" aria-live="polite"></p>
 
         <label>
           Test ID
@@ -361,6 +362,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=78"></script>
+    <script src="./dashboard.js?v=79"></script>
   </body>
 </html>

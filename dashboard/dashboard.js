@@ -32,6 +32,7 @@
   var els = {
     csvUrl: document.getElementById("csv-url"),
     loadData: document.getElementById("load-data"),
+    csvLoadStatus: document.getElementById("csv-load-status"),
     docLink: document.getElementById("google-doc-link"),
     trackingSheetLink: document.getElementById("tracking-sheet-link"),
     testId: document.getElementById("filter-test-id"),
@@ -185,13 +186,43 @@
       })
       .then(function (text) {
         rows = parseCsv(text);
+        renderCsvLoadStatus(rows);
         reconcileLegacyVariantVersions();
         populateFilters();
         updateDashboard();
       })
       .catch(function (error) {
+        renderCsvLoadStatus([], error.message);
         window.alert(error.message);
       });
+  }
+
+  function renderCsvLoadStatus(data, errorMessage) {
+    if (!els.csvLoadStatus) return;
+    if (errorMessage) {
+      els.csvLoadStatus.textContent = "Load failed: " + errorMessage;
+      els.csvLoadStatus.classList.add("is-error");
+      return;
+    }
+
+    var counts = data.reduce(function (counts, row) {
+      var type = eventType(row);
+      counts.total += 1;
+      if (type === "popup_view") counts.views += 1;
+      if (type === "popup_quiz_submit") counts.quiz += 1;
+      if (type === "popup_lead_submit" || type === "kajabi_form_submitted") counts.leads += 1;
+      if (type === "popup_submit_attempt") counts.submitAttempts += 1;
+      return counts;
+    }, { total: 0, views: 0, quiz: 0, leads: 0, submitAttempts: 0 });
+
+    els.csvLoadStatus.classList.remove("is-error");
+    els.csvLoadStatus.textContent = [
+      "Loaded " + formatNumber(counts.total) + " rows",
+      formatNumber(counts.views) + " views",
+      formatNumber(counts.quiz) + " quiz",
+      formatNumber(counts.leads) + " leads",
+      formatNumber(counts.submitAttempts) + " submit attempts"
+    ].join(" | ");
   }
 
   function renderEditors() {
@@ -925,7 +956,31 @@
   }
 
   function eventType(row) {
-    return String(row && row.eventType || "").trim().toLowerCase();
+    var raw = String(row && row.eventType || "").trim().toLowerCase();
+    var normalized = raw.replace(/[^a-z0-9]/g, "");
+    var aliases = {
+      popupview: "popup_view",
+      view: "popup_view",
+      impression: "popup_view",
+      popupformclick: "popup_form_click",
+      formclick: "popup_form_click",
+      click: "popup_form_click",
+      popupquizsubmit: "popup_quiz_submit",
+      quizsubmit: "popup_quiz_submit",
+      quizcompletion: "popup_quiz_submit",
+      popupsubmitattempt: "popup_submit_attempt",
+      submitattempt: "popup_submit_attempt",
+      submit: "popup_submit_attempt",
+      popupleadsubmit: "popup_lead_submit",
+      leadsubmit: "popup_lead_submit",
+      lead: "popup_lead_submit",
+      kajabiformsubmitted: "kajabi_form_submitted",
+      formsubmitted: "kajabi_form_submitted",
+      popupclose: "popup_close",
+      close: "popup_close",
+      variantsavetest: "variant_save_test"
+    };
+    return aliases[normalized] || raw;
   }
 
   function renderStats(metrics) {
@@ -2942,12 +2997,50 @@
       return line.some(Boolean);
     }).map(function (line) {
       var record = headers.reduce(function (record, header, index) {
-        record[header.trim()] = (line[index] || "").trim();
+        var rawHeader = String(header || "").trim();
+        var value = (line[index] || "").trim();
+        var canonicalHeader = canonicalCsvHeader(rawHeader);
+        if (rawHeader) record[rawHeader] = value;
+        if (canonicalHeader) record[canonicalHeader] = value;
         return record;
       }, {});
       record.configVersion = normalizeRowConfigVersion(record);
       return record;
     });
+  }
+
+  function canonicalCsvHeader(header) {
+    var normalized = String(header || "").trim().toLowerCase().replace(/[^a-z0-9]/g, "");
+    var aliases = {
+      timestamp: "timestamp",
+      datetime: "timestamp",
+      date: "timestamp",
+      testid: "testId",
+      test: "testId",
+      configversion: "configVersion",
+      version: "configVersion",
+      changenote: "changeNote",
+      note: "changeNote",
+      notes: "changeNote",
+      variant: "variant",
+      variantid: "variant",
+      variantlabel: "variantLabel",
+      label: "variantLabel",
+      variantsnapshot: "variantSnapshot",
+      snapshot: "variantSnapshot",
+      eventtype: "eventType",
+      event: "eventType",
+      type: "eventType",
+      pageurl: "pageUrl",
+      url: "pageUrl",
+      pagetitle: "pageTitle",
+      title: "pageTitle",
+      devicetype: "deviceType",
+      device: "deviceType",
+      sessionid: "sessionId",
+      session: "sessionId"
+    };
+    return aliases[normalized] || header;
   }
 
   function normalizeRowConfigVersion(record) {
