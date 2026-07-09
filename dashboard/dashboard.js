@@ -2659,10 +2659,8 @@
     var flow = els.historyFlow ? els.historyFlow.value : "";
     var minViews = Math.max(0, Number(els.historyMinViews && els.historyMinViews.value || 0));
     var minLeads = Math.max(0, Number(els.historyMinLeads && els.historyMinLeads.value || 0));
-    var minCvrValue = Number(els.historyMinCvr && els.historyMinCvr.value);
-    var maxCvrValue = Number(els.historyMaxCvr && els.historyMaxCvr.value);
-    var minCvr = Number.isFinite(minCvrValue) ? minCvrValue / 100 : null;
-    var maxCvr = Number.isFinite(maxCvrValue) ? maxCvrValue / 100 : null;
+    var minCvr = parseOptionalPercentFilter(els.historyMinCvr);
+    var maxCvr = parseOptionalPercentFilter(els.historyMaxCvr);
 
     return history.filter(function (item) {
       if (search && item.searchText.indexOf(search) === -1) return false;
@@ -2674,6 +2672,13 @@
       if (maxCvr !== null && item.cvr > maxCvr) return false;
       return true;
     });
+  }
+
+  function parseOptionalPercentFilter(input) {
+    var raw = input ? String(input.value || "").trim() : "";
+    if (!raw) return null;
+    var value = Number(raw);
+    return Number.isFinite(value) ? value / 100 : null;
   }
 
   function describeVariantAttributes(snapshot, label) {
