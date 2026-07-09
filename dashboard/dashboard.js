@@ -28,6 +28,7 @@
   var lastColorTarget = null;
   var versionFilterInitialized = false;
   var fullHistorySort = { key: "published", direction: "desc" };
+  var compareFullHistoryToLive = false;
 
   var els = {
     csvUrl: document.getElementById("csv-url"),
@@ -88,7 +89,8 @@
     historyMinViews: document.getElementById("history-min-views"),
     historyMinLeads: document.getElementById("history-min-leads"),
     historyMinCvr: document.getElementById("history-min-cvr"),
-    historyMaxCvr: document.getElementById("history-max-cvr")
+    historyMaxCvr: document.getElementById("history-max-cvr"),
+    compareLiveHistory: document.getElementById("compare-live-history")
   };
 
   els.csvUrl.value = defaultCsvUrl;
@@ -113,6 +115,12 @@
   });
   [els.historySearch, els.historyStatus, els.historyFlow, els.historyMinViews, els.historyMinLeads, els.historyMinCvr, els.historyMaxCvr].forEach(function (element) {
     element.addEventListener("input", updateDashboard);
+  });
+  els.compareLiveHistory.addEventListener("click", function () {
+    compareFullHistoryToLive = !compareFullHistoryToLive;
+    els.compareLiveHistory.classList.toggle("is-active", compareFullHistoryToLive);
+    els.compareLiveHistory.setAttribute("aria-pressed", compareFullHistoryToLive ? "true" : "false");
+    updateDashboard();
   });
   [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.reopenAfterCloseSeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
     element.addEventListener("input", onGlobalConfigInput);
@@ -2421,7 +2429,7 @@
     updateFullHistorySortHeaders();
 
     if (!history.length) {
-      els.fullHistoryBody.innerHTML = "<tr><td colspan=\"13\">No matching historical variants yet.</td></tr>";
+      els.fullHistoryBody.innerHTML = "<tr><td colspan=\"14\">No matching historical variants yet.</td></tr>";
       return;
     }
 
@@ -2429,8 +2437,10 @@
       var snapshotHtml = item.snapshot
         ? "<details class=\"dash-history-details\"><summary>View</summary><pre>" + escapeHtml(JSON.stringify(item.snapshot, null, 2)) + "</pre></details>"
         : "";
+      var matchHtml = renderLiveMatchBadge(item);
+      var rowClass = compareFullHistoryToLive ? " class=\"dash-history-match-row dash-history-match-" + escapeHtmlAttr(item.liveMatchLevel) + "\"" : "";
       return [
-        "<tr>",
+        "<tr" + rowClass + ">",
         "<td>" + (item.isLive ? "<span class=\"dash-live-badge\">Live</span>" : "<span class=\"dash-archive-badge\">Archived</span>") + "</td>",
         "<td>" + escapeHtml(item.configVersion) + "</td>",
         "<td>" + escapeHtml(item.publishedLabel) + "</td>",
@@ -2442,11 +2452,24 @@
         "<td>" + formatNumber(item.views) + "</td>",
         "<td>" + formatNumber(item.fullSubmissions) + "</td>",
         "<td>" + formatPercent(item.cvr) + "</td>",
+        "<td>" + matchHtml + "</td>",
         "<td class=\"dash-history-text-cell\">" + escapeHtml(item.uniqueAttributes) + "</td>",
         "<td>" + snapshotHtml + "</td>",
         "</tr>"
       ].join("");
     }).join("");
+  }
+
+  function renderLiveMatchBadge(item) {
+    if (!item.liveMatchLabel) return "<span class=\"dash-match-muted\">-</span>";
+    return [
+      "<span class=\"dash-live-match dash-live-match-" + escapeHtmlAttr(item.liveMatchLevel) + "\">",
+      escapeHtml(item.liveMatchLabel),
+      "</span>",
+      "<small class=\"dash-live-match-detail\">",
+      escapeHtml(Math.round(Number(item.liveMatchScore || 0) * 100) + "% vs Live " + item.liveMatchVariant),
+      "</small>"
+    ].join("");
   }
 
   function onFullHistoryTableClick(event) {
@@ -2480,6 +2503,7 @@
     if (key === "views") return item.views;
     if (key === "fullSubmissions") return item.fullSubmissions;
     if (key === "cvr") return item.cvr;
+    if (key === "liveMatchScore") return item.liveMatchScore;
     if (key === "status") return item.status;
     if (key === "flow") return item.flowLabel;
     if (key === "buttonColor") return item.buttonColor;
@@ -2495,7 +2519,7 @@
   }
 
   function defaultFullHistorySortDirection(key) {
-    return ["published", "days", "views", "fullSubmissions", "cvr"].indexOf(key) >= 0 ? "desc" : "asc";
+    return ["published", "days", "views", "fullSubmissions", "cvr", "liveMatchScore"].indexOf(key) >= 0 ? "desc" : "asc";
   }
 
   function updateFullHistorySortHeaders() {
@@ -2510,6 +2534,7 @@
 
   function buildFullVariantHistory(data) {
     var liveVersions = getLiveVariantVersions();
+    var liveComparisonItems = buildLiveComparisonItems();
     var groups = {};
 
     publishedActiveVariants().forEach(function (variant) {
@@ -2554,6 +2579,11 @@
       item.closeRate = rate(item.closes, item.views);
       item.uniqueAttributes = describeVariantAttributes(item.snapshot, item.label);
       item.isLive = item.configVersion === liveVersions[item.variant];
+      item.liveMatch = compareHistoryItemToLive(item, liveComparisonItems);
+      item.liveMatchScore = item.liveMatch.score;
+      item.liveMatchVariant = item.liveMatch.variant;
+      item.liveMatchLevel = item.liveMatch.level;
+      item.liveMatchLabel = item.liveMatch.label;
       item.status = item.isLive ? "live" : "archived";
       item.searchText = [
         item.status,
@@ -2651,6 +2681,105 @@
     var submits = Number(item.submits || 0);
     if (leads > 0) return leads;
     return submits;
+  }
+
+  function buildLiveComparisonItems() {
+    return publishedActiveVariants().map(function (variant) {
+      var snapshot = getVariantSnapshot(variant);
+      return {
+        variant: variant.id,
+        snapshot: snapshot,
+        headline: cleanHistoryText(snapshot.headlineHtml || snapshot.headline || ""),
+        cta: liveSnapshotCta(snapshot),
+        flow: liveSnapshotFlow(snapshot),
+        buttonColor: normalizeComparableText(snapshot.accentColor),
+        backgroundColor: normalizeComparableText(snapshot.backgroundColor),
+        imageUrl: normalizeComparableText(snapshot.imageUrl),
+        width: String(snapshot.width || ""),
+        textAlign: normalizeComparableText(snapshot.textAlign)
+      };
+    });
+  }
+
+  function compareHistoryItemToLive(item, liveItems) {
+    if (!liveItems.length) return { score: 0, variant: "", level: "low", label: "Different" };
+
+    var best = liveItems.reduce(function (best, live) {
+      var score = liveSimilarityScore(item, live);
+      return !best || score > best.score ? { score: score, variant: live.variant } : best;
+    }, null);
+
+    var level = best.score >= 0.85 ? "high" : best.score >= 0.55 ? "medium" : "low";
+    var label = level === "high" ? "Strong" : level === "medium" ? "Similar" : "Different";
+    return {
+      score: best.score,
+      variant: best.variant,
+      level: level,
+      label: label
+    };
+  }
+
+  function liveSimilarityScore(item, live) {
+    var snapshot = item.snapshot || {};
+    var total = 0;
+    var score = 0;
+
+    function add(weight, matched) {
+      total += weight;
+      score += weight * matched;
+    }
+
+    add(18, item.flow === live.flow ? 1 : 0);
+    add(18, textSimilarity(item.headline || cleanHistoryText(snapshot.headlineHtml || snapshot.headline || ""), live.headline));
+    add(12, textSimilarity(item.cta || liveSnapshotCta(snapshot), live.cta));
+    add(10, exactSimilarity(item.buttonColor || snapshot.accentColor, live.buttonColor));
+    add(8, exactSimilarity(snapshot.backgroundColor, live.backgroundColor));
+    add(12, exactSimilarity(snapshot.imageUrl, live.imageUrl));
+    add(5, exactSimilarity(snapshot.width, live.width));
+    add(5, exactSimilarity(snapshot.textAlign, live.textAlign));
+    add(6, exactSimilarity(Boolean(snapshot.sizeToImage), Boolean(live.snapshot.sizeToImage)));
+    add(3, exactSimilarity(Boolean(snapshot.proteinQuiz && snapshot.proteinQuiz.showFirstName === false), Boolean(live.snapshot.proteinQuiz && live.snapshot.proteinQuiz.showFirstName === false)));
+    add(3, exactSimilarity(Boolean(snapshot.proteinQuiz && snapshot.proteinQuiz.progressEnabled), Boolean(live.snapshot.proteinQuiz && live.snapshot.proteinQuiz.progressEnabled)));
+
+    return total ? score / total : 0;
+  }
+
+  function liveSnapshotFlow(snapshot) {
+    return snapshot && snapshot.proteinQuiz && snapshot.proteinQuiz.showQuizStep === false ? "single" : "quiz";
+  }
+
+  function liveSnapshotCta(snapshot) {
+    var quiz = snapshot && snapshot.proteinQuiz || {};
+    return quiz.leadButtonText || snapshot.buttonText || "";
+  }
+
+  function exactSimilarity(a, b) {
+    var left = normalizeComparableText(a);
+    var right = normalizeComparableText(b);
+    if (!left && !right) return 1;
+    return left === right ? 1 : 0;
+  }
+
+  function textSimilarity(a, b) {
+    var left = tokenizeComparableText(a);
+    var right = tokenizeComparableText(b);
+    if (!left.length && !right.length) return 1;
+    if (!left.length || !right.length) return 0;
+    var union = unique(left.concat(right));
+    var intersection = left.filter(function (token) {
+      return right.indexOf(token) >= 0;
+    });
+    return union.length ? unique(intersection).length / union.length : 0;
+  }
+
+  function tokenizeComparableText(value) {
+    return unique(normalizeComparableText(cleanHistoryText(value)).split(" ").filter(function (token) {
+      return token.length > 2;
+    }));
+  }
+
+  function normalizeComparableText(value) {
+    return String(value == null ? "" : value).toLowerCase().replace(/[^a-z0-9#]+/g, " ").replace(/\s+/g, " ").trim();
   }
 
   function applyFullHistoryFilters(history) {
