@@ -27,6 +27,7 @@
   var previewStep = "quiz";
   var lastColorTarget = null;
   var versionFilterInitialized = false;
+  var fullHistorySort = { key: "published", direction: "desc" };
 
   var els = {
     csvUrl: document.getElementById("csv-url"),
@@ -79,6 +80,7 @@
     showHiddenMetrics: document.getElementById("show-hidden-metrics"),
     body: document.getElementById("performance-body"),
     fullHistoryBody: document.getElementById("full-history-body"),
+    fullHistoryTable: document.querySelector(".dash-full-history-table"),
     historySearch: document.getElementById("history-search"),
     historyStatus: document.getElementById("history-status"),
     historyFlow: document.getElementById("history-flow"),
@@ -118,6 +120,7 @@
   els.editors.addEventListener("click", onEditorClick);
   els.editors.addEventListener("focusin", onEditorFocus);
   els.history.addEventListener("click", onHistoryClick);
+  els.fullHistoryTable.addEventListener("click", onFullHistoryTableClick);
   els.body.addEventListener("click", onMetricRowClick);
   els.savedColors.addEventListener("input", onPaletteInput);
   els.savedColors.addEventListener("click", onPaletteClick);
@@ -2359,7 +2362,8 @@
 
   function renderFullVariantHistory(data) {
     if (!els.fullHistoryBody) return;
-    var history = applyFullHistoryFilters(buildFullVariantHistory(data));
+    var history = sortFullVariantHistory(applyFullHistoryFilters(buildFullVariantHistory(data)));
+    updateFullHistorySortHeaders();
 
     if (!history.length) {
       els.fullHistoryBody.innerHTML = "<tr><td colspan=\"13\">No matching historical variants yet.</td></tr>";
@@ -2388,6 +2392,64 @@
         "</tr>"
       ].join("");
     }).join("");
+  }
+
+  function onFullHistoryTableClick(event) {
+    var button = event.target.closest("[data-history-sort]");
+    if (!button) return;
+
+    var key = button.dataset.historySort;
+    if (fullHistorySort.key === key) {
+      fullHistorySort.direction = fullHistorySort.direction === "asc" ? "desc" : "asc";
+    } else {
+      fullHistorySort.key = key;
+      fullHistorySort.direction = defaultFullHistorySortDirection(key);
+    }
+    updateDashboard();
+  }
+
+  function sortFullVariantHistory(history) {
+    var key = fullHistorySort.key || "published";
+    var direction = fullHistorySort.direction === "asc" ? 1 : -1;
+    return history.slice().sort(function (a, b) {
+      var comparison = compareFullHistoryValues(sortFullHistoryValue(a, key), sortFullHistoryValue(b, key));
+      if (comparison === 0) comparison = compareFullHistoryValues(sortFullHistoryValue(a, "published"), sortFullHistoryValue(b, "published"));
+      return comparison * direction;
+    });
+  }
+
+  function sortFullHistoryValue(item, key) {
+    if (key === "published") return item.firstSeen ? item.firstSeen.getTime() : 0;
+    if (key === "days") return Number(item.daysLabel || 0);
+    if (key === "views") return item.views;
+    if (key === "fullSubmissions") return item.fullSubmissions;
+    if (key === "cvr") return item.cvr;
+    if (key === "status") return item.status;
+    if (key === "flow") return item.flowLabel;
+    if (key === "buttonColor") return item.buttonColor;
+    if (key === "headline") return item.headline;
+    if (key === "cta") return item.cta;
+    if (key === "uniqueAttributes") return item.uniqueAttributes;
+    return item[key] || "";
+  }
+
+  function compareFullHistoryValues(a, b) {
+    if (typeof a === "number" && typeof b === "number") return a - b;
+    return String(a || "").localeCompare(String(b || ""), undefined, { numeric: true, sensitivity: "base" });
+  }
+
+  function defaultFullHistorySortDirection(key) {
+    return ["published", "days", "views", "fullSubmissions", "cvr"].indexOf(key) >= 0 ? "desc" : "asc";
+  }
+
+  function updateFullHistorySortHeaders() {
+    if (!els.fullHistoryTable) return;
+    Array.from(els.fullHistoryTable.querySelectorAll("[data-history-sort]")).forEach(function (button) {
+      var active = button.dataset.historySort === fullHistorySort.key;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-sort", active ? (fullHistorySort.direction === "asc" ? "ascending" : "descending") : "none");
+      button.setAttribute("data-sort-direction", active ? fullHistorySort.direction : "");
+    });
   }
 
   function buildFullVariantHistory(data) {

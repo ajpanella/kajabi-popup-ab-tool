@@ -815,6 +815,10 @@ body {
   align-items: end;
   gap: 12px;
   margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(6, 176, 11, 0.22);
+  border-radius: 12px;
+  background: linear-gradient(180deg, rgba(6, 176, 11, 0.13), rgba(6, 176, 11, 0.07));
 }
 
 .dash-history-filters label {
@@ -855,6 +859,41 @@ body {
 
 .dash-full-history-table {
   min-width: 1320px;
+}
+
+.dash-sort-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  padding: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  font-weight: 900;
+  text-transform: inherit;
+  cursor: pointer;
+}
+
+.dash-sort-button::after {
+  content: "^v";
+  color: #98a2b3;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.dash-sort-button.is-active {
+  color: var(--dash-green);
+}
+
+.dash-sort-button.is-active[data-sort-direction="asc"]::after {
+  content: "^";
+  color: var(--dash-green);
+}
+
+.dash-sort-button.is-active[data-sort-direction="desc"]::after {
+  content: "v";
+  color: var(--dash-green);
 }
 
 .dash-history-text-cell {
