@@ -312,6 +312,10 @@
       strengthDaysPlaceholder: "Select days",
       ageLabel: "Age",
       agePlaceholder: "48",
+      multiStepEnabled: false,
+      targetWeightAnswerStyle: "dropdown",
+      strengthDaysAnswerStyle: "dropdown",
+      ageAnswerStyle: "dropdown",
       progressEnabled: false,
       progressStepOneLabel: "Step 1 of 2: Quick Calculator",
       progressStepOneText: "Answer 3 quick questions to calculate your personalized protein target immediately.",
@@ -375,6 +379,7 @@
       "proteinQuiz.showQuizStep",
       "proteinQuiz.showFirstName",
       "proteinQuiz.showEmail",
+      "proteinQuiz.multiStepEnabled",
       "proteinQuiz.progressEnabled",
       "proteinQuiz.targetPreviewStyle"
     ].indexOf(key) >= 0;
@@ -443,6 +448,7 @@
     var showQuiz = quiz.showQuizStep !== false;
     var showProgress = quiz.progressEnabled;
     var showProgressText = showProgress && showQuiz;
+    var multiStep = showQuiz && quiz.multiStepEnabled === true;
     var showFirstName = quiz.showFirstName !== false;
     var showEmail = quiz.showEmail !== false;
     return [
@@ -450,6 +456,7 @@
       "<div class=\"dash-flow-head\"><strong>Protein Quiz Flow</strong><span>Variant-specific quiz labels, placeholders, and step-two copy.</span></div>",
       "<div class=\"dash-global-editor\">",
       editorCheckbox("proteinQuiz.showQuizStep", index, "Show quiz step before lead form", quiz.showQuizStep !== false),
+      editorCheckbox("proteinQuiz.multiStepEnabled", index, "Ask one quiz question per screen", multiStep, !showQuiz),
       editorCheckbox("proteinQuiz.showFirstName", index, "Show first name field", quiz.showFirstName !== false),
       editorCheckbox("proteinQuiz.showEmail", index, "Show email field", quiz.showEmail !== false),
       editorCheckbox("proteinQuiz.progressEnabled", index, "Show progress bar and step framing", quiz.progressEnabled),
@@ -463,10 +470,13 @@
       editorTextarea("proteinQuiz.progressStepOneText", index, "Step 1 framing text", quiz.progressStepOneText, !showProgressText),
       editorInput("proteinQuiz.targetWeightLabel", index, "Target weight label", quiz.targetWeightLabel, "text", !showQuiz),
       editorInput("proteinQuiz.targetWeightPlaceholder", index, "Target weight placeholder", quiz.targetWeightPlaceholder, "text", !showQuiz),
+      multiStep ? editorOptionSelect("proteinQuiz.targetWeightAnswerStyle", index, "Target weight answer style", quiz.targetWeightAnswerStyle, [{label:"Dropdown",value:"dropdown"},{label:"Range buttons",value:"ranges"}]) : "",
       editorInput("proteinQuiz.strengthDaysLabel", index, "Strength days label", quiz.strengthDaysLabel, "text", !showQuiz),
       editorInput("proteinQuiz.strengthDaysPlaceholder", index, "Strength dropdown placeholder", quiz.strengthDaysPlaceholder, "text", !showQuiz),
+      multiStep ? editorOptionSelect("proteinQuiz.strengthDaysAnswerStyle", index, "Strength days answer style", quiz.strengthDaysAnswerStyle, [{label:"Dropdown",value:"dropdown"},{label:"Range buttons",value:"ranges"}]) : "",
       editorInput("proteinQuiz.ageLabel", index, "Age label", quiz.ageLabel, "text", !showQuiz),
       editorInput("proteinQuiz.agePlaceholder", index, "Age placeholder", quiz.agePlaceholder, "text", !showQuiz),
+      multiStep ? editorOptionSelect("proteinQuiz.ageAnswerStyle", index, "Age answer style", quiz.ageAnswerStyle, [{label:"Dropdown",value:"dropdown"},{label:"Range buttons",value:"ranges"}]) : "",
       editorInput("proteinQuiz.quizButtonText", index, "Quiz button text", quiz.quizButtonText, "text", !showQuiz),
       "<div class=\"dash-flow-divider\"><span>After visitor clicks quiz submit</span></div>",
       editorProteinTargetPreviewSelect("proteinQuiz.targetPreviewStyle", index, "Step 2 target display", quiz.targetPreviewStyle, !showQuiz),
@@ -523,8 +533,8 @@
     ].join("");
   }
 
-  function editorCheckbox(field, index, label, checked) {
-    return "<label class=\"dash-checkbox-label\"><input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"checkbox\"" + (checked ? " checked" : "") + "><span>" + escapeHtml(label) + "</span></label>";
+  function editorCheckbox(field, index, label, checked, disabled) {
+    return "<label class=\"dash-checkbox-label" + (disabled ? " dash-disabled-field" : "") + "\"><input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"checkbox\"" + (checked ? " checked" : "") + disabledAttr(disabled) + "><span>" + escapeHtml(label) + "</span></label>";
   }
 
   function editorTextarea(field, index, label, value, disabled) {
@@ -631,6 +641,12 @@
       { label: "Inline text", value: "inline" },
       { label: "Calculator box", value: "box" }
     ];
+    return "<label" + disabledFieldClass(disabled) + ">" + escapeHtml(label) + "<select data-variant-index=\"" + index + "\" data-field=\"" + field + "\"" + disabledAttr(disabled) + ">" + options.map(function (option) {
+      return "<option value=\"" + escapeHtmlAttr(option.value) + "\"" + (option.value === value ? " selected" : "") + ">" + escapeHtml(option.label) + "</option>";
+    }).join("") + "</select></label>";
+  }
+
+  function editorOptionSelect(field, index, label, value, options, disabled) {
     return "<label" + disabledFieldClass(disabled) + ">" + escapeHtml(label) + "<select data-variant-index=\"" + index + "\" data-field=\"" + field + "\"" + disabledAttr(disabled) + ">" + options.map(function (option) {
       return "<option value=\"" + escapeHtmlAttr(option.value) + "\"" + (option.value === value ? " selected" : "") + ">" + escapeHtml(option.label) + "</option>";
     }).join("") + "</select></label>";
@@ -1543,6 +1559,12 @@
     var subheadline = root && root.querySelector(".ll-popup-subheadline");
     var valueLine = root && root.querySelector(".ll-popup-value-line");
     var quiz = getProteinQuizConfig(variant);
+    var multiQuestions = [
+      { key: "targetWeight", labelKey: "targetWeightLabel", placeholderKey: "targetWeightPlaceholder", styleKey: "targetWeightAnswerStyle" },
+      { key: "strengthDays", labelKey: "strengthDaysLabel", placeholderKey: "strengthDaysPlaceholder", styleKey: "strengthDaysAnswerStyle" },
+      { key: "age", labelKey: "ageLabel", placeholderKey: "agePlaceholder", styleKey: "ageAnswerStyle" }
+    ];
+
     if (quiz.showQuizStep === false || previewStep === "lead") {
       if (quiz.showQuizStep !== false) {
         quizData = {
@@ -1556,8 +1578,47 @@
         };
       }
       renderLeadStep(quiz.showQuizStep === false);
+    } else if (quiz.multiStepEnabled === true) {
+      renderMultiQuizStep(0);
     } else {
       renderQuizStep();
+    }
+
+    function renderMultiQuizStep(index) {
+      var question = multiQuestions[index];
+      renderProteinTargetPreview(root, quiz, null);
+      if (headline) headline.innerHTML = sanitizeRichHtml(variant.quizHeadline || variant.headlineHtml || escapeHtml(variant.headline || ""));
+      if (subheadline) subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || escapeHtml(variant.subheadline || ""));
+      setPopupValueLine(valueLine, variant.valueLineHtml || escapeHtml(variant.valueLine || ""));
+      container.innerHTML = [
+        index > 0 ? "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Previous question\">&#8592;</button>" : "",
+        renderMultiProgressHtml(quiz, index + 1, 3),
+        "<form class=\"ll-popup-zapier-form ll-popup-protein-form ll-popup-multi-question\"><fieldset><legend>" + escapeHtml(quiz[question.labelKey]) + "</legend>",
+        renderMultiQuestionControl(question, quiz),
+        "</fieldset>",
+        quiz[question.styleKey] === "ranges" ? "" : "<button type=\"submit\">" + escapeHtml(index === 2 ? quiz.quizButtonText : "Continue") + "</button>",
+        "</form>"
+      ].join("");
+      var form = container.querySelector("form");
+      var backButton = container.querySelector(".ll-popup-step-back");
+      if (backButton) backButton.addEventListener("click", function () { renderMultiQuizStep(index - 1); });
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var value = getFormValue(form, question.key);
+        if (!value) return;
+        quizData[question.key] = value;
+        quizData[question.key === "targetWeight" ? "targetWeightLbs" : question.key === "age" ? "Age" : "StrengthDays"] = value;
+        if (index < 2) return renderMultiQuizStep(index + 1);
+        quizData.proteinTarget = calculateProteinTarget(quizData.targetWeight, quizData.age, quizData.strengthDays);
+        renderLeadStep();
+      });
+      form.querySelectorAll("[data-auto-answer]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          form.elements[question.key].value = button.dataset.value;
+          form.requestSubmit();
+        });
+      });
+      schedulePopupFit(root);
     }
 
     function renderQuizStep() {
@@ -1609,7 +1670,7 @@
       renderProteinTargetPreview(root, quiz, singleStep ? null : quizData.proteinTarget);
       container.innerHTML = [
         singleStep ? "" : "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
-        singleStep ? renderProteinProgressHtml(quiz, 1, true) : renderProteinProgressHtml(quiz, 2),
+        singleStep ? renderProteinProgressHtml(quiz, 1, true) : (quiz.multiStepEnabled === true ? renderMultiProgressHtml(quiz, 3, 3) : renderProteinProgressHtml(quiz, 2)),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"lead\">",
         quiz.showFirstName === false ? "" : "<label><span>" + escapeHtml(quiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(quiz.firstNamePlaceholder) + "\" required></label>",
         quiz.showEmail === false ? "" : "<label><span>" + escapeHtml(quiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(quiz.emailPlaceholder) + "\" required></label>",
@@ -1619,7 +1680,7 @@
 
       var form = container.querySelector("form");
       var backButton = container.querySelector(".ll-popup-step-back");
-      if (backButton) backButton.addEventListener("click", renderQuizStep);
+      if (backButton) backButton.addEventListener("click", function () { quiz.multiStepEnabled === true ? renderMultiQuizStep(2) : renderQuizStep(); });
       form.addEventListener("submit", function (event) {
         event.preventDefault();
         sendLeadPayload(config.leadWebhookUrl, {
@@ -1686,6 +1747,35 @@
       text ? "<p>" + escapeHtml(text) + "</p>" : "",
       "</div>"
     ].join("");
+  }
+
+  function renderMultiProgressHtml(quiz, step, total) {
+    if (!quiz || !quiz.progressEnabled) return "";
+    var percent = Math.round((step / total) * 100);
+    return "<div class=\"ll-popup-progress ll-popup-progress-multi\"><div class=\"ll-popup-progress-top\"><span>Question " + step + " of " + total + "</span><strong>" + step + "/" + total + "</strong></div><div class=\"ll-popup-progress-track\"><span style=\"width:" + percent + "%\"></span></div></div>";
+  }
+
+  function renderMultiQuestionControl(question, quiz) {
+    var options = getMultiQuestionOptions(question.key);
+    if (quiz[question.styleKey] === "ranges") {
+      return "<input type=\"hidden\" name=\"" + question.key + "\"><div class=\"ll-popup-answer-grid\">" + options.ranges.map(function (option) { return "<button type=\"button\" data-auto-answer data-value=\"" + option.value + "\">" + escapeHtml(option.label) + "</button>"; }).join("") + "</div>";
+    }
+    return "<select name=\"" + question.key + "\" required><option value=\"\">" + escapeHtml(quiz[question.placeholderKey]) + "</option>" + options.dropdown.map(function (option) { return "<option value=\"" + option.value + "\">" + escapeHtml(option.label) + "</option>"; }).join("") + "</select>";
+  }
+
+  function getMultiQuestionOptions(key) {
+    var values = [], ranges = [], i;
+    if (key === "strengthDays") {
+      for (i = 0; i <= 7; i += 1) values.push({value:String(i),label:i + (i === 1 ? " day" : " days")});
+      ranges = values;
+    } else if (key === "age") {
+      for (i = 18; i <= 100; i += 1) values.push({value:String(i),label:String(i)});
+      ranges = [{value:"24",label:"18-29"},{value:"35",label:"30-39"},{value:"45",label:"40-49"},{value:"55",label:"50-59"},{value:"65",label:"60-69"},{value:"75",label:"70+"}];
+    } else {
+      for (i = 80; i <= 350; i += 5) values.push({value:String(i),label:i + " lbs"});
+      ranges = [{value:"110",label:"Under 120 lbs"},{value:"130",label:"120-139 lbs"},{value:"150",label:"140-159 lbs"},{value:"170",label:"160-179 lbs"},{value:"190",label:"180-199 lbs"},{value:"220",label:"200-239 lbs"},{value:"260",label:"240+ lbs"}];
+    }
+    return {dropdown:values,ranges:ranges};
   }
 
   function renderProteinTargetPreview(root, quiz, target) {
@@ -2892,8 +2982,8 @@
       headline: cleanHistoryText(source.headlineHtml || source.headline || headlineFromLabel(label) || ""),
       subheadline: cleanHistoryText(source.subheadlineHtml || source.subheadline || ""),
       cta: quiz.leadButtonText || source.buttonText || "",
-      flow: isSingleStep ? "single" : "quiz",
-      flowLabel: isSingleStep ? "Single-step" : "Quiz + lead form",
+      flow: isSingleStep ? "single" : (quiz.multiStepEnabled === true ? "multi" : "quiz"),
+      flowLabel: isSingleStep ? "Single-step" : (quiz.multiStepEnabled === true ? "Multi-step quiz + lead form" : "Quiz + lead form"),
       buttonColor: source.accentColor || "",
       firstSeen: null,
       lastSeen: null,
@@ -3127,7 +3217,9 @@
   }
 
   function liveSnapshotFlow(snapshot) {
-    return snapshot && snapshot.proteinQuiz && snapshot.proteinQuiz.showQuizStep === false ? "single" : "quiz";
+    var quiz = snapshot && snapshot.proteinQuiz || {};
+    if (quiz.showQuizStep === false) return "single";
+    return quiz.multiStepEnabled === true ? "multi" : "quiz";
   }
 
   function liveSnapshotCta(snapshot) {
@@ -3246,7 +3338,7 @@
   function buildVariantLabel(variant) {
     var quiz = getProteinQuizConfig(variant);
     var parts = [
-      "Flow: " + (quiz.showQuizStep === false ? "Single-step" : "Quiz + form"),
+      "Flow: " + (quiz.showQuizStep === false ? "Single-step" : (quiz.multiStepEnabled === true ? "Multi-step quiz + form" : "Quiz + form")),
       "Fields: " + [
         quiz.showFirstName === false ? "" : "Name",
         quiz.showEmail === false ? "" : "Email"

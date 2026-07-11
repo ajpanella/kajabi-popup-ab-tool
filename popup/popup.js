@@ -244,10 +244,61 @@
     var initialHeadline = headline ? headline.textContent : "";
     var initialSubheadline = subheadline ? subheadline.innerHTML : "";
 
+    var multiQuestions = [
+      { key: "targetWeight", labelKey: "targetWeightLabel", placeholderKey: "targetWeightPlaceholder", styleKey: "targetWeightAnswerStyle" },
+      { key: "strengthDays", labelKey: "strengthDaysLabel", placeholderKey: "strengthDaysPlaceholder", styleKey: "strengthDaysAnswerStyle" },
+      { key: "age", labelKey: "ageLabel", placeholderKey: "agePlaceholder", styleKey: "ageAnswerStyle" }
+    ];
+
     if (proteinQuiz.showQuizStep === false) {
       renderLeadStep(true);
+    } else if (proteinQuiz.multiStepEnabled === true) {
+      renderMultiQuizStep(0);
     } else {
       renderQuizStep();
+    }
+
+    function renderMultiQuizStep(index) {
+      var question = multiQuestions[index];
+      renderProteinTargetPreview(root, proteinQuiz, null);
+      if (headline) headline.innerHTML = sanitizeRichHtml(variant.quizHeadline || variant.headlineHtml || escapeHtml(initialHeadline || "Your Personalized Protein Plan"));
+      if (subheadline) subheadline.innerHTML = sanitizeRichHtml(variant.quizSubheadlineHtml || variant.subheadlineHtml || initialSubheadline || "Answer 3 quick questions and get your personalized protein target.");
+      setPopupValueLine(valueLine, variant.valueLineHtml || escapeHtml(variant.valueLine || ""));
+      container.innerHTML = [
+        index > 0 ? "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Previous question\">&#8592;</button>" : "",
+        renderMultiProgressHtml(proteinQuiz, index + 1, 3),
+        "<form class=\"ll-popup-zapier-form ll-popup-protein-form ll-popup-multi-question\" data-step=\"quiz-" + (index + 1) + "\">",
+        "<fieldset><legend>" + escapeHtml(proteinQuiz[question.labelKey]) + "</legend>",
+        renderMultiQuestionControl(question, proteinQuiz),
+        "</fieldset>",
+        proteinQuiz[question.styleKey] === "ranges" ? "" : "<button type=\"submit\">" + escapeHtml(index === 2 ? proteinQuiz.quizButtonText : "Continue") + "</button>",
+        "</form>"
+      ].join("");
+
+      var form = container.querySelector("form");
+      var backButton = container.querySelector(".ll-popup-step-back");
+      if (backButton) backButton.addEventListener("click", function () { renderMultiQuizStep(index - 1); });
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        var value = getFormValue(form, question.key);
+        if (!value) return;
+        quizData[question.key] = value;
+        if (index < 2) {
+          renderMultiQuizStep(index + 1);
+          return;
+        }
+        quizData.proteinTarget = calculateProteinTarget(quizData.targetWeight, quizData.age, quizData.strengthDays);
+        trackEvent("popup_quiz_submit", getProteinTrackingFields(quizData));
+        renderLeadStep(false);
+      });
+      form.querySelectorAll("[data-auto-answer]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          form.elements[question.key].value = button.dataset.value;
+          quizData[question.key + "Range"] = button.textContent.trim();
+          form.requestSubmit();
+        });
+      });
+      schedulePopupFit(root);
     }
 
     function renderQuizStep() {
@@ -302,7 +353,7 @@
 
       container.innerHTML = [
         singleStep ? "" : "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Back\">&#8592;</button>",
-        singleStep ? renderProteinProgressHtml(proteinQuiz, 1, true) : renderProteinProgressHtml(proteinQuiz, 2),
+        singleStep ? renderProteinProgressHtml(proteinQuiz, 1, true) : (proteinQuiz.multiStepEnabled === true ? renderMultiProgressHtml(proteinQuiz, 3, 3) : renderProteinProgressHtml(proteinQuiz, 2)),
         "<form class=\"ll-popup-zapier-form ll-popup-protein-form\" data-step=\"lead\">",
         proteinQuiz.showFirstName === false ? "" : "<label><span>" + escapeHtml(proteinQuiz.firstNameLabel) + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.firstNamePlaceholder) + "\" required></label>",
         proteinQuiz.showEmail === false ? "" : "<label><span>" + escapeHtml(proteinQuiz.emailLabel) + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(proteinQuiz.emailPlaceholder) + "\" required></label>",
@@ -312,7 +363,7 @@
 
       var form = container.querySelector("form");
       var backButton = container.querySelector(".ll-popup-step-back");
-      if (backButton) backButton.addEventListener("click", renderQuizStep);
+      if (backButton) backButton.addEventListener("click", function () { proteinQuiz.multiStepEnabled === true ? renderMultiQuizStep(2) : renderQuizStep(); });
 
       form.addEventListener("submit", function (event) {
         event.preventDefault();
@@ -325,6 +376,12 @@
           Age: quizData.age,
           strengthDays: quizData.strengthDays,
           StrengthDays: quizData.strengthDays,
+          targetWeightRange: quizData.targetWeightRange || "",
+          TargetWeightRange: quizData.targetWeightRange || "",
+          ageRange: quizData.ageRange || "",
+          AgeRange: quizData.ageRange || "",
+          strengthDaysRange: quizData.strengthDaysRange || "",
+          StrengthDaysRange: quizData.strengthDaysRange || "",
           proteinTargetRange: quizData.proteinTarget && quizData.proteinTarget.rangeText,
           ProteinTargetRange: quizData.proteinTarget && quizData.proteinTarget.rangeText,
           proteinDailyGoalGrams: quizData.proteinTarget && quizData.proteinTarget.dailyGoalGrams,
@@ -378,6 +435,10 @@
       strengthDaysPlaceholder: "Select days",
       ageLabel: "Age",
       agePlaceholder: "48",
+      multiStepEnabled: false,
+      targetWeightAnswerStyle: "dropdown",
+      strengthDaysAnswerStyle: "dropdown",
+      ageAnswerStyle: "dropdown",
       progressEnabled: false,
       progressStepOneLabel: "Step 1 of 2: Quick Calculator",
       progressStepOneText: "Answer 3 quick questions to calculate your personalized protein target immediately.",
@@ -485,6 +546,42 @@
       text ? "<p>" + escapeHtml(text) + "</p>" : "",
       "</div>"
     ].join("");
+  }
+
+  function renderMultiProgressHtml(proteinQuiz, step, total) {
+    if (!proteinQuiz || !proteinQuiz.progressEnabled) return "";
+    var percent = Math.round((step / total) * 100);
+    return "<div class=\"ll-popup-progress ll-popup-progress-multi\" aria-label=\"Question " + step + " of " + total + "\"><div class=\"ll-popup-progress-top\"><span>Question " + step + " of " + total + "</span><strong>" + step + "/" + total + "</strong></div><div class=\"ll-popup-progress-track\" role=\"progressbar\" aria-valuemin=\"1\" aria-valuemax=\"" + total + "\" aria-valuenow=\"" + step + "\"><span style=\"width:" + percent + "%\"></span></div></div>";
+  }
+
+  function renderMultiQuestionControl(question, quiz) {
+    var style = quiz[question.styleKey] || "dropdown";
+    var options = getMultiQuestionOptions(question.key);
+    if (style === "ranges") {
+      return "<input type=\"hidden\" name=\"" + question.key + "\"><div class=\"ll-popup-answer-grid\">" + options.ranges.map(function (option) {
+        return "<button type=\"button\" data-auto-answer data-value=\"" + escapeHtmlAttr(option.value) + "\">" + escapeHtml(option.label) + "</button>";
+      }).join("") + "</div>";
+    }
+    return "<select name=\"" + question.key + "\" required><option value=\"\">" + escapeHtml(quiz[question.placeholderKey]) + "</option>" + options.dropdown.map(function (option) {
+      return "<option value=\"" + option.value + "\">" + escapeHtml(option.label) + "</option>";
+    }).join("") + "</select>";
+  }
+
+  function getMultiQuestionOptions(key) {
+    var values = [];
+    var ranges = [];
+    var i;
+    if (key === "strengthDays") {
+      for (i = 0; i <= 7; i += 1) values.push({ value: String(i), label: i + (i === 1 ? " day" : " days") });
+      ranges = [{value:"0",label:"0 days"},{value:"1",label:"1 day"},{value:"2",label:"2 days"},{value:"3",label:"3 days"},{value:"4",label:"4 days"},{value:"5",label:"5 days"},{value:"6",label:"6 days"},{value:"7",label:"7 days"}];
+    } else if (key === "age") {
+      for (i = 18; i <= 100; i += 1) values.push({ value: String(i), label: String(i) });
+      ranges = [{value:"24",label:"18-29"},{value:"35",label:"30-39"},{value:"45",label:"40-49"},{value:"55",label:"50-59"},{value:"65",label:"60-69"},{value:"75",label:"70+"}];
+    } else {
+      for (i = 80; i <= 350; i += 5) values.push({ value: String(i), label: i + " lbs" });
+      ranges = [{value:"110",label:"Under 120 lbs"},{value:"130",label:"120-139 lbs"},{value:"150",label:"140-159 lbs"},{value:"170",label:"160-179 lbs"},{value:"190",label:"180-199 lbs"},{value:"220",label:"200-239 lbs"},{value:"260",label:"240+ lbs"}];
+    }
+    return { dropdown: values, ranges: ranges };
   }
 
   function redirectToProteinPlan(payload) {
