@@ -4,8 +4,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
-    <link rel="stylesheet" href="../popup/popup.css?v=28">
-    <link rel="stylesheet" href="./dashboard.css?v=49">
+    <link rel="stylesheet" href="../popup/popup.css?v=29">
+    <link rel="stylesheet" href="./dashboard.css?v=50">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js"></script>
   </head>
@@ -213,10 +213,7 @@
               <button id="compare-preview" type="button">Side by Side</button>
               <button id="mobile-preview" type="button">Mobile</button>
             </div>
-            <div class="dash-toggle" role="group" aria-label="Preview step">
-              <button id="quiz-step-preview" class="is-active" type="button">Step 1 Quiz</button>
-              <button id="lead-step-preview" type="button">Step 2 Form</button>
-            </div>
+            <div id="flow-preview-tabs" class="dash-toggle dash-flow-preview-tabs" role="group" aria-label="Preview step"></div>
           </div>
           <div id="variant-previews" class="dash-preview-grid"></div>
         </section>
@@ -368,6 +365,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=88"></script>
+    <script src="./dashboard.js?v=89"></script>
   </body>
 </html>

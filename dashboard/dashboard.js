@@ -24,7 +24,8 @@
   var rows = [];
   var charts = {};
   var previewMode = "desktop";
-  var previewStep = "quiz";
+  var previewStep = 0;
+  var selectedFlowSteps = {};
   var lastColorTarget = null;
   var versionFilterInitialized = false;
   var fullHistorySort = { key: "published", direction: "desc" };
@@ -77,6 +78,7 @@
     mobilePreview: document.getElementById("mobile-preview"),
     quizStepPreview: document.getElementById("quiz-step-preview"),
     leadStepPreview: document.getElementById("lead-step-preview"),
+    flowPreviewTabs: document.getElementById("flow-preview-tabs"),
     warning: document.getElementById("sample-warning"),
     hiddenMetricsStatus: document.getElementById("hidden-metrics-status"),
     showHiddenMetrics: document.getElementById("show-hidden-metrics"),
@@ -174,12 +176,9 @@
     setPreviewMode("mobile");
   });
 
-  els.quizStepPreview.addEventListener("click", function () {
-    setPreviewStep("quiz");
-  });
-
-  els.leadStepPreview.addEventListener("click", function () {
-    setPreviewStep("lead");
+  els.flowPreviewTabs.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-preview-flow-step]");
+    if (button) setPreviewStep(Number(button.dataset.previewFlowStep));
   });
 
   if (defaultCsvUrl) loadCsv();
@@ -250,17 +249,16 @@
     els.changeNote.value = config.changeNote || "";
     renderPalette();
     activeVariants().forEach(function (variant, index) {
+      ensureFlowSteps(variant);
       var label = buildVariantLabel(variant);
       var card = document.createElement("article");
       card.className = "dash-editor-card";
       card.innerHTML = [
         "<div class=\"dash-editor-title\"><h3>Variant " + escapeHtml(variant.id) + "</h3><span>" + escapeHtml(label) + "</span></div>",
-        editorRichText("headlineHtml", index, "Headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
-        editorRichText("subheadlineHtml", index, "Subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
-        editorRichText("valueLineHtml", index, "Value Line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
-        config.leadMagnetMode === "protein_plan" ? editorCompactSizeInput("buttonFontSize", index, "Button CTA size", variant.buttonFontSize, 16) : editorTextWithSize("buttonText", "buttonFontSize", index, "CTA button text", variant.buttonText || "Submit", variant.buttonFontSize, 16),
-        editorInput("imageUrl", index, "Image URL", variant.imageUrl || "", "url"),
-        editorInput("imageAlt", index, "Image alt text", variant.imageAlt || "", "text"),
+        config.leadMagnetMode === "protein_plan" ? "" : editorRichText("headlineHtml", index, "Headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
+        config.leadMagnetMode === "protein_plan" ? "" : editorRichText("subheadlineHtml", index, "Subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
+        config.leadMagnetMode === "protein_plan" ? "" : editorRichText("valueLineHtml", index, "Value Line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
+        "<details class=\"dash-design-panel\"><summary>Design & popup settings</summary><div class=\"dash-global-editor\">",
         "<div class=\"dash-color-row\">",
         editorInput("backgroundColor", index, "Background", variant.backgroundColor || "#ffffff", "color"),
         editorInput("textColor", index, "Text", variant.textColor || "#172026", "color"),
@@ -273,6 +271,11 @@
         editorInput("height", index, "Height px", String(variant.height || ""), "number"),
         editorCheckbox("sizeToImage", index, "Size to Image", Boolean(variant.sizeToImage)),
         editorInput("trafficSplit", index, "Traffic split", String(variant.trafficSplit || 0), "number"),
+        editorCompactSizeInput("headlineFontSize", index, "Default headline size", variant.headlineFontSize, 32),
+        editorCompactSizeInput("subheadlineFontSize", index, "Default subheadline size", variant.subheadlineFontSize, 17),
+        editorCompactSizeInput("valueLineFontSize", index, "Default value line size", variant.valueLineFontSize, 15),
+        editorCompactSizeInput("buttonFontSize", index, "Default button size", variant.buttonFontSize, 16),
+        "</div></details>",
         renderProteinFlowEditor(variant, index),
         "<button class=\"dash-test-popup-button\" data-test-popup=\"" + index + "\" type=\"button\">Load Variant Preview (Dashboard Only)</button>",
         "<button class=\"dash-save-test\" data-save-test=\"" + index + "\" type=\"button\">Save Draft + Log Version</button>"
@@ -351,6 +354,7 @@
     var value = target.isContentEditable ? sanitizeRichHtml(target.innerHTML) : (target.type === "checkbox" ? target.checked : target.value);
     if (key === "width" || key === "height" || key === "trafficSplit" || key === "headlineFontSize" || key === "subheadlineFontSize" || key === "valueLineFontSize" || key === "buttonFontSize") value = value === "" ? "" : Number(value);
     setNestedValue(variant, key, value);
+    syncLegacyVariantFromFlow(variant);
     if (key === "headlineHtml") {
       variant.headline = target.isContentEditable ? (target.textContent || "") : htmlToPlainText(value);
     }
@@ -375,6 +379,7 @@
   }
 
   function shouldRerenderEditorsForField(key) {
+    if (/^flowSteps\.\d+\.(type|field|answerStyle|progressEnabled|enabled)$/.test(key)) return true;
     return [
       "proteinQuiz.showQuizStep",
       "proteinQuiz.showFirstName",
@@ -401,6 +406,11 @@
   }
 
   function onEditorClick(event) {
+    var flowAction = event.target.closest("[data-flow-action]");
+    if (flowAction) {
+      handleFlowAction(flowAction);
+      return;
+    }
     var testButton = event.target.closest("[data-test-popup]");
     if (testButton) {
       var testVariant = activeVariants()[Number(testButton.dataset.testPopup)];
@@ -444,53 +454,16 @@
   }
 
   function renderProteinFlowEditor(variant, index) {
-    var quiz = getProteinQuizConfig(variant);
-    var showQuiz = quiz.showQuizStep !== false;
-    var showProgress = quiz.progressEnabled;
-    var showProgressText = showProgress && showQuiz;
-    var multiStep = showQuiz && quiz.multiStepEnabled === true;
-    var showFirstName = quiz.showFirstName !== false;
-    var showEmail = quiz.showEmail !== false;
+    var steps = ensureFlowSteps(variant);
+    var selected = Math.min(Number(selectedFlowSteps[variant.id] || 0), Math.max(0, steps.length - 1));
+    selectedFlowSteps[variant.id] = selected;
+    var step = steps[selected];
     return [
       "<div class=\"dash-flow-editor dash-variant-flow-editor\">",
-      "<div class=\"dash-flow-head\"><strong>Protein Quiz Flow</strong><span>Variant-specific quiz labels, placeholders, and step-two copy.</span></div>",
-      "<div class=\"dash-global-editor\">",
-      editorCheckbox("proteinQuiz.showQuizStep", index, "Show quiz step before lead form", quiz.showQuizStep !== false),
-      editorCheckbox("proteinQuiz.multiStepEnabled", index, "Ask one quiz question per screen", multiStep, !showQuiz),
-      editorCheckbox("proteinQuiz.showFirstName", index, "Show first name field", quiz.showFirstName !== false),
-      editorCheckbox("proteinQuiz.showEmail", index, "Show email field", quiz.showEmail !== false),
-      editorCheckbox("proteinQuiz.progressEnabled", index, "Show progress bar and step framing", quiz.progressEnabled),
-      showQuiz ? "" : "<div class=\"dash-flow-divider\"><span>Single-step visible copy</span></div>",
-      showQuiz ? "" : editorInput("imageUrl", index, "Single-step hero image URL", variant.imageUrl || "", "url"),
-      showQuiz ? "" : editorRichText("headlineHtml", index, "Single-step headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
-      showQuiz ? "" : editorRichText("subheadlineHtml", index, "Single-step subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
-      showQuiz ? "" : editorRichText("valueLineHtml", index, "Single-step value line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
-      editorTextWithSize("proteinQuiz.progressSingleStepLabel", "proteinQuiz.progressSingleStepLabelFontSize", index, "Single-step progress label", quiz.progressSingleStepLabel || "Step 1", quiz.progressSingleStepLabelFontSize, 12, !showProgress || showQuiz),
-      editorInput("proteinQuiz.progressStepOneLabel", index, "Step 1 progress label", quiz.progressStepOneLabel, "text", !showProgressText),
-      editorTextarea("proteinQuiz.progressStepOneText", index, "Step 1 framing text", quiz.progressStepOneText, !showProgressText),
-      editorInput("proteinQuiz.targetWeightLabel", index, "Target weight label", quiz.targetWeightLabel, "text", !showQuiz),
-      editorInput("proteinQuiz.targetWeightPlaceholder", index, "Target weight placeholder", quiz.targetWeightPlaceholder, "text", !showQuiz),
-      multiStep ? editorOptionSelect("proteinQuiz.targetWeightAnswerStyle", index, "Target weight answer style", quiz.targetWeightAnswerStyle, [{label:"Dropdown",value:"dropdown"},{label:"Range buttons",value:"ranges"}]) : "",
-      editorInput("proteinQuiz.strengthDaysLabel", index, "Strength days label", quiz.strengthDaysLabel, "text", !showQuiz),
-      editorInput("proteinQuiz.strengthDaysPlaceholder", index, "Strength dropdown placeholder", quiz.strengthDaysPlaceholder, "text", !showQuiz),
-      multiStep ? editorOptionSelect("proteinQuiz.strengthDaysAnswerStyle", index, "Strength days answer style", quiz.strengthDaysAnswerStyle, [{label:"Dropdown",value:"dropdown"},{label:"Range buttons",value:"ranges"}]) : "",
-      editorInput("proteinQuiz.ageLabel", index, "Age label", quiz.ageLabel, "text", !showQuiz),
-      editorInput("proteinQuiz.agePlaceholder", index, "Age placeholder", quiz.agePlaceholder, "text", !showQuiz),
-      multiStep ? editorOptionSelect("proteinQuiz.ageAnswerStyle", index, "Age answer style", quiz.ageAnswerStyle, [{label:"Dropdown",value:"dropdown"},{label:"Range buttons",value:"ranges"}]) : "",
-      editorInput("proteinQuiz.quizButtonText", index, "Quiz button text", quiz.quizButtonText, "text", !showQuiz),
-      "<div class=\"dash-flow-divider\"><span>After visitor clicks quiz submit</span></div>",
-      editorProteinTargetPreviewSelect("proteinQuiz.targetPreviewStyle", index, "Step 2 target display", quiz.targetPreviewStyle, !showQuiz),
-      editorInput("proteinQuiz.targetPreviewLabel", index, "Target display label", quiz.targetPreviewLabel, "text", !showQuiz || quiz.targetPreviewStyle === "off"),
-      editorInput("proteinQuiz.progressStepTwoLabel", index, "Step 2 progress label", quiz.progressStepTwoLabel, "text", !showProgressText),
-      editorTextarea("proteinQuiz.progressStepTwoText", index, "Step 2 framing text", quiz.progressStepTwoText, !showProgressText),
-      editorInput("proteinQuiz.leadHeadline", index, "Lead-step headline", quiz.leadHeadline, "text", !showQuiz),
-      editorTextarea("proteinQuiz.leadSubheadline", index, "Lead-step subheadline", quiz.leadSubheadline, !showQuiz),
-      editorInput("proteinQuiz.firstNameLabel", index, "First name label", quiz.firstNameLabel, "text", !showFirstName),
-      editorInput("proteinQuiz.firstNamePlaceholder", index, "First name placeholder", quiz.firstNamePlaceholder, "text", !showFirstName),
-      editorInput("proteinQuiz.emailLabel", index, "Email label", quiz.emailLabel, "text", !showEmail),
-      editorInput("proteinQuiz.emailPlaceholder", index, "Email placeholder", quiz.emailPlaceholder, "text", !showEmail),
-      editorTextWithSize("proteinQuiz.leadButtonText", "buttonFontSize", index, showQuiz ? "Lead button text" : "Button CTA", quiz.leadButtonText, variant.buttonFontSize, 16),
-      "</div>",
+      "<div class=\"dash-flow-head\"><strong>Flow Builder</strong><span>Build the popup in the same order visitors experience it.</span></div>",
+      renderFlowPresetBar(variant, index),
+      "<div class=\"dash-step-sequence\">" + steps.map(function (item, stepIndex) { return renderFlowStepTab(item, stepIndex, selected, index); }).join("") + "<button class=\"dash-add-step\" type=\"button\" data-flow-action=\"add\" data-variant-index=\"" + index + "\">+ Add Step</button></div>",
+      renderFlowStepEditor(variant, step, selected, index),
       "</div>"
     ].join("");
   }
@@ -498,6 +471,190 @@
   function editorInput(field, index, label, value, type, disabled) {
     if (type === "color") return editorColorInput(field, index, label, value, disabled);
     return "<label" + disabledFieldClass(disabled) + ">" + escapeHtml(label) + "<input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"" + type + "\" value=\"" + escapeHtmlAttr(value) + "\"" + disabledAttr(disabled) + "></label>";
+  }
+
+  function ensureFlowSteps(variant) {
+    if (Array.isArray(variant.flowSteps) && variant.flowSteps.length) return variant.flowSteps;
+    var quiz = getProteinQuizConfig(variant);
+    var shared = {
+      headlineHtml: variant.headlineHtml || escapeHtml(variant.headline || ""),
+      subheadlineHtml: variant.subheadlineHtml || escapeHtml(variant.subheadline || ""),
+      valueLineHtml: variant.valueLineHtml || escapeHtml(variant.valueLine || ""),
+      imageUrl: variant.imageUrl || ""
+    };
+    var lead = Object.assign({}, shared, {
+      id: flowStepId(), name: "Lead Form", type: "lead", enabled: true,
+      headlineHtml: quiz.showQuizStep === false ? shared.headlineHtml : escapeHtml(quiz.leadHeadline || ""),
+      subheadlineHtml: quiz.showQuizStep === false ? shared.subheadlineHtml : escapeHtml(quiz.leadSubheadline || ""),
+      fields: [quiz.showFirstName === false ? "" : "name", quiz.showEmail === false ? "" : "email"].filter(Boolean),
+      firstNameLabel: quiz.firstNameLabel, firstNamePlaceholder: quiz.firstNamePlaceholder,
+      emailLabel: quiz.emailLabel, emailPlaceholder: quiz.emailPlaceholder,
+      buttonText: quiz.leadButtonText || variant.buttonText || "Submit",
+      progressEnabled: Boolean(quiz.progressEnabled), progressLabel: quiz.progressSingleStepLabel || "Step 1",
+      targetPreviewStyle: quiz.showQuizStep === false ? "off" : quiz.targetPreviewStyle,
+      targetPreviewLabel: quiz.targetPreviewLabel
+    });
+    lead.showFirstName = lead.fields.indexOf("name") >= 0;
+    lead.showEmail = lead.fields.indexOf("email") >= 0;
+    if (quiz.showQuizStep === false) variant.flowSteps = [lead];
+    else if (quiz.multiStepEnabled === true) variant.flowSteps = [
+      makeQuestionStep("Target Weight", "targetWeight", quiz.targetWeightLabel, quiz.targetWeightPlaceholder, quiz.targetWeightAnswerStyle, shared, quiz),
+      makeQuestionStep("Strength Training", "strengthDays", quiz.strengthDaysLabel, quiz.strengthDaysPlaceholder, quiz.strengthDaysAnswerStyle, shared, quiz),
+      makeQuestionStep("Age", "age", quiz.ageLabel, quiz.agePlaceholder, quiz.ageAnswerStyle, shared, quiz),
+      lead
+    ];
+    else variant.flowSteps = [Object.assign({}, shared, {
+      id: flowStepId(), name: "Protein Questions", type: "questions", enabled: true,
+      fields: ["targetWeight", "strengthDays", "age"], buttonText: quiz.quizButtonText,
+      targetWeightLabel: quiz.targetWeightLabel, targetWeightPlaceholder: quiz.targetWeightPlaceholder,
+      strengthDaysLabel: quiz.strengthDaysLabel, strengthDaysPlaceholder: quiz.strengthDaysPlaceholder,
+      ageLabel: quiz.ageLabel, agePlaceholder: quiz.agePlaceholder,
+      progressEnabled: Boolean(quiz.progressEnabled), progressLabel: quiz.progressStepOneLabel,
+      progressText: quiz.progressStepOneText
+    }), lead];
+    return variant.flowSteps;
+  }
+
+  function makeQuestionStep(name, field, label, placeholder, answerStyle, shared, quiz) {
+    return Object.assign({}, shared, {
+      id: flowStepId(), name: name, type: "question", enabled: true, field: field,
+      questionLabel: label, placeholder: placeholder, answerStyle: answerStyle || "dropdown",
+      required: true, autoAdvance: answerStyle === "ranges", buttonText: quiz.quizButtonText || "Continue",
+      progressEnabled: Boolean(quiz.progressEnabled), progressLabel: "Question {current} of {total}"
+    });
+  }
+
+  function flowStepId() {
+    return "step_" + Math.random().toString(36).slice(2, 8);
+  }
+
+  function renderFlowPresetBar(variant, index) {
+    return "<div class=\"dash-flow-presets\"><span>Start from:</span>" + [
+      ["email", "Email Only"], ["combined", "All Questions + Email"], ["multi", "One Question Per Step"]
+    ].map(function (preset) {
+      return "<button type=\"button\" data-flow-action=\"preset\" data-preset=\"" + preset[0] + "\" data-variant-index=\"" + index + "\">" + preset[1] + "</button>";
+    }).join("") + "</div>";
+  }
+
+  function renderFlowStepTab(step, stepIndex, selected, variantIndex) {
+    return "<button class=\"dash-step-tab" + (stepIndex === selected ? " is-active" : "") + "\" type=\"button\" data-flow-action=\"select\" data-step-index=\"" + stepIndex + "\" data-variant-index=\"" + variantIndex + "\"><strong>" + (stepIndex + 1) + ". " + escapeHtml(step.name || step.type) + "</strong><span>" + escapeHtml(flowStepTypeLabel(step)) + "</span></button>";
+  }
+
+  function flowStepTypeLabel(step) {
+    if (step.type === "lead") return "Lead form";
+    if (step.type === "questions") return "3 questions";
+    if (step.type === "message") return "Message";
+    return step.answerStyle === "ranges" ? "Choice buttons" : (step.answerStyle || "Question");
+  }
+
+  function renderFlowStepEditor(variant, step, stepIndex, variantIndex) {
+    if (!step) return "";
+    var path = "flowSteps." + stepIndex + ".";
+    var questionOptions = [{label:"Target Weight",value:"targetWeight"},{label:"Strength Training",value:"strengthDays"},{label:"Age",value:"age"},{label:"Custom Question",value:"custom"}];
+    return [
+      "<div class=\"dash-step-editor\"><div class=\"dash-step-editor-head\"><div><span>STEP " + (stepIndex + 1) + "</span><h4>" + escapeHtml(step.name || "Popup step") + "</h4></div><div class=\"dash-step-actions\">",
+      stepIndex > 0 ? flowActionButton("up", "↑", variantIndex, stepIndex, "Move earlier") : "",
+      stepIndex < variant.flowSteps.length - 1 ? flowActionButton("down", "↓", variantIndex, stepIndex, "Move later") : "",
+      flowActionButton("duplicate", "Duplicate", variantIndex, stepIndex, "Duplicate step"),
+      variant.flowSteps.length > 1 ? flowActionButton("delete", "Delete", variantIndex, stepIndex, "Delete step") : "",
+      "</div></div><div class=\"dash-step-settings\">",
+      editorInput(path + "name", variantIndex, "Internal step name", step.name || "", "text"),
+      editorCheckbox(path + "enabled", variantIndex, "Step enabled", step.enabled !== false),
+      editorOptionSelect(path + "type", variantIndex, "Step type", step.type, [{label:"Single question",value:"question"},{label:"Combined questions",value:"questions"},{label:"Lead form",value:"lead"},{label:"Message / result",value:"message"}]),
+      editorInput(path + "imageUrl", variantIndex, "Hero image URL", step.imageUrl || "", "url"),
+      editorRichText(path + "headlineHtml", variantIndex, "Headline", step.headlineHtml || "", false, path + "headlineFontSize", step.headlineFontSize || variant.headlineFontSize, 32, variant.textColor),
+      editorRichText(path + "subheadlineHtml", variantIndex, "Subheadline", step.subheadlineHtml || "", false, path + "subheadlineFontSize", step.subheadlineFontSize || variant.subheadlineFontSize, 17, variant.textColor),
+      editorRichText(path + "valueLineHtml", variantIndex, "Value line", step.valueLineHtml || "", false, path + "valueLineFontSize", step.valueLineFontSize || variant.valueLineFontSize, 15, variant.brandAccentColor),
+      editorInput(path + "backgroundColor", variantIndex, "Step background (optional)", step.backgroundColor || variant.backgroundColor || "#ffffff", "color"),
+      editorInput(path + "buttonColor", variantIndex, "Step button color", step.buttonColor || variant.accentColor || "#1f6feb", "color"),
+      editorInput(path + "progressColor", variantIndex, "Progress color", step.progressColor || variant.brandAccentColor || "#06b00b", "color"),
+      step.type === "question" ? editorOptionSelect(path + "field", variantIndex, "Question", step.field, questionOptions) : "",
+      step.type === "question" ? editorInput(path + "questionLabel", variantIndex, "Question text", step.questionLabel || "", "text") : "",
+      step.type === "question" ? editorOptionSelect(path + "answerStyle", variantIndex, "Answer style", step.answerStyle || "dropdown", [{label:"Dropdown",value:"dropdown"},{label:"Choice buttons",value:"ranges"},{label:"Number field",value:"number"},{label:"Text field",value:"text"}]) : "",
+      step.type === "question" ? editorInput(path + "placeholder", variantIndex, "Placeholder", step.placeholder || "", "text") : "",
+      step.type === "question" && step.field === "custom" && (step.answerStyle === "dropdown" || step.answerStyle === "ranges") ? editorTextarea(path + "optionsText", variantIndex, "Choices (Label|value, one per line)", step.optionsText || "Yes|yes\nNo|no") : "",
+      step.type === "question" ? editorCheckbox(path + "required", variantIndex, "Required", step.required !== false) : "",
+      step.type === "question" ? editorCheckbox(path + "autoAdvance", variantIndex, "Advance immediately after a choice", Boolean(step.autoAdvance)) : "",
+      step.type === "questions" ? editorInput(path + "targetWeightLabel", variantIndex, "Target weight label", step.targetWeightLabel || "Target weight in lbs", "text") : "",
+      step.type === "questions" ? editorInput(path + "targetWeightPlaceholder", variantIndex, "Target weight placeholder", step.targetWeightPlaceholder || "155", "text") : "",
+      step.type === "questions" ? editorInput(path + "strengthDaysLabel", variantIndex, "Strength days label", step.strengthDaysLabel || "Strength training days", "text") : "",
+      step.type === "questions" ? editorInput(path + "strengthDaysPlaceholder", variantIndex, "Strength days placeholder", step.strengthDaysPlaceholder || "Select days", "text") : "",
+      step.type === "questions" ? editorInput(path + "ageLabel", variantIndex, "Age label", step.ageLabel || "Age", "text") : "",
+      step.type === "questions" ? editorInput(path + "agePlaceholder", variantIndex, "Age placeholder", step.agePlaceholder || "48", "text") : "",
+      step.type === "lead" ? editorCheckbox(path + "showFirstName", variantIndex, "Collect first name", (step.fields || []).indexOf("name") >= 0) : "",
+      step.type === "lead" ? editorCheckbox(path + "showEmail", variantIndex, "Collect email", (step.fields || []).indexOf("email") >= 0) : "",
+      step.type === "lead" ? editorInput(path + "firstNamePlaceholder", variantIndex, "First name placeholder", step.firstNamePlaceholder || "First Name", "text") : "",
+      step.type === "lead" ? editorInput(path + "emailPlaceholder", variantIndex, "Email placeholder", step.emailPlaceholder || "Email", "text") : "",
+      step.type === "lead" ? editorProteinTargetPreviewSelect(path + "targetPreviewStyle", variantIndex, "Protein target display", step.targetPreviewStyle || "off") : "",
+      editorTextWithSize(path + "buttonText", path + "buttonFontSize", variantIndex, "Button CTA", step.buttonText || "Continue", step.buttonFontSize || variant.buttonFontSize, 16),
+      "<div class=\"dash-flow-divider\"><span>Progress & navigation</span></div>",
+      editorCheckbox(path + "progressEnabled", variantIndex, "Show progress bar", Boolean(step.progressEnabled)),
+      editorInput(path + "progressLabel", variantIndex, "Progress label", step.progressLabel || "Step {current} of {total}", "text", !step.progressEnabled),
+      editorCheckbox(path + "showBack", variantIndex, "Show back arrow", stepIndex > 0 && step.showBack !== false, stepIndex === 0),
+      "</div></div>"
+    ].join("");
+  }
+
+  function flowActionButton(action, text, variantIndex, stepIndex, label) {
+    return "<button type=\"button\" data-flow-action=\"" + action + "\" data-variant-index=\"" + variantIndex + "\" data-step-index=\"" + stepIndex + "\" aria-label=\"" + label + "\">" + text + "</button>";
+  }
+
+  function handleFlowAction(button) {
+    var variantIndex = Number(button.dataset.variantIndex);
+    var variant = activeVariants()[variantIndex];
+    if (!variant) return;
+    var steps = ensureFlowSteps(variant);
+    var index = Number(button.dataset.stepIndex || 0);
+    var action = button.dataset.flowAction;
+    if (action === "select") selectedFlowSteps[variant.id] = index;
+    if (action === "add") {
+      steps.push(makeBlankFlowStep("question", variant));
+      selectedFlowSteps[variant.id] = steps.length - 1;
+    }
+    if (action === "delete" && steps.length > 1) {
+      steps.splice(index, 1);
+      selectedFlowSteps[variant.id] = Math.max(0, index - 1);
+    }
+    if (action === "duplicate") {
+      var copy = cloneConfig(steps[index]); copy.id = flowStepId(); copy.name = (copy.name || "Step") + " Copy";
+      steps.splice(index + 1, 0, copy); selectedFlowSteps[variant.id] = index + 1;
+    }
+    if ((action === "up" && index > 0) || (action === "down" && index < steps.length - 1)) {
+      var next = action === "up" ? index - 1 : index + 1;
+      var moved = steps.splice(index, 1)[0]; steps.splice(next, 0, moved); selectedFlowSteps[variant.id] = next;
+    }
+    if (action === "preset") applyFlowPreset(variant, button.dataset.preset);
+    syncLegacyVariantFromFlow(variant);
+    saveDraftConfig(); renderEditors(); renderPreviews(previewMode); renderEmbedCode(); updateDashboard();
+  }
+
+  function makeBlankFlowStep(type, variant) {
+    return {id:flowStepId(),name:"New Question",type:type,enabled:true,field:"custom",questionLabel:"Your question",answerStyle:"text",placeholder:"",required:true,autoAdvance:false,headlineHtml:"",subheadlineHtml:"",valueLineHtml:"",imageUrl:variant.imageUrl || "",buttonText:"Continue",buttonColor:variant.accentColor || "",progressColor:variant.brandAccentColor || "",progressEnabled:true,progressLabel:"Step {current} of {total}",showBack:true};
+  }
+
+  function applyFlowPreset(variant, preset) {
+    delete variant.flowSteps;
+    var quiz = variant.proteinQuiz = variant.proteinQuiz || {};
+    quiz.showQuizStep = preset !== "email";
+    quiz.multiStepEnabled = preset === "multi";
+    quiz.showFirstName = false; quiz.showEmail = true;
+    ensureFlowSteps(variant);
+    selectedFlowSteps[variant.id] = 0;
+  }
+
+  function syncLegacyVariantFromFlow(variant) {
+    var steps = variant.flowSteps || [];
+    var lead = steps.filter(function (step) { return step.enabled !== false && step.type === "lead"; })[0];
+    var quiz = variant.proteinQuiz = variant.proteinQuiz || {};
+    quiz.showQuizStep = steps.some(function (step) { return step.enabled !== false && (step.type === "question" || step.type === "questions"); });
+    quiz.multiStepEnabled = steps.filter(function (step) { return step.enabled !== false && step.type === "question"; }).length > 1;
+    if (lead) {
+      lead.fields = [lead.showFirstName ? "name" : "", lead.showEmail === false ? "" : "email"].filter(Boolean);
+      quiz.showFirstName = lead.fields.indexOf("name") >= 0; quiz.showEmail = lead.fields.indexOf("email") >= 0;
+      quiz.leadButtonText = lead.buttonText || quiz.leadButtonText; quiz.leadHeadline = htmlToPlainText(lead.headlineHtml); quiz.leadSubheadline = htmlToPlainText(lead.subheadlineHtml);
+    }
+    var first = steps[0];
+    if (first) { variant.headlineHtml = first.headlineHtml || ""; variant.headline = htmlToPlainText(first.headlineHtml); variant.subheadlineHtml = first.subheadlineHtml || ""; variant.subheadline = htmlToPlainText(first.subheadlineHtml); variant.valueLineHtml = first.valueLineHtml || ""; variant.imageUrl = first.imageUrl || variant.imageUrl; }
   }
 
   function editorColorInput(field, index, label, value, disabled) {
@@ -1276,6 +1433,7 @@
   }
 
   function renderPreviews(mode) {
+    renderPreviewFlowTabs();
     els.previews.innerHTML = "";
     els.previews.classList.toggle("is-compare", mode === "compare");
     els.previews.classList.toggle("is-mobile", mode === "mobile");
@@ -1289,7 +1447,8 @@
 
       var stage = document.createElement("div");
       stage.className = "dash-preview-stage" + (mode === "mobile" ? " is-mobile" : "") + (mode === "compare" ? " is-compare" : "");
-      var preview = buildPreview(variant, previewStep);
+      var steps = ensureFlowSteps(variant);
+      var preview = buildPreview(variant, Math.min(Number(previewStep || 0), steps.length - 1));
       stage.appendChild(preview);
 
       card.appendChild(title);
@@ -1301,8 +1460,18 @@
     });
   }
 
+  function renderPreviewFlowTabs() {
+    var variant = activeVariants()[0];
+    if (!variant || !els.flowPreviewTabs) return;
+    var steps = ensureFlowSteps(variant);
+    if (Number(previewStep) >= steps.length) previewStep = 0;
+    els.flowPreviewTabs.innerHTML = steps.map(function (step, index) {
+      return "<button type=\"button\" data-preview-flow-step=\"" + index + "\" class=\"" + (Number(previewStep) === index ? "is-active" : "") + "\">" + (index + 1) + ". " + escapeHtml(step.name || step.type) + "</button>";
+    }).join("");
+  }
+
   function buildPreview(variant, step) {
-    step = step || "quiz";
+    step = Number(step || 0);
     var quiz = getProteinQuizConfig(variant);
     var root = document.createElement("div");
     root.className = "ll-popup-root ll-popup-is-visible";
@@ -1553,6 +1722,10 @@
   }
 
   function renderProteinPlanPreviewForm(container, variant) {
+    if (Array.isArray(variant.flowSteps) && variant.flowSteps.length) {
+      renderFlowPlanPreviewForm(container, variant, Number(previewStep || 0));
+      return;
+    }
     var quizData = {};
     var root = container.closest(".ll-popup-root");
     var headline = root && root.querySelector(".ll-popup-headline");
@@ -1704,6 +1877,77 @@
       });
       schedulePopupFit(container.closest(".ll-popup-root"));
     }
+  }
+
+  function renderFlowPlanPreviewForm(container, variant, initialStep) {
+    var steps = variant.flowSteps.filter(function (step) { return step && step.enabled !== false; });
+    var root = container.closest(".ll-popup-root");
+    var headline = root && root.querySelector(".ll-popup-headline");
+    var subheadline = root && root.querySelector(".ll-popup-subheadline");
+    var valueLine = root && root.querySelector(".ll-popup-value-line");
+    renderStep(Math.min(initialStep, steps.length - 1));
+
+    function renderStep(index) {
+      var step = steps[index];
+      if (!step) return;
+      if (headline) headline.innerHTML = sanitizeRichHtml(step.headlineHtml || "");
+      if (subheadline) { subheadline.innerHTML = sanitizeRichHtml(step.subheadlineHtml || ""); subheadline.hidden = !step.subheadlineHtml; }
+      setPopupValueLine(valueLine, step.valueLineHtml || "");
+      root.style.setProperty("--ll-popup-bg", step.backgroundColor || variant.backgroundColor || "#ffffff");
+      root.style.setProperty("--ll-popup-button-bg", step.buttonColor || variant.accentColor || "#1f6feb");
+      root.style.setProperty("--ll-popup-accent", step.progressColor || variant.brandAccentColor || "#06b00b");
+      setOptionalPixelVariable(root, "--ll-popup-headline-size", step.headlineFontSize || variant.headlineFontSize, 18, 72);
+      setOptionalPixelVariable(root, "--ll-popup-subheadline-size", step.subheadlineFontSize || variant.subheadlineFontSize, 12, 36);
+      setOptionalPixelVariable(root, "--ll-popup-value-line-size", step.valueLineFontSize || variant.valueLineFontSize, 11, 32);
+      setOptionalPixelVariable(root, "--ll-popup-button-size", step.buttonFontSize || variant.buttonFontSize, 12, 28);
+      var image = root.querySelector(".ll-popup-image");
+      if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
+      var progress = flowPreviewPosition(steps, index);
+      container.innerHTML = (index > 0 && step.showBack !== false ? "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Previous step\">&#8592;</button>" : "") + renderFlowPreviewProgress(step, progress.current, progress.total) + renderFlowPreviewForm(step);
+      var back = container.querySelector(".ll-popup-step-back"); if (back) back.addEventListener("click", function () { renderStep(index - 1); });
+      var form = container.querySelector("form"); if (form) form.addEventListener("submit", function (event) { event.preventDefault(); if (index < steps.length - 1) renderStep(index + 1); });
+      container.querySelectorAll("[data-flow-answer]").forEach(function (button) { button.addEventListener("click", function () { if (index < steps.length - 1) renderStep(index + 1); }); });
+      schedulePopupFit(root);
+    }
+
+    function renderFlowPreviewForm(step) {
+      var content = "";
+      if (step.type === "lead") {
+        var fields = step.fields || [];
+        if (fields.indexOf("name") >= 0) content += "<label><span>" + escapeHtml(step.firstNameLabel || "First name") + "</span><input placeholder=\"" + escapeHtmlAttr(step.firstNamePlaceholder || "First Name") + "\"></label>";
+        if (fields.indexOf("email") >= 0) content += "<label><span>" + escapeHtml(step.emailLabel || "Email") + "</span><input type=\"email\" placeholder=\"" + escapeHtmlAttr(step.emailPlaceholder || "Email") + "\"></label>";
+      } else if (step.type === "questions") content = "<label><span>" + escapeHtml(step.targetWeightLabel || "Target weight in lbs") + "</span><input placeholder=\"" + escapeHtmlAttr(step.targetWeightPlaceholder || "155") + "\"></label><label><span>" + escapeHtml(step.strengthDaysLabel || "Strength training days") + "</span><select><option>" + escapeHtml(step.strengthDaysPlaceholder || "Select days") + "</option></select></label><label><span>" + escapeHtml(step.ageLabel || "Age") + "</span><input placeholder=\"" + escapeHtmlAttr(step.agePlaceholder || "48") + "\"></label>";
+      else if (step.type === "message") content = "";
+      else content = "<fieldset><legend>" + escapeHtml(step.questionLabel || step.name) + "</legend>" + renderFlowPreviewControl(step) + "</fieldset>";
+      var hide = step.type === "question" && step.answerStyle === "ranges" && step.autoAdvance !== false;
+      return "<form class=\"ll-popup-zapier-form ll-popup-protein-form" + (step.type === "question" ? " ll-popup-multi-question" : "") + "\">" + content + (hide ? "" : "<button type=\"submit\">" + escapeHtml(step.buttonText || "Continue") + "</button>") + "</form>";
+    }
+
+    function renderFlowPreviewControl(step) {
+      var options = getFlowStepOptions(step);
+      if (step.answerStyle === "ranges") return "<div class=\"ll-popup-answer-grid\">" + options.ranges.map(function (option) { return "<button type=\"button\" data-flow-answer>" + escapeHtml(option.label) + "</button>"; }).join("") + "</div>";
+      if (step.answerStyle === "dropdown") return "<select><option>" + escapeHtml(step.placeholder || "Select one") + "</option>" + options.dropdown.slice(0, 20).map(function (option) { return "<option>" + escapeHtml(option.label) + "</option>"; }).join("") + "</select>";
+      return "<input type=\"" + (step.answerStyle === "number" ? "number" : "text") + "\" placeholder=\"" + escapeHtmlAttr(step.placeholder || "") + "\">";
+    }
+  }
+
+  function renderFlowPreviewProgress(step, current, total) {
+    if (!step.progressEnabled) return "";
+    var label = String(step.progressLabel || "Step {current} of {total}").replace(/\{current\}/g, current).replace(/\{total\}/g, total);
+    return "<div class=\"ll-popup-progress\"><div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label) + "</span><strong>" + current + "/" + total + "</strong></div><div class=\"ll-popup-progress-track\"><span style=\"width:" + Math.round(current / total * 100) + "%\"></span></div></div>";
+  }
+
+  function flowPreviewPosition(steps, index) {
+    var questionIndexes = [];
+    steps.forEach(function (step, stepIndex) { if (step.type === "question" || step.type === "questions") questionIndexes.push(stepIndex); });
+    var position = questionIndexes.indexOf(index);
+    return {current: position >= 0 ? position + 1 : Math.max(1, questionIndexes.length), total: Math.max(1, questionIndexes.length)};
+  }
+
+  function getFlowStepOptions(step) {
+    if (step.field !== "custom") return getMultiQuestionOptions(step.field);
+    var lines = String(step.optionsText || "Yes|yes\nNo|no").split(/\n/).filter(Boolean).map(function (line) { var parts = line.split("|"); return {label:parts[0].trim(),value:(parts[1] || parts[0]).trim()}; });
+    return {dropdown:lines,ranges:lines};
   }
 
   function getFormValue(form, name) {
@@ -2006,8 +2250,6 @@
 
   function setPreviewStep(step) {
     previewStep = step;
-    els.quizStepPreview.classList.toggle("is-active", step === "quiz");
-    els.leadStepPreview.classList.toggle("is-active", step === "lead");
     renderPreviews(previewMode);
   }
 
@@ -2972,6 +3214,9 @@
     var label = row.variantLabel || labelFromSnapshot(row.variantSnapshot) || "";
     var source = snapshot || {};
     var quiz = source.proteinQuiz || {};
+    var flowSteps = Array.isArray(source.flowSteps) ? source.flowSteps.filter(function (step) { return step.enabled !== false; }) : [];
+    var firstFlowStep = flowSteps[0] || {};
+    var leadFlowStep = flowSteps.filter(function (step) { return step.type === "lead"; })[0] || {};
     var isSingleStep = quiz.showQuizStep === false || label.indexOf("Flow: Single-step") >= 0;
     return {
       variant: row.variant || "Unknown",
@@ -2979,11 +3224,11 @@
       label: label || [row.variant || "Unknown", row.configVersion || "unversioned"].join(" / "),
       snapshot: snapshot,
       changeNote: row.changeNote || "",
-      headline: cleanHistoryText(source.headlineHtml || source.headline || headlineFromLabel(label) || ""),
-      subheadline: cleanHistoryText(source.subheadlineHtml || source.subheadline || ""),
-      cta: quiz.leadButtonText || source.buttonText || "",
-      flow: isSingleStep ? "single" : (quiz.multiStepEnabled === true ? "multi" : "quiz"),
-      flowLabel: isSingleStep ? "Single-step" : (quiz.multiStepEnabled === true ? "Multi-step quiz + lead form" : "Quiz + lead form"),
+      headline: cleanHistoryText(firstFlowStep.headlineHtml || source.headlineHtml || source.headline || headlineFromLabel(label) || ""),
+      subheadline: cleanHistoryText(firstFlowStep.subheadlineHtml || source.subheadlineHtml || source.subheadline || ""),
+      cta: leadFlowStep.buttonText || quiz.leadButtonText || source.buttonText || "",
+      flow: flowSteps.length > 2 ? "multi" : (isSingleStep ? "single" : "quiz"),
+      flowLabel: flowSteps.length ? flowSteps.length + "-step custom flow" : (isSingleStep ? "Single-step" : (quiz.multiStepEnabled === true ? "Multi-step quiz + lead form" : "Quiz + lead form")),
       buttonColor: source.accentColor || "",
       firstSeen: null,
       lastSeen: null,
@@ -3218,6 +3463,9 @@
 
   function liveSnapshotFlow(snapshot) {
     var quiz = snapshot && snapshot.proteinQuiz || {};
+    var flowSteps = snapshot && Array.isArray(snapshot.flowSteps) ? snapshot.flowSteps.filter(function (step) { return step.enabled !== false; }) : [];
+    if (flowSteps.length > 2) return "multi";
+    if (flowSteps.length === 1) return "single";
     if (quiz.showQuizStep === false) return "single";
     return quiz.multiStepEnabled === true ? "multi" : "quiz";
   }
@@ -3337,8 +3585,9 @@
 
   function buildVariantLabel(variant) {
     var quiz = getProteinQuizConfig(variant);
+    var flowCount = Array.isArray(variant.flowSteps) ? variant.flowSteps.filter(function (step) { return step.enabled !== false; }).length : 0;
     var parts = [
-      "Flow: " + (quiz.showQuizStep === false ? "Single-step" : (quiz.multiStepEnabled === true ? "Multi-step quiz + form" : "Quiz + form")),
+      "Flow: " + (flowCount ? flowCount + "-step custom flow" : (quiz.showQuizStep === false ? "Single-step" : (quiz.multiStepEnabled === true ? "Multi-step quiz + form" : "Quiz + form"))),
       "Fields: " + [
         quiz.showFirstName === false ? "" : "Name",
         quiz.showEmail === false ? "" : "Email"
@@ -3382,7 +3631,8 @@
       fontFamily: variant.fontFamily || "",
       textAlign: variant.textAlign || "",
       trafficSplit: variant.trafficSplit || "",
-      proteinQuiz: cloneConfig(variant.proteinQuiz || {})
+      proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
+      flowSteps: cloneConfig(variant.flowSteps || [])
     };
   }
 

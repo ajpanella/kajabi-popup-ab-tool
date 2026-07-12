@@ -235,6 +235,10 @@
   }
 
   function renderProteinPlanForm(container) {
+    if (Array.isArray(variant.flowSteps) && variant.flowSteps.length) {
+      renderFlowPlanForm(container);
+      return;
+    }
     var quizData = {};
     var proteinQuiz = getProteinQuizConfig(variant);
     var root = container.closest(".ll-popup-root");
@@ -399,6 +403,147 @@
 
       schedulePopupFit(root);
     }
+  }
+
+  function renderFlowPlanForm(container) {
+    var steps = variant.flowSteps.filter(function (step) { return step && step.enabled !== false; });
+    if (!steps.length) return;
+    var answers = {};
+    var currentIndex = 0;
+    var root = container.closest(".ll-popup-root");
+    var headline = root && root.querySelector(".ll-popup-headline");
+    var subheadline = root && root.querySelector(".ll-popup-subheadline");
+    var valueLine = root && root.querySelector(".ll-popup-value-line");
+    renderStep(0);
+
+    function renderStep(index) {
+      currentIndex = Math.max(0, Math.min(index, steps.length - 1));
+      var step = steps[currentIndex];
+      applyFlowStepCopy(root, step, headline, subheadline, valueLine);
+      var target = calculateFlowProteinTarget(answers);
+      renderProteinTargetPreview(root, {showQuizStep:true,targetPreviewStyle:step.targetPreviewStyle || "off",targetPreviewLabel:step.targetPreviewLabel || "Your Daily Target:"}, target);
+      container.innerHTML = [
+        currentIndex > 0 && step.showBack !== false ? "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Previous step\">&#8592;</button>" : "",
+        renderFlowProgressHtml(step, flowProgressPosition(steps, currentIndex).current, flowProgressPosition(steps, currentIndex).total),
+        renderFlowStepForm(step)
+      ].join("");
+      var back = container.querySelector(".ll-popup-step-back");
+      if (back) back.addEventListener("click", function () { renderStep(currentIndex - 1); });
+      var form = container.querySelector("form");
+      if (form) {
+        form.addEventListener("submit", function (event) {
+          event.preventDefault();
+          collectFlowStepAnswers(form, step, answers);
+          if (step.type === "lead") return submitFlowLead(form, answers);
+          if (currentIndex < steps.length - 1) renderStep(currentIndex + 1);
+        });
+        form.querySelectorAll("[data-flow-answer]").forEach(function (button) {
+          button.addEventListener("click", function () {
+            var input = form.elements[step.field];
+            if (input) input.value = button.dataset.value;
+            answers[step.field + "Range"] = button.textContent.trim();
+            form.requestSubmit();
+          });
+        });
+      }
+      schedulePopupFit(root);
+    }
+
+    function renderFlowStepForm(step) {
+      if (step.type === "message") return currentIndex < steps.length - 1 ? "<form class=\"ll-popup-zapier-form\" data-step=\"message\"><button type=\"submit\">" + escapeHtml(step.buttonText || "Continue") + "</button></form>" : "<div class=\"ll-popup-form-status\"></div>";
+      var content = "";
+      if (step.type === "lead") {
+        var fields = step.fields || [];
+        if (fields.indexOf("name") >= 0) content += "<label><span>" + escapeHtml(step.firstNameLabel || "First name") + "</span><input name=\"name\" autocomplete=\"given-name\" placeholder=\"" + escapeHtmlAttr(step.firstNamePlaceholder || "First Name") + "\" required></label>";
+        if (fields.indexOf("email") >= 0) content += "<label><span>" + escapeHtml(step.emailLabel || "Email") + "</span><input name=\"email\" type=\"email\" autocomplete=\"email\" placeholder=\"" + escapeHtmlAttr(step.emailPlaceholder || "Email") + "\" required></label>";
+      } else if (step.type === "questions") {
+        content = renderLegacyCombinedFields(step);
+      } else {
+        content = "<fieldset><legend>" + escapeHtml(step.questionLabel || step.name || "Your answer") + "</legend>" + renderFlowQuestionControl(step) + "</fieldset>";
+      }
+      var hideButton = step.type === "question" && step.answerStyle === "ranges" && step.autoAdvance !== false;
+      return "<form class=\"ll-popup-zapier-form ll-popup-protein-form" + (step.type === "question" ? " ll-popup-multi-question" : "") + "\" data-step=\"" + escapeHtmlAttr(step.type) + "\">" + content + (hideButton ? "" : "<button type=\"submit\">" + escapeHtml(step.buttonText || "Continue") + "</button>") + "</form>";
+    }
+
+    function renderFlowQuestionControl(step) {
+      var field = step.field || "custom";
+      var options = getFlowRuntimeOptions(step);
+      if (step.answerStyle === "ranges") return "<input type=\"hidden\" name=\"" + escapeHtmlAttr(field) + "\"><div class=\"ll-popup-answer-grid\">" + options.ranges.map(function (option) { return "<button type=\"button\" data-flow-answer data-value=\"" + escapeHtmlAttr(option.value) + "\">" + escapeHtml(option.label) + "</button>"; }).join("") + "</div>";
+      if (step.answerStyle === "dropdown") return "<select name=\"" + escapeHtmlAttr(field) + "\"" + (step.required === false ? "" : " required") + "><option value=\"\">" + escapeHtml(step.placeholder || "Select one") + "</option>" + options.dropdown.map(function (option) { return "<option value=\"" + escapeHtmlAttr(option.value) + "\">" + escapeHtml(option.label) + "</option>"; }).join("") + "</select>";
+      var type = step.answerStyle === "number" ? "number" : "text";
+      return "<input name=\"" + escapeHtmlAttr(field) + "\" type=\"" + type + "\" placeholder=\"" + escapeHtmlAttr(step.placeholder || "") + "\"" + (step.required === false ? "" : " required") + ">";
+    }
+
+    function renderLegacyCombinedFields(step) {
+      return "<label><span>" + escapeHtml(step.targetWeightLabel || "Target weight in lbs") + "</span><input name=\"targetWeight\" type=\"number\" min=\"80\" max=\"350\" placeholder=\"" + escapeHtmlAttr(step.targetWeightPlaceholder || "155") + "\" required></label><label><span>" + escapeHtml(step.strengthDaysLabel || "Strength training days per week") + "</span><select name=\"strengthDays\" required><option value=\"\">" + escapeHtml(step.strengthDaysPlaceholder || "Select days") + "</option>" + getMultiQuestionOptions("strengthDays").dropdown.map(function (option) { return "<option value=\"" + option.value + "\">" + option.label + "</option>"; }).join("") + "</select></label><label><span>" + escapeHtml(step.ageLabel || "Age") + "</span><input name=\"age\" type=\"number\" min=\"18\" max=\"100\" placeholder=\"" + escapeHtmlAttr(step.agePlaceholder || "48") + "\" required></label>";
+    }
+
+    function collectFlowStepAnswers(form, step, target) {
+      if (step.type === "lead") { target.name = getFormValue(form, "name"); target.email = getFormValue(form, "email"); return; }
+      if (step.type === "questions") { target.targetWeight = getFormValue(form, "targetWeight"); target.strengthDays = getFormValue(form, "strengthDays"); target.age = getFormValue(form, "age"); trackEvent("popup_quiz_submit", getProteinTrackingFields(target)); return; }
+      target[step.field] = getFormValue(form, step.field);
+      var remainingQuestions = steps.slice(currentIndex + 1).some(function (item) { return item.type === "question" || item.type === "questions"; });
+      if (!remainingQuestions) trackEvent("popup_quiz_submit", getProteinTrackingFields(target));
+    }
+
+    function submitFlowLead(form, data) {
+      collectFlowStepAnswers(form, {type:"lead"}, data);
+      var proteinTarget = calculateFlowProteinTarget(data);
+      var payload = buildProteinLeadPayload(data, proteinTarget);
+      sendLeadPayload(config.leadWebhookUrl, payload);
+      trackEvent("popup_lead_submit", getProteinTrackingFields(payload));
+      setCooldown(config.cooldownDaysAfterSubmitAttempt || 90);
+      redirectToProteinPlan(payload);
+    }
+
+    function buildProteinLeadPayload(data, target) {
+      return {name:data.name || "",email:data.email || "",targetWeightLbs:data.targetWeight || "",TargetWeight:data.targetWeight || "",age:data.age || "",Age:data.age || "",strengthDays:data.strengthDays || "",StrengthDays:data.strengthDays || "",targetWeightRange:data.targetWeightRange || "",TargetWeightRange:data.targetWeightRange || "",ageRange:data.ageRange || "",AgeRange:data.ageRange || "",strengthDaysRange:data.strengthDaysRange || "",StrengthDaysRange:data.strengthDaysRange || "",customAnswers:JSON.stringify(data),proteinTargetRange:target && target.rangeText || "",ProteinTargetRange:target && target.rangeText || "",proteinDailyGoalGrams:target && target.dailyGoalGrams || "",ProteinDailyGoalGrams:target && target.dailyGoalGrams || "",source:"protein_popup",ctaVariant:"show_my_protein_plan",popupVariant:variant.id};
+    }
+  }
+
+  function applyFlowStepCopy(root, step, headline, subheadline, valueLine) {
+    if (headline) headline.innerHTML = sanitizeRichHtml(step.headlineHtml || "");
+    if (subheadline) { subheadline.innerHTML = sanitizeRichHtml(step.subheadlineHtml || ""); subheadline.hidden = !step.subheadlineHtml; }
+    setPopupValueLine(valueLine, step.valueLineHtml || "");
+    if (root) {
+      root.style.setProperty("--ll-popup-bg", step.backgroundColor || variant.backgroundColor || "#ffffff");
+      root.style.setProperty("--ll-popup-button-bg", step.buttonColor || variant.accentColor || "#1f6feb");
+      root.style.setProperty("--ll-popup-accent", step.progressColor || variant.brandAccentColor || "#06b00b");
+      setOptionalPixelVariable(root, "--ll-popup-headline-size", step.headlineFontSize || variant.headlineFontSize, 18, 72);
+      setOptionalPixelVariable(root, "--ll-popup-subheadline-size", step.subheadlineFontSize || variant.subheadlineFontSize, 12, 36);
+      setOptionalPixelVariable(root, "--ll-popup-value-line-size", step.valueLineFontSize || variant.valueLineFontSize, 11, 32);
+      setOptionalPixelVariable(root, "--ll-popup-button-size", step.buttonFontSize || variant.buttonFontSize, 12, 28);
+    }
+    var image = root && root.querySelector(".ll-popup-image");
+    if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
+  }
+
+  function renderFlowProgressHtml(step, current, total) {
+    if (!step.progressEnabled) return "";
+    var label = String(step.progressLabel || "Step {current} of {total}").replace(/\{current\}/g, current).replace(/\{total\}/g, total);
+    var percent = Math.round((current / total) * 100);
+    return "<div class=\"ll-popup-progress\"><div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label) + "</span><strong>" + current + "/" + total + "</strong></div><div class=\"ll-popup-progress-track\" role=\"progressbar\" aria-valuemin=\"1\" aria-valuemax=\"" + total + "\" aria-valuenow=\"" + current + "\"><span style=\"width:" + percent + "%\"></span></div>" + (step.progressText ? "<p>" + escapeHtml(step.progressText) + "</p>" : "") + "</div>";
+  }
+
+  function calculateFlowProteinTarget(answers) {
+    if (!answers.targetWeight || !answers.age || answers.strengthDays === undefined || answers.strengthDays === "") return null;
+    return calculateProteinTarget(answers.targetWeight, answers.age, answers.strengthDays);
+  }
+
+  function flowProgressPosition(steps, index) {
+    var questionIndexes = [];
+    steps.forEach(function (step, stepIndex) { if (step.type === "question" || step.type === "questions") questionIndexes.push(stepIndex); });
+    var position = questionIndexes.indexOf(index);
+    return { current: position >= 0 ? position + 1 : Math.max(1, questionIndexes.length), total: Math.max(1, questionIndexes.length) };
+  }
+
+  function getFlowRuntimeOptions(step) {
+    if (step.field !== "custom") return getMultiQuestionOptions(step.field);
+    var lines = String(step.optionsText || "Yes|yes\nNo|no").split(/\n/).filter(Boolean).map(function (line) {
+      var parts = line.split("|");
+      return { label: parts[0].trim(), value: (parts[1] || parts[0]).trim() };
+    });
+    return { dropdown: lines, ranges: lines };
   }
 
   function getFormValue(form, name) {
@@ -613,6 +758,12 @@
       Age: payload.Age || payload.age || "",
       strengthDays: payload.strengthDays || payload.StrengthDays || "",
       StrengthDays: payload.StrengthDays || payload.strengthDays || "",
+      targetWeightRange: payload.targetWeightRange || payload.TargetWeightRange || "",
+      TargetWeightRange: payload.TargetWeightRange || payload.targetWeightRange || "",
+      ageRange: payload.ageRange || payload.AgeRange || "",
+      AgeRange: payload.AgeRange || payload.ageRange || "",
+      strengthDaysRange: payload.strengthDaysRange || payload.StrengthDaysRange || "",
+      StrengthDaysRange: payload.StrengthDaysRange || payload.strengthDaysRange || "",
       proteinTargetRange: payload.proteinTargetRange || payload.ProteinTargetRange || "",
       ProteinTargetRange: payload.ProteinTargetRange || payload.proteinTargetRange || "",
       proteinDailyGoalGrams: payload.proteinDailyGoalGrams || payload.ProteinDailyGoalGrams || "",
@@ -784,7 +935,7 @@
     }, true);
 
     function submitAttempt(form) {
-      if (form && form.getAttribute("data-step") === "quiz") return;
+      if (form && ["quiz", "question", "questions"].indexOf(form.getAttribute("data-step")) >= 0) return;
       if (hasAttemptedSubmit) return;
       hasAttemptedSubmit = true;
       setCooldown(config.cooldownDaysAfterSubmitAttempt || 90);
@@ -964,14 +1115,16 @@
       fontFamily: variant.fontFamily || "",
       textAlign: variant.textAlign || "",
       trafficSplit: variant.trafficSplit || "",
-      proteinQuiz: cloneConfig(variant.proteinQuiz || {})
+      proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
+      flowSteps: cloneConfig(variant.flowSteps || [])
     });
   }
 
   function getVariantLabel() {
     var quiz = getProteinQuizConfig(variant);
+    var flowCount = Array.isArray(variant.flowSteps) ? variant.flowSteps.filter(function (step) { return step.enabled !== false; }).length : 0;
     return [
-      "Flow: " + (quiz.showQuizStep === false ? "Single-step" : "Quiz + form"),
+      "Flow: " + (flowCount ? flowCount + "-step custom flow" : (quiz.showQuizStep === false ? "Single-step" : "Quiz + form")),
       "Fields: " + [
         quiz.showFirstName === false ? "" : "Name",
         quiz.showEmail === false ? "" : "Email"
