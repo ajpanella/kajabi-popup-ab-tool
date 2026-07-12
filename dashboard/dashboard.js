@@ -988,6 +988,8 @@
         configVersion: liveVersion,
         sessions: new Set(),
         actionSessions: new Set(),
+        leadSessions: new Set(),
+        submitSessions: new Set(),
         views: 0,
         clicks: 0,
         quizSubmits: 0,
@@ -1006,6 +1008,8 @@
           configVersion: rowVersion,
           sessions: new Set(),
           actionSessions: new Set(),
+          leadSessions: new Set(),
+          submitSessions: new Set(),
           views: 0,
           clicks: 0,
           quizSubmits: 0,
@@ -1026,8 +1030,14 @@
       }
       if (type === "popup_form_click") item.clicks += 1;
       if (type === "popup_quiz_submit") item.quizSubmits += 1;
-      if (type === "popup_lead_submit" || type === "kajabi_form_submitted") item.leads += 1;
-      if (type === "popup_submit_attempt" || type === "popup_lead_submit" || type === "kajabi_form_submitted") item.submits += 1;
+      if (type === "popup_lead_submit" || type === "kajabi_form_submitted") {
+        item.leads += 1;
+        if (row.sessionId) item.leadSessions.add(row.sessionId);
+      }
+      if (type === "popup_submit_attempt" || type === "popup_lead_submit" || type === "kajabi_form_submitted") {
+        item.submits += 1;
+        if (row.sessionId) item.submitSessions.add(row.sessionId);
+      }
       if (type === "popup_close") item.closes += 1;
     });
 
@@ -1038,8 +1048,8 @@
       });
       var inferredViews = Math.max(item.views, item.sessions.size, item.quizSubmits, item.leads, item.submits);
       var sessionCount = item.sessions.size || inferredViews;
-      var fullSubmissions = fullSubmissionCount(item.leads, item.submits);
-      var fullConversionRate = rate(fullSubmissions, inferredViews);
+      var fullSubmissions = uniqueFullSubmissionCount(item);
+      var fullConversionRate = rate(fullSubmissions, sessionCount);
       return {
         variant: item.variant,
         configVersion: item.configVersion,
@@ -1171,6 +1181,7 @@
     updateMetricLabels(allSingleStep);
     var totals = metrics.reduce(function (sum, item) {
       sum.views += item.views;
+      sum.sessions += item.sessions;
       sum.clicks += item.clicks;
       sum.quizSubmits += item.quizSubmits;
       sum.leads += item.leads;
@@ -1178,12 +1189,12 @@
       sum.submits += item.submits;
       sum.closes += item.closes;
       return sum;
-    }, { views: 0, clicks: 0, quizSubmits: 0, leads: 0, fullSubmissions: 0, submits: 0, closes: 0 });
+    }, { sessions: 0, views: 0, clicks: 0, quizSubmits: 0, leads: 0, fullSubmissions: 0, submits: 0, closes: 0 });
 
     document.getElementById("stat-views").textContent = formatNumber(totals.views);
     document.getElementById("stat-quiz-submits").textContent = allSingleStep ? "N/A" : formatNumber(totals.quizSubmits);
     document.getElementById("stat-leads").textContent = formatNumber(totals.fullSubmissions);
-    document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.fullSubmissions, totals.views));
+    document.getElementById("stat-close-rate").textContent = formatPercent(rate(totals.fullSubmissions, totals.sessions));
   }
 
   function updateMetricLabels(allSingleStep) {
@@ -2619,6 +2630,8 @@
           variant: row.variant || "Unknown",
           configVersion: row.configVersion || "unversioned",
           snapshot: snapshot,
+          sessions: new Set(),
+          leadSessions: new Set(),
           views: 0,
           leads: 0,
           firstSeen: null,
@@ -2632,19 +2645,27 @@
         if (!item.firstSeen || timestamp < item.firstSeen) item.firstSeen = timestamp;
         if (!item.lastSeen || timestamp > item.lastSeen) item.lastSeen = timestamp;
       }
-      if (row.eventType === "popup_view") item.views += 1;
-      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.leads += 1;
+      if (row.eventType === "popup_view") {
+        item.views += 1;
+        if (row.sessionId) item.sessions.add(row.sessionId);
+      }
+      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") {
+        item.leads += 1;
+        if (row.sessionId) item.leadSessions.add(row.sessionId);
+      }
     });
 
     return Object.keys(groups).map(function (key) {
       var item = groups[key];
-      item.leadRate = rate(item.leads, item.views);
+      item.uniqueVisitors = item.sessions.size || item.views;
+      item.uniqueLeads = item.leadSessions.size || item.leads;
+      item.leadRate = rate(item.uniqueLeads, item.uniqueVisitors);
       return item;
     }).filter(function (item) {
-      return item.views >= minimumViews;
+      return item.uniqueVisitors >= minimumViews;
     }).sort(function (a, b) {
       if (b.leadRate !== a.leadRate) return b.leadRate - a.leadRate;
-      return b.views - a.views;
+      return b.uniqueVisitors - a.uniqueVisitors;
     })[0] || null;
   }
 
@@ -2685,6 +2706,7 @@
           configVersion: row.configVersion || "unversioned",
           changeNote: row.changeNote || "",
           sessions: new Set(),
+          leadSessions: new Set(),
           views: 0,
           clicks: 0,
           quizSubmits: 0,
@@ -2725,7 +2747,7 @@
 
     els.history.innerHTML = history.map(function (item) {
       var uniqueImpressions = item.sessions.size || item.views;
-      var fullSubmissions = fullSubmissionCount(item.leads, item.submits);
+      var fullSubmissions = item.leadSessions.size || fullSubmissionCount(item.leads, item.submits);
       var isSingleStep = item.label.indexOf("Flow: Single-step") >= 0;
       return [
         "<article class=\"dash-history-card\" data-history-key=\"" + escapeHtmlAttr(item.key) + "\">",
@@ -2735,8 +2757,8 @@
         "<div><dt>Unique impressions</dt><dd>" + formatNumber(uniqueImpressions) + "</dd></div>",
         "<div><dt>Views</dt><dd>" + formatNumber(item.views) + "</dd></div>",
         "<div><dt>Click rate</dt><dd>" + formatPercent(rate(item.clicks, item.views)) + "</dd></div>",
-        "<div><dt>Full CVR</dt><dd>" + formatPercent(rate(fullSubmissions, item.views)) + "</dd></div>",
-        "<div><dt>Quiz CVR</dt><dd>" + (isSingleStep ? "N/A" : formatPercent(rate(item.quizSubmits, item.views))) + "</dd></div>",
+        "<div><dt>Full CVR</dt><dd>" + formatPercent(rate(fullSubmissions, uniqueImpressions)) + "</dd></div>",
+        "<div><dt>Quiz CVR</dt><dd>" + (isSingleStep ? "N/A" : formatPercent(rate(item.quizSubmits, uniqueImpressions))) + "</dd></div>",
         "<div><dt>Lead-step CVR</dt><dd>" + (isSingleStep ? "N/A" : formatPercent(rate(fullSubmissions, item.quizSubmits))) + "</dd></div>",
         "</dl>",
         item.changeNote ? "<p>" + escapeHtml(item.changeNote) + "</p>" : "",
@@ -3165,7 +3187,8 @@
       });
       item.views = Math.max(item.views, item.sessions.size, item.quizSubmits, item.leads, item.submits);
       item.fullSubmissions = fullHistorySubmissionCount(item);
-      item.cvr = rate(item.fullSubmissions, item.views);
+      item.uniqueVisitors = item.sessions.size || item.views;
+      item.cvr = rate(item.fullSubmissions, item.uniqueVisitors);
       item.closeRate = rate(item.closes, item.views);
       item.uniqueAttributes = describeVariantAttributes(item.snapshot, item.label);
       item.isLive = item.configVersion === liveVersions[item.variant];
@@ -3234,6 +3257,8 @@
       lastSeen: null,
       sessions: new Set(),
       actionSessions: new Set(),
+      leadSessions: new Set(),
+      submitSessions: new Set(),
       views: 0,
       clicks: 0,
       quizSubmits: 0,
@@ -3268,16 +3293,23 @@
     }
     if (type === "popup_form_click") item.clicks += 1;
     if (type === "popup_quiz_submit") item.quizSubmits += 1;
-    if (type === "popup_lead_submit" || type === "kajabi_form_submitted") item.leads += 1;
-    if (type === "popup_submit_attempt" || type === "popup_lead_submit" || type === "kajabi_form_submitted") item.submits += 1;
+    if (type === "popup_lead_submit" || type === "kajabi_form_submitted") {
+      item.leads += 1;
+      if (row.sessionId) item.leadSessions.add(row.sessionId);
+    }
+    if (type === "popup_submit_attempt" || type === "popup_lead_submit" || type === "kajabi_form_submitted") {
+      item.submits += 1;
+      if (row.sessionId) item.submitSessions.add(row.sessionId);
+    }
     if (type === "popup_close") item.closes += 1;
   }
 
   function fullHistorySubmissionCount(item) {
+    if (item.leadSessions && item.leadSessions.size) return item.leadSessions.size;
     var leads = Number(item.leads || 0);
-    var submits = Number(item.submits || 0);
     if (leads > 0) return leads;
-    return submits;
+    if (config.leadMagnetMode !== "protein_plan" && item.submitSessions && item.submitSessions.size) return item.submitSessions.size;
+    return config.leadMagnetMode === "protein_plan" ? 0 : Number(item.submits || 0);
   }
 
   function buildPatternTags(item) {
@@ -4030,6 +4062,13 @@
   function fullSubmissionCount(leads, submits) {
     if (config.leadMagnetMode === "protein_plan") return Number(leads || 0);
     return Number(leads || submits || 0);
+  }
+
+  function uniqueFullSubmissionCount(item) {
+    if (item.leadSessions && item.leadSessions.size) return item.leadSessions.size;
+    if (Number(item.leads || 0) > 0) return Number(item.leads || 0);
+    if (config.leadMagnetMode !== "protein_plan" && item.submitSessions && item.submitSessions.size) return item.submitSessions.size;
+    return config.leadMagnetMode === "protein_plan" ? 0 : Number(item.submits || 0);
   }
 
   function unique(values) {

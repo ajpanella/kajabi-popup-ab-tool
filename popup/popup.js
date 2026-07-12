@@ -434,8 +434,11 @@
         form.addEventListener("submit", function (event) {
           event.preventDefault();
           collectFlowStepAnswers(form, step, answers);
-          if (step.type === "lead") return submitFlowLead(form, answers);
-          if (currentIndex < steps.length - 1) renderStep(currentIndex + 1);
+          if (currentIndex < steps.length - 1) {
+            renderStep(currentIndex + 1);
+            return;
+          }
+          submitFlowLead(step.type === "lead" ? form : null, answers);
         });
         form.querySelectorAll("[data-flow-answer]").forEach(function (button) {
           button.addEventListener("click", function () {
@@ -450,7 +453,7 @@
     }
 
     function renderFlowStepForm(step) {
-      if (step.type === "message") return currentIndex < steps.length - 1 ? "<form class=\"ll-popup-zapier-form\" data-step=\"message\"><button type=\"submit\">" + escapeHtml(step.buttonText || "Continue") + "</button></form>" : "<div class=\"ll-popup-form-status\"></div>";
+      if (step.type === "message") return "<form class=\"ll-popup-zapier-form\" data-step=\"message\"><button type=\"submit\">" + escapeHtml(step.buttonText || (currentIndex < steps.length - 1 ? "Continue" : "Finish")) + "</button></form>";
       var content = "";
       if (step.type === "lead") {
         var fields = step.fields || [];
@@ -487,11 +490,11 @@
     }
 
     function submitFlowLead(form, data) {
-      collectFlowStepAnswers(form, {type:"lead"}, data);
+      if (form) collectFlowStepAnswers(form, {type:"lead"}, data);
       var proteinTarget = calculateFlowProteinTarget(data);
       var payload = buildProteinLeadPayload(data, proteinTarget);
       sendLeadPayload(config.leadWebhookUrl, payload);
-      trackEvent("popup_lead_submit", getProteinTrackingFields(payload));
+      if (steps.some(function (step) { return step.type === "lead"; })) trackEvent("popup_lead_submit", getProteinTrackingFields(payload));
       setCooldown(config.cooldownDaysAfterSubmitAttempt || 90);
       redirectToProteinPlan(payload);
     }
