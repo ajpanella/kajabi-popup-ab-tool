@@ -262,7 +262,7 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-07-12T22:46:10.488Z",
+  "draftSavedAt": "2026-07-12T22:46:45.854Z",
   "reopenAfterCloseSeconds": 35
 };
 })();
