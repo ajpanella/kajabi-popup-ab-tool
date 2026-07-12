@@ -589,6 +589,7 @@
       editorTextWithSize(path + "buttonText", path + "buttonFontSize", variantIndex, "Button CTA", step.buttonText || "Continue", step.buttonFontSize || variant.buttonFontSize, 16),
       "<div class=\"dash-flow-divider\"><span>Progress & navigation</span></div>",
       editorCheckbox(path + "progressEnabled", variantIndex, "Show progress bar", Boolean(step.progressEnabled)),
+      editorOptionSelect(path + "progressScope", variantIndex, "Progress counts", step.progressScope || "all", [{label:"All visible steps",value:"all"},{label:"Questions only",value:"questions"}], !step.progressEnabled),
       editorInput(path + "progressLabel", variantIndex, "Progress label", step.progressLabel || "Step {current} of {total}", "text", !step.progressEnabled),
       editorCheckbox(path + "showBack", variantIndex, "Show back arrow", stepIndex > 0 && step.showBack !== false, stepIndex === 0),
       "</div></div>"
@@ -1913,7 +1914,7 @@
       setOptionalPixelVariable(root, "--ll-popup-button-size", step.buttonFontSize || variant.buttonFontSize, 12, 28);
       var image = root.querySelector(".ll-popup-image");
       if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
-      var progress = flowPreviewPosition(steps, index);
+      var progress = flowPreviewPosition(steps, index, step.progressScope || "all");
       container.innerHTML = (index > 0 && step.showBack !== false ? "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Previous step\">&#8592;</button>" : "") + renderFlowPreviewProgress(step, progress.current, progress.total) + renderFlowPreviewForm(step);
       var back = container.querySelector(".ll-popup-step-back"); if (back) back.addEventListener("click", function () { renderStep(index - 1); });
       var form = container.querySelector("form"); if (form) form.addEventListener("submit", function (event) { event.preventDefault(); if (index < steps.length - 1) renderStep(index + 1); });
@@ -1948,7 +1949,8 @@
     return "<div class=\"ll-popup-progress\"><div class=\"ll-popup-progress-top\"><span>" + escapeHtml(label) + "</span><strong>" + current + "/" + total + "</strong></div><div class=\"ll-popup-progress-track\"><span style=\"width:" + Math.round(current / total * 100) + "%\"></span></div></div>";
   }
 
-  function flowPreviewPosition(steps, index) {
+  function flowPreviewPosition(steps, index, scope) {
+    if (scope !== "questions") return {current:index + 1,total:Math.max(1,steps.length)};
     var questionIndexes = [];
     steps.forEach(function (step, stepIndex) { if (step.type === "question" || step.type === "questions") questionIndexes.push(stepIndex); });
     var position = questionIndexes.indexOf(index);

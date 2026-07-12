@@ -424,7 +424,7 @@
       renderProteinTargetPreview(root, {showQuizStep:true,targetPreviewStyle:step.targetPreviewStyle || "off",targetPreviewLabel:step.targetPreviewLabel || "Your Daily Target:"}, target);
       container.innerHTML = [
         currentIndex > 0 && step.showBack !== false ? "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Previous step\">&#8592;</button>" : "",
-        renderFlowProgressHtml(step, flowProgressPosition(steps, currentIndex).current, flowProgressPosition(steps, currentIndex).total),
+        renderFlowProgressHtml(step, flowProgressPosition(steps, currentIndex, step.progressScope || "all").current, flowProgressPosition(steps, currentIndex, step.progressScope || "all").total),
         renderFlowStepForm(step)
       ].join("");
       var back = container.querySelector(".ll-popup-step-back");
@@ -533,7 +533,8 @@
     return calculateProteinTarget(answers.targetWeight, answers.age, answers.strengthDays);
   }
 
-  function flowProgressPosition(steps, index) {
+  function flowProgressPosition(steps, index, scope) {
+    if (scope !== "questions") return { current: index + 1, total: Math.max(1, steps.length) };
     var questionIndexes = [];
     steps.forEach(function (step, stepIndex) { if (step.type === "question" || step.type === "questions") questionIndexes.push(stepIndex); });
     var position = questionIndexes.indexOf(index);
