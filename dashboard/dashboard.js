@@ -414,7 +414,11 @@
     var testButton = event.target.closest("[data-test-popup]");
     if (testButton) {
       var testVariant = activeVariants()[Number(testButton.dataset.testPopup)];
-      if (testVariant) showDashboardTestPopup(testVariant);
+      if (testVariant) {
+        previewStep = Number(selectedFlowSteps[testVariant.id] || 0);
+        renderPreviews(previewMode);
+        showDashboardTestPopup(testVariant);
+      }
       return;
     }
 
@@ -1559,6 +1563,9 @@
     modal.appendChild(close);
     modal.appendChild(content);
     root.appendChild(modal);
+    if (isProteinPlan && Array.isArray(variant.flowSteps) && variant.flowSteps.length) {
+      renderProteinPlanPreviewForm(form, variant);
+    }
     return root;
   }
 
@@ -2388,6 +2395,7 @@
       })
       .then(function (result) {
         var commitSha = result.commit && result.commit.sha ? result.commit.sha.slice(0, 7) : "published";
+        promotePublishedConfig();
         showLatestTwoVersions();
         setPublishStatus(versionMessage + "Published popup/variants.js to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
@@ -2449,6 +2457,7 @@
       })
       .then(function (body) {
         var note = body.status === "unchanged" ? "No file changes were needed." : "Published popup/variants.js to GitHub.";
+        promotePublishedConfig();
         showLatestTwoVersions();
         setPublishStatus((versionMessage || "") + note + " GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
@@ -2461,6 +2470,15 @@
     els.publishStatus.textContent = message || "";
     els.publishStatus.classList.toggle("is-error", type === "error");
     els.publishStatus.classList.toggle("is-success", type === "success");
+  }
+
+  function promotePublishedConfig() {
+    originalConfig = cloneConfig(config);
+    saveDraftConfig();
+    renderEditors();
+    renderPreviews(previewMode);
+    populateFilters();
+    updateDashboard();
   }
 
   function encodeBase64(value) {
