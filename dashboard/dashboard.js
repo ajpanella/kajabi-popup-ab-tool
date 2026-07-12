@@ -572,7 +572,7 @@
       step.type === "question" ? editorInput(path + "questionLabel", variantIndex, "Question text", step.questionLabel || "", "text") : "",
       step.type === "question" ? editorOptionSelect(path + "answerStyle", variantIndex, "Answer style", step.answerStyle || "dropdown", [{label:"Dropdown",value:"dropdown"},{label:"Choice buttons",value:"ranges"},{label:"Number field",value:"number"},{label:"Text field",value:"text"}]) : "",
       step.type === "question" ? editorInput(path + "placeholder", variantIndex, "Placeholder", step.placeholder || "", "text") : "",
-      step.type === "question" && step.field === "custom" && (step.answerStyle === "dropdown" || step.answerStyle === "ranges") ? editorTextarea(path + "optionsText", variantIndex, "Choices (Label|value, one per line)", step.optionsText || "Yes|yes\nNo|no") : "",
+      step.type === "question" && step.answerStyle === "ranges" ? editorTextarea(path + "optionsText", variantIndex, "Choice buttons (Label | calculator value, one per line)", step.optionsText || defaultFlowOptionsText(step.field)) : "",
       step.type === "question" ? editorCheckbox(path + "required", variantIndex, "Required", step.required !== false) : "",
       step.type === "question" ? editorCheckbox(path + "autoAdvance", variantIndex, "Advance immediately after a choice", Boolean(step.autoAdvance)) : "",
       step.type === "questions" ? editorInput(path + "targetWeightLabel", variantIndex, "Target weight label", step.targetWeightLabel || "Target weight in lbs", "text") : "",
@@ -1956,9 +1956,16 @@
   }
 
   function getFlowStepOptions(step) {
-    if (step.field !== "custom") return getMultiQuestionOptions(step.field);
-    var lines = String(step.optionsText || "Yes|yes\nNo|no").split(/\n/).filter(Boolean).map(function (line) { var parts = line.split("|"); return {label:parts[0].trim(),value:(parts[1] || parts[0]).trim()}; });
+    if (!step.optionsText && step.field !== "custom") return getMultiQuestionOptions(step.field);
+    var lines = String(step.optionsText || defaultFlowOptionsText(step.field)).split(/\n/).filter(Boolean).map(function (line) { var parts = line.split("|"); return {label:parts[0].trim(),value:(parts[1] || parts[0]).trim()}; });
     return {dropdown:lines,ranges:lines};
+  }
+
+  function defaultFlowOptionsText(field) {
+    if (field === "custom") return "Yes | yes\nNo | no";
+    return getMultiQuestionOptions(field).ranges.map(function (option) {
+      return option.label + " | " + option.value;
+    }).join("\n");
   }
 
   function getFormValue(form, name) {

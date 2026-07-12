@@ -335,8 +335,8 @@
 
 .ll-popup-step-back {
   position: absolute;
-  top: 52px;
-  left: 12px;
+  top: 12px;
+  left: 56px;
   z-index: 2;
   width: 36px;
   height: 36px;

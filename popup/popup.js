@@ -541,8 +541,9 @@
   }
 
   function getFlowRuntimeOptions(step) {
-    if (step.field !== "custom") return getMultiQuestionOptions(step.field);
-    var lines = String(step.optionsText || "Yes|yes\nNo|no").split(/\n/).filter(Boolean).map(function (line) {
+    if (!step.optionsText && step.field !== "custom") return getMultiQuestionOptions(step.field);
+    var defaultOptions = step.field === "custom" ? "Yes|yes\nNo|no" : getMultiQuestionOptions(step.field).ranges.map(function (option) { return option.label + "|" + option.value; }).join("\n");
+    var lines = String(step.optionsText || defaultOptions).split(/\n/).filter(Boolean).map(function (line) {
       var parts = line.split("|");
       return { label: parts[0].trim(), value: (parts[1] || parts[0]).trim() };
     });
