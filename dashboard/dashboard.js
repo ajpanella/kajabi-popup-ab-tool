@@ -2345,6 +2345,7 @@
       return;
     }
 
+    normalizeVariantSlotIdentities(config);
     var versionMessage = ensureFreshPublishVersion();
     versionMessage += prepareVariantVersionsForPublish();
     saveDraftConfig();
@@ -2420,6 +2421,17 @@
     var changed = [];
     activeVariants().forEach(function (variant) {
       var fingerprint = variantFingerprint(variant);
+      var publishedVariant = publishedActiveVariants().find(function (candidate) {
+        return candidate.id === variant.id;
+      });
+      var publishedFingerprint = publishedVariant ? variantFingerprint(publishedVariant) : "";
+
+      if (publishedVariant && fingerprint === publishedFingerprint) {
+        variant.trackingVersion = getVariantTrackingVersion(publishedVariant);
+        variant.trackingFingerprint = publishedVariant.trackingFingerprint || publishedFingerprint;
+        return;
+      }
+
       if (variant.trackingFingerprint !== fingerprint) {
         variant.trackingVersion = config.configVersion || "v1";
         variant.trackingFingerprint = fingerprint;
@@ -2840,7 +2852,7 @@
         "<td>" + matchHtml + "</td>",
         "<td>" + renderPatternTags(item) + "</td>",
         "<td class=\"dash-history-text-cell\">" + escapeHtml(item.uniqueAttributes) + "</td>",
-        "<td>" + snapshotHtml + "</td>",
+        "<td><button class=\"dash-history-restore\" type=\"button\" data-history-restore=\"" + escapeHtmlAttr(item.key) + "\">Restore</button>" + snapshotHtml + "</td>",
         "</tr>"
       ].join("");
     }).join("");
@@ -3111,6 +3123,12 @@
   }
 
   function onFullHistoryTableClick(event) {
+    var restoreButton = event.target.closest("[data-history-restore]");
+    if (restoreButton) {
+      restoreHistoricalVariant(restoreButton.dataset.historyRestore);
+      return;
+    }
+
     var button = event.target.closest("[data-history-sort]");
     if (!button) return;
 
@@ -3122,6 +3140,49 @@
       fullHistorySort.direction = defaultFullHistorySortDirection(key);
     }
     updateDashboard();
+  }
+
+  function restoreHistoricalVariant(historyKey) {
+    var item = buildFullVariantHistory(rows).find(function (candidate) {
+      return candidate.key === historyKey;
+    });
+
+    if (!item || !item.snapshot) {
+      window.alert("This historical row does not contain a restorable variant snapshot.");
+      return;
+    }
+
+    var slotId = item.variant === "B" ? "B" : "A";
+    var targetIndex = (config.variants || []).findIndex(function (variant) {
+      return variant.id === slotId;
+    });
+    if (targetIndex < 0) targetIndex = slotId === "B" ? 1 : 0;
+
+    var current = config.variants[targetIndex] || { id: slotId, name: "Variant " + slotId, active: true, trafficSplit: 50 };
+    var restored = Object.assign({}, current, cloneConfig(item.snapshot), {
+      id: slotId,
+      name: current.name || "Variant " + slotId,
+      active: true,
+      trafficSplit: current.trafficSplit == null ? 50 : current.trafficSplit,
+      trackingVersion: current.trackingVersion,
+      trackingFingerprint: current.trackingFingerprint
+    });
+
+    config.variants[targetIndex] = restored;
+    normalizeVariantSlotIdentities(config);
+    ensureFlowSteps(restored);
+    selectedFlowSteps[slotId] = 0;
+    config.changeNote = "Restored " + slotId + " from " + item.configVersion;
+    saveDraftConfig();
+    renderEditors();
+    renderPreviews(previewMode);
+    renderEmbedCode();
+    populateFilters();
+    updateDashboard();
+
+    var editor = els.editors.querySelectorAll(".dash-editor-card")[targetIndex];
+    if (editor) editor.scrollIntoView({ behavior: "smooth", block: "start" });
+    window.alert("Restored historical Variant " + slotId + " into the editor as a draft. The other variant was not changed. Review it, then publish when ready.");
   }
 
   function sortFullVariantHistory(history) {
@@ -3207,6 +3268,7 @@
 
     return Object.keys(groups).map(function (key) {
       var item = groups[key];
+      item.key = key;
       item.publishedLabel = item.firstSeen ? shortDateTime(item.firstSeen) : "";
       item.daysLabel = item.firstSeen && item.lastSeen ? String(Math.max(1, Math.ceil((item.lastSeen - item.firstSeen) / (24 * 60 * 60 * 1000)))) : "";
       item.actionSessions.forEach(function (sessionId) {
@@ -4046,6 +4108,7 @@
     if (!Number.isFinite(value.triggers.scrollDepth)) value.triggers.scrollDepth = 0.5;
     value.savedColors = (value.savedColors || originalConfig.savedColors || defaultColors).slice(0, 10).concat(defaultColors).slice(0, 10);
     value.variants = value.variants || [];
+    normalizeVariantSlotIdentities(value);
     value.variants.forEach(function (variant) {
       var originalVariant = (originalConfig.variants || []).find(function (item) {
         return item.id === variant.id;
@@ -4067,6 +4130,13 @@
       variant.proteinQuiz = Object.assign(getProteinQuizDefaults(), value.proteinQuiz || {}, originalVariant.proteinQuiz || {}, variant.proteinQuiz || {});
     });
     return value;
+  }
+
+  function normalizeVariantSlotIdentities(targetConfig) {
+    var variants = targetConfig && Array.isArray(targetConfig.variants) ? targetConfig.variants : [];
+    if (variants[0]) variants[0].id = "A";
+    if (variants[1]) variants[1].id = "B";
+    return variants;
   }
 
   function saveDraftConfig() {
