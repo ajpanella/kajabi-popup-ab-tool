@@ -2852,7 +2852,7 @@
         "<td>" + matchHtml + "</td>",
         "<td>" + renderPatternTags(item) + "</td>",
         "<td class=\"dash-history-text-cell\">" + escapeHtml(item.uniqueAttributes) + "</td>",
-        "<td><button class=\"dash-history-restore\" type=\"button\" data-history-restore=\"" + escapeHtmlAttr(item.key) + "\">Restore</button>" + snapshotHtml + "</td>",
+        "<td><button class=\"dash-history-restore\" type=\"button\" data-history-restore=\"" + escapeHtmlAttr(item.key) + "\">Restore as Draft</button>" + snapshotHtml + "</td>",
         "</tr>"
       ].join("");
     }).join("");
@@ -3152,7 +3152,23 @@
       return;
     }
 
-    var slotId = item.variant === "B" ? "B" : "A";
+    var livePerformance = getCurrentLiveVariantPerformance();
+    if (livePerformance.length < 2 || livePerformance.every(function (item) { return item.sessions === 0; })) {
+      window.alert("Load the tracking CSV first so the dashboard can identify the lower-converting live variant safely.");
+      return;
+    }
+
+    var lowerPerformer = livePerformance[0];
+    var higherPerformer = livePerformance[1];
+    var slotId = lowerPerformer.variant;
+    var confirmed = window.confirm(
+      "Restore this historical design into lower-performing Variant " + slotId + "?\n\n" +
+      "Variant " + lowerPerformer.variant + ": " + formatPercent(lowerPerformer.cvr) + " CVR\n" +
+      "Variant " + higherPerformer.variant + ": " + formatPercent(higherPerformer.cvr) + " CVR\n\n" +
+      "This only creates an editable draft. Nothing will go live until you explicitly publish to GitHub."
+    );
+    if (!confirmed) return;
+
     var targetIndex = (config.variants || []).findIndex(function (variant) {
       return variant.id === slotId;
     });
@@ -3182,7 +3198,25 @@
 
     var editor = els.editors.querySelectorAll(".dash-editor-card")[targetIndex];
     if (editor) editor.scrollIntoView({ behavior: "smooth", block: "start" });
-    window.alert("Restored historical Variant " + slotId + " into the editor as a draft. The other variant was not changed. Review it, then publish when ready.");
+    window.alert("Restored the historical design into lower-performing Variant " + slotId + " as a draft. The winning variant and live website were not changed. Edit or preview the draft, then publish only when ready.");
+  }
+
+  function getCurrentLiveVariantPerformance() {
+    var liveVersions = getLiveVariantVersions();
+    var currentTestId = originalConfig.testId || config.testId || "";
+    var liveRows = rows.filter(function (row) {
+      if (currentTestId && row.testId !== currentTestId) return false;
+      return liveVersions[row.variant] && (row.configVersion || "unversioned") === liveVersions[row.variant];
+    });
+
+    return buildMetrics(liveRows, publishedActiveVariants()).filter(function (item) {
+      return liveVersions[item.variant] === item.configVersion;
+    }).sort(function (a, b) {
+      if (a.cvr !== b.cvr) return a.cvr - b.cvr;
+      if (a.fullSubmissions !== b.fullSubmissions) return a.fullSubmissions - b.fullSubmissions;
+      if (a.sessions !== b.sessions) return b.sessions - a.sessions;
+      return a.variant === "A" ? -1 : 1;
+    });
   }
 
   function sortFullVariantHistory(history) {
