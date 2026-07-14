@@ -14,6 +14,7 @@
   var LATEST_TWO_VERSIONS = "__latest_two_versions";
   var HIDDEN_HISTORY_KEY = "ll_popup_dashboard_hidden_history";
   var HIDDEN_METRICS_KEY = "ll_popup_dashboard_hidden_metrics";
+  var IDEA_BANK_KEY = "ll_popup_dashboard_idea_bank_v1";
   var config = loadDraftConfig();
   var legacyTrackingVariantIds = [];
   initializeVariantTracking();
@@ -30,6 +31,7 @@
   var versionFilterInitialized = false;
   var fullHistorySort = { key: "published", direction: "desc" };
   var compareFullHistoryToLive = false;
+  var ideaBank = loadIdeaBank();
 
   var els = {
     csvUrl: document.getElementById("csv-url"),
@@ -94,7 +96,18 @@
     historyMinLeads: document.getElementById("history-min-leads"),
     historyMinCvr: document.getElementById("history-min-cvr"),
     historyMaxCvr: document.getElementById("history-max-cvr"),
-    compareLiveHistory: document.getElementById("compare-live-history")
+    compareLiveHistory: document.getElementById("compare-live-history"),
+    ideaForm: document.getElementById("idea-form"),
+    ideaText: document.getElementById("idea-text"),
+    ideaCategory: document.getElementById("idea-category"),
+    ideaPriority: document.getElementById("idea-priority"),
+    ideaSearch: document.getElementById("idea-search"),
+    ideaStatusFilter: document.getElementById("idea-status-filter"),
+    ideaList: document.getElementById("idea-list"),
+    ideaCount: document.getElementById("idea-count"),
+    exportIdeas: document.getElementById("export-ideas"),
+    importIdeas: document.getElementById("import-ideas"),
+    importIdeasFile: document.getElementById("import-ideas-file")
   };
 
   els.csvUrl.value = defaultCsvUrl;
@@ -110,6 +123,7 @@
   renderEditors();
   renderPreviews(previewMode);
   renderEmbedCode();
+  renderIdeaBank();
   populateFilters();
   updateDashboard();
 
@@ -134,6 +148,15 @@
   els.editors.addEventListener("focusin", onEditorFocus);
   els.history.addEventListener("click", onHistoryClick);
   els.fullHistoryTable.addEventListener("click", onFullHistoryTableClick);
+  els.ideaForm.addEventListener("submit", addIdea);
+  els.ideaList.addEventListener("input", onIdeaListInput);
+  els.ideaList.addEventListener("change", onIdeaListInput);
+  els.ideaList.addEventListener("click", onIdeaListClick);
+  els.ideaSearch.addEventListener("input", renderIdeaBank);
+  els.ideaStatusFilter.addEventListener("change", renderIdeaBank);
+  els.exportIdeas.addEventListener("click", exportIdeaBank);
+  els.importIdeas.addEventListener("click", function () { els.importIdeasFile.click(); });
+  els.importIdeasFile.addEventListener("change", importIdeaBank);
   els.body.addEventListener("click", onMetricRowClick);
   els.savedColors.addEventListener("input", onPaletteInput);
   els.savedColors.addEventListener("click", onPaletteClick);
@@ -182,6 +205,172 @@
   });
 
   if (defaultCsvUrl) loadCsv();
+
+  function addIdea(event) {
+    event.preventDefault();
+    var text = els.ideaText.value.trim();
+    if (!text) {
+      els.ideaText.focus();
+      return;
+    }
+
+    var now = new Date().toISOString();
+    ideaBank.unshift({
+      id: "idea_" + Date.now().toString(36) + "_" + Math.random().toString(36).slice(2, 7),
+      text: text,
+      category: els.ideaCategory.value || "Other",
+      priority: els.ideaPriority.value || "medium",
+      status: "backlog",
+      createdAt: now,
+      updatedAt: now
+    });
+    saveIdeaBank();
+    els.ideaText.value = "";
+    renderIdeaBank();
+    els.ideaText.focus();
+  }
+
+  function renderIdeaBank() {
+    if (!els.ideaList) return;
+    var search = String(els.ideaSearch.value || "").trim().toLowerCase();
+    var status = els.ideaStatusFilter.value || "";
+    var visible = ideaBank.filter(function (idea) {
+      if (status && idea.status !== status) return false;
+      if (search && [idea.text, idea.category, idea.priority, idea.status].join(" ").toLowerCase().indexOf(search) === -1) return false;
+      return true;
+    }).sort(compareIdeas);
+
+    els.ideaCount.textContent = String(ideaBank.length);
+    if (!visible.length) {
+      els.ideaList.innerHTML = "<p class=\"dash-empty-state\">" + (ideaBank.length ? "No ideas match these filters." : "Your next strong test idea can start here.") + "</p>";
+      return;
+    }
+
+    els.ideaList.innerHTML = visible.map(function (idea) {
+      return [
+        "<article class=\"dash-idea-card dash-idea-priority-" + escapeHtmlAttr(idea.priority) + "\" data-idea-id=\"" + escapeHtmlAttr(idea.id) + "\">",
+        "<textarea class=\"dash-idea-copy\" data-idea-field=\"text\" aria-label=\"Idea notes\">" + escapeHtml(idea.text) + "</textarea>",
+        "<div class=\"dash-idea-meta\">",
+        ideaSelect("category", idea.category, ["Headline", "Offer", "CTA", "Flow", "Visual", "Trust", "Timing", "Other"]),
+        ideaSelect("priority", idea.priority, ["high", "medium", "low"]),
+        ideaSelect("status", idea.status, ["backlog", "next", "testing", "completed"]),
+        "<button class=\"dash-idea-use\" type=\"button\" data-idea-action=\"use-note\">Use as Change Note</button>",
+        "<button class=\"dash-idea-delete\" type=\"button\" data-idea-action=\"delete\" aria-label=\"Delete idea\">&times;</button>",
+        "</div>",
+        "</article>"
+      ].join("");
+    }).join("");
+  }
+
+  function ideaSelect(field, current, values) {
+    var labels = { high: "High priority", medium: "Medium priority", low: "Low priority", backlog: "Backlog", next: "Test Next", testing: "Testing", completed: "Completed" };
+    return "<select data-idea-field=\"" + field + "\" aria-label=\"" + field + "\">" + values.map(function (value) {
+      return "<option value=\"" + escapeHtmlAttr(value) + "\"" + (value === current ? " selected" : "") + ">" + escapeHtml(labels[value] || value) + "</option>";
+    }).join("") + "</select>";
+  }
+
+  function compareIdeas(a, b) {
+    var statusOrder = { next: 0, testing: 1, backlog: 2, completed: 3 };
+    var priorityOrder = { high: 0, medium: 1, low: 2 };
+    var statusDifference = (statusOrder[a.status] == null ? 9 : statusOrder[a.status]) - (statusOrder[b.status] == null ? 9 : statusOrder[b.status]);
+    if (statusDifference) return statusDifference;
+    var priorityDifference = (priorityOrder[a.priority] == null ? 9 : priorityOrder[a.priority]) - (priorityOrder[b.priority] == null ? 9 : priorityOrder[b.priority]);
+    if (priorityDifference) return priorityDifference;
+    return String(b.updatedAt || "").localeCompare(String(a.updatedAt || ""));
+  }
+
+  function onIdeaListInput(event) {
+    var field = event.target.dataset.ideaField;
+    var card = event.target.closest("[data-idea-id]");
+    if (!field || !card) return;
+    var idea = ideaBank.find(function (item) { return item.id === card.dataset.ideaId; });
+    if (!idea) return;
+    idea[field] = event.target.value;
+    idea.updatedAt = new Date().toISOString();
+    saveIdeaBank();
+    if (event.type === "change" && field !== "text") renderIdeaBank();
+  }
+
+  function onIdeaListClick(event) {
+    var button = event.target.closest("[data-idea-action]");
+    var card = event.target.closest("[data-idea-id]");
+    if (!button || !card) return;
+    var index = ideaBank.findIndex(function (item) { return item.id === card.dataset.ideaId; });
+    if (index < 0) return;
+
+    if (button.dataset.ideaAction === "delete") {
+      if (!window.confirm("Delete this test idea?")) return;
+      ideaBank.splice(index, 1);
+      saveIdeaBank();
+      renderIdeaBank();
+      return;
+    }
+
+    if (button.dataset.ideaAction === "use-note") {
+      els.changeNote.value = ideaBank[index].text;
+      onGlobalConfigInput();
+      els.changeNote.scrollIntoView({ behavior: "smooth", block: "center" });
+      els.changeNote.focus();
+    }
+  }
+
+  function loadIdeaBank() {
+    try {
+      var stored = JSON.parse(localStorage.getItem(IDEA_BANK_KEY)) || [];
+      return Array.isArray(stored) ? stored.map(normalizeIdea).filter(function (idea) { return idea.text; }) : [];
+    } catch (error) {
+      return [];
+    }
+  }
+
+  function normalizeIdea(idea) {
+    var now = new Date().toISOString();
+    return {
+      id: String(idea && idea.id || "idea_" + Date.now().toString(36) + Math.random().toString(36).slice(2, 7)),
+      text: String(idea && idea.text || "").trim(),
+      category: String(idea && idea.category || "Other"),
+      priority: ["high", "medium", "low"].indexOf(idea && idea.priority) >= 0 ? idea.priority : "medium",
+      status: ["backlog", "next", "testing", "completed"].indexOf(idea && idea.status) >= 0 ? idea.status : "backlog",
+      createdAt: String(idea && idea.createdAt || now),
+      updatedAt: String(idea && idea.updatedAt || now)
+    };
+  }
+
+  function saveIdeaBank() {
+    localStorage.setItem(IDEA_BANK_KEY, JSON.stringify(ideaBank));
+  }
+
+  function exportIdeaBank() {
+    var blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), ideas: ideaBank }, null, 2)], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    link.href = url;
+    link.download = "popup-test-idea-bank.json";
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  }
+
+  function importIdeaBank(event) {
+    var file = event.target.files && event.target.files[0];
+    if (!file) return;
+    var reader = new FileReader();
+    reader.onload = function () {
+      try {
+        var parsed = JSON.parse(String(reader.result || "{}"));
+        var imported = Array.isArray(parsed) ? parsed : parsed.ideas;
+        if (!Array.isArray(imported)) throw new Error("Invalid idea bank file.");
+        ideaBank = imported.map(normalizeIdea).filter(function (idea) { return idea.text; });
+        saveIdeaBank();
+        renderIdeaBank();
+      } catch (error) {
+        window.alert("That file is not a valid Test Idea Bank backup.");
+      }
+      event.target.value = "";
+    };
+    reader.readAsText(file);
+  }
 
   function loadCsv() {
     var csvUrl = els.csvUrl.value.trim();

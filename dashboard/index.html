@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=30">
-    <link rel="stylesheet" href="./dashboard.css?v=50">
+    <link rel="stylesheet" href="./dashboard.css?v=51">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js"></script>
   </head>
@@ -192,6 +192,59 @@
           <div id="recommendation-list" class="dash-recommendations"></div>
         </section>
 
+        <section class="dash-panel dash-idea-bank">
+          <div class="dash-section-heading">
+            <div>
+              <p class="dash-eyebrow">Planning</p>
+              <h2>Test Idea Bank <span id="idea-count" class="dash-count-badge">0</span></h2>
+            </div>
+            <div class="dash-action-row">
+              <button id="export-ideas" class="dash-secondary-button" type="button">Export Notes</button>
+              <button id="import-ideas" class="dash-secondary-button" type="button">Import Notes</button>
+              <input id="import-ideas-file" type="file" accept="application/json,.json" hidden>
+            </div>
+          </div>
+          <form id="idea-form" class="dash-idea-capture">
+            <label class="dash-idea-text-field">
+              Persuasion tactic or test idea
+              <textarea id="idea-text" rows="3" placeholder="Example: Test a loss-aversion headline focused on preserving strength after 40"></textarea>
+            </label>
+            <label>
+              Category
+              <select id="idea-category">
+                <option value="Headline">Headline</option>
+                <option value="Offer">Offer</option>
+                <option value="CTA">CTA</option>
+                <option value="Flow">Flow</option>
+                <option value="Visual">Visual</option>
+                <option value="Trust">Trust</option>
+                <option value="Timing">Timing</option>
+                <option value="Other">Other</option>
+              </select>
+            </label>
+            <label>
+              Priority
+              <select id="idea-priority">
+                <option value="high">High</option>
+                <option value="medium" selected>Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </label>
+            <button class="dash-idea-add" type="submit">Add Idea</button>
+          </form>
+          <div class="dash-idea-toolbar">
+            <input id="idea-search" type="search" placeholder="Search ideas..." aria-label="Search ideas">
+            <select id="idea-status-filter" aria-label="Filter ideas by status">
+              <option value="">All statuses</option>
+              <option value="backlog">Backlog</option>
+              <option value="next">Test Next</option>
+              <option value="testing">Testing</option>
+              <option value="completed">Completed</option>
+            </select>
+          </div>
+          <div id="idea-list" class="dash-idea-list"></div>
+        </section>
+
         <section class="dash-panel">
           <div class="dash-section-heading">
             <div>
@@ -365,6 +418,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=97"></script>
+    <script src="./dashboard.js?v=98"></script>
   </body>
 </html>
