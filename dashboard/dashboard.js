@@ -19,7 +19,7 @@
   var legacyTrackingVariantIds = [];
   initializeVariantTracking();
   var urlParams = new URLSearchParams(window.location.search);
-  var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || "";
+  var defaultCsvUrl = urlParams.get("csv") || localStorage.getItem(CSV_URL_KEY) || config.trackingCsvUrl || originalConfig.trackingCsvUrl || "";
   var googleDocUrl = urlParams.get("doc") || "";
   var trackingSheetUrl = urlParams.get("sheet") || "https://docs.google.com/spreadsheets/d/1fjbkrBO5r1XaJf3x-WNT0UNjEtn0IlDlAA9e2Sza69w";
   var rows = [];
@@ -128,6 +128,10 @@
   updateDashboard();
 
   els.loadData.addEventListener("click", loadCsv);
+  els.csvUrl.addEventListener("change", function () {
+    persistCsvUrl();
+    loadCsv();
+  });
   [els.testId, els.variant, els.version, els.start, els.end, els.pageUrl, els.device].forEach(function (element) {
     element.addEventListener("input", updateDashboard);
   });
@@ -374,10 +378,14 @@
 
   function loadCsv() {
     var csvUrl = els.csvUrl.value.trim();
-    if (!csvUrl) return;
-    localStorage.setItem(CSV_URL_KEY, csvUrl);
+    if (!csvUrl) {
+      renderCsvLoadStatus([], "Add a Published CSV URL first.");
+      return;
+    }
+    persistCsvUrl();
+    setCsvLoading(true);
 
-    fetch(csvUrl)
+    fetch(csvUrl, { cache: "no-store" })
       .then(function (response) {
         if (!response.ok) throw new Error("Unable to load CSV");
         return response.text();
@@ -391,8 +399,27 @@
       })
       .catch(function (error) {
         renderCsvLoadStatus([], error.message);
-        window.alert(error.message);
+      })
+      .finally(function () {
+        setCsvLoading(false);
       });
+  }
+
+  function persistCsvUrl() {
+    var csvUrl = els.csvUrl.value.trim();
+    if (!csvUrl) return;
+    localStorage.setItem(CSV_URL_KEY, csvUrl);
+    config.trackingCsvUrl = csvUrl;
+    saveDraftConfig();
+  }
+
+  function setCsvLoading(isLoading) {
+    els.loadData.disabled = isLoading;
+    els.loadData.textContent = isLoading ? "Loading..." : "Refresh Data";
+    if (isLoading && els.csvLoadStatus) {
+      els.csvLoadStatus.classList.remove("is-error");
+      els.csvLoadStatus.textContent = "Loading latest tracking data...";
+    }
   }
 
   function renderCsvLoadStatus(data, errorMessage) {
@@ -4315,6 +4342,7 @@
     var defaultColors = ["#111827", "#ffffff", "#f8fafc", "#172026", "#1f6feb", "#0f766e", "#c2410c", "#fbfaf7", "#1c2520", "#d9dee7"];
     value.configVersion = value.configVersion || "v1";
     value.changeNote = value.changeNote || "";
+    value.trackingCsvUrl = value.trackingCsvUrl || originalConfig.trackingCsvUrl || "";
     value.kajabiFormEmbed = value.kajabiFormEmbed || originalConfig.kajabiFormEmbed || "";
     value.kajabiEmbedMode = value.kajabiEmbedMode || originalConfig.kajabiEmbedMode || "auto";
     value.formMode = value.formMode || originalConfig.formMode || "zapier";
