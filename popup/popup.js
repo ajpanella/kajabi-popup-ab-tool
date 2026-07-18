@@ -54,6 +54,9 @@
     root.style.setProperty("--ll-popup-accent", variant.brandAccentColor || "#06b00b");
     root.style.setProperty("--ll-popup-button-bg", variant.accentColor || "#1f6feb");
     root.style.setProperty("--ll-popup-font", variant.fontFamily || "Arial, Helvetica, sans-serif");
+    root.style.setProperty("--ll-popup-headline-weight", String(variant.headlineFontWeight || 700));
+    root.style.setProperty("--ll-popup-body-weight", String(variant.bodyFontWeight || 400));
+    root.style.setProperty("--ll-popup-button-weight", String(variant.buttonFontWeight || 700));
     root.style.setProperty("--ll-popup-align", variant.textAlign || "left");
     setPopupTextSizeVariables(root, variant);
 
@@ -530,6 +533,8 @@
       setOptionalPixelVariable(root, "--ll-popup-choice-font-size", step.choiceButtonFontSize || 16, 12, 28);
       root.style.setProperty("--ll-popup-choice-columns", step.answerLayout === "stacked" ? "1" : "2");
       root.style.setProperty("--ll-popup-choice-transform", step.choiceButtonTransform === "uppercase" ? "uppercase" : "none");
+      root.style.setProperty("--ll-popup-question-weight", String(step.questionFontWeight || variant.bodyFontWeight || 400));
+      root.style.setProperty("--ll-popup-choice-weight", String(step.choiceButtonFontWeight || variant.buttonFontWeight || 700));
     }
     var image = root && root.querySelector(".ll-popup-image");
     if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
@@ -1132,6 +1137,9 @@
       brandAccentColor: variant.brandAccentColor || "",
       accentColor: variant.accentColor || "",
       fontFamily: variant.fontFamily || "",
+      headlineFontWeight: variant.headlineFontWeight || 700,
+      bodyFontWeight: variant.bodyFontWeight || 400,
+      buttonFontWeight: variant.buttonFontWeight || 700,
       textAlign: variant.textAlign || "",
       trafficSplit: variant.trafficSplit || "",
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),

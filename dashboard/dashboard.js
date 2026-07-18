@@ -482,6 +482,9 @@
         editorInput("accentColor", index, "Button", variant.accentColor || "#1f6feb", "color"),
         "</div>",
         editorSelect("fontFamily", index, "Font", variant.fontFamily || "Arial, Helvetica, sans-serif"),
+        editorFontWeightSelect("headlineFontWeight", index, "Headline weight", variant.headlineFontWeight || 700),
+        editorFontWeightSelect("bodyFontWeight", index, "Body weight", variant.bodyFontWeight || 400),
+        editorFontWeightSelect("buttonFontWeight", index, "CTA weight", variant.buttonFontWeight || 700),
         editorAlignmentSelect("textAlign", index, "Text alignment", variant.textAlign || "left"),
         editorInput("width", index, "Width px", String(variant.width || 560), "number"),
         editorInput("height", index, "Height px", String(variant.height || ""), "number"),
@@ -794,6 +797,8 @@
       step.type === "question" ? editorOptionSelect(path + "answerStyle", variantIndex, "Answer style", step.answerStyle || "dropdown", [{label:"Dropdown",value:"dropdown"},{label:"Choice buttons",value:"ranges"},{label:"Number field",value:"number"},{label:"Text field",value:"text"}]) : "",
       step.type === "question" && step.answerStyle === "ranges" ? editorOptionSelect(path + "answerLayout", variantIndex, "Choice button layout", step.answerLayout || "grid", [{label:"Stacked (one column)",value:"stacked"},{label:"Grid (two columns)",value:"grid"}]) : "",
       step.type === "question" && step.answerStyle === "ranges" ? editorCompactSizeInput(path + "choiceButtonFontSize", variantIndex, "Choice button size", step.choiceButtonFontSize, 16) : "",
+      step.type === "question" ? editorFontWeightSelect(path + "questionFontWeight", variantIndex, "Question weight", step.questionFontWeight || variant.bodyFontWeight || 400) : "",
+      step.type === "question" && step.answerStyle === "ranges" ? editorFontWeightSelect(path + "choiceButtonFontWeight", variantIndex, "Choice button weight", step.choiceButtonFontWeight || variant.buttonFontWeight || 700) : "",
       step.type === "question" && step.answerStyle === "ranges" ? editorOptionSelect(path + "choiceButtonTransform", variantIndex, "Choice button capitalization", step.choiceButtonTransform || "none", [{label:"As written",value:"none"},{label:"ALL CAPS",value:"uppercase"}]) : "",
       step.type === "question" ? editorInput(path + "placeholder", variantIndex, "Placeholder", step.placeholder || "", "text") : "",
       step.type === "question" && step.answerStyle === "ranges" ? editorTextarea(path + "optionsText", variantIndex, "Choice buttons (Label | calculator value, one per line)", step.optionsText || defaultFlowOptionsText(step.field)) : "",
@@ -996,15 +1001,31 @@
 
   function editorSelect(field, index, label, value) {
     var options = [
-      "Arial, Helvetica, sans-serif",
-      "Georgia, serif",
-      "Inter, Arial, sans-serif",
-      "Helvetica Neue, Arial, sans-serif",
-      "Verdana, Geneva, sans-serif"
+      { label: "Poppins", value: "Poppins, Arial, sans-serif" },
+      { label: "Montserrat", value: "Montserrat, Arial, sans-serif" },
+      { label: "DM Sans", value: "'DM Sans', Arial, sans-serif" },
+      { label: "Nunito Sans", value: "'Nunito Sans', Arial, sans-serif" },
+      { label: "League Spartan", value: "'League Spartan', Arial, sans-serif" },
+      { label: "Oswald", value: "Oswald, Arial, sans-serif" },
+      { label: "Arial", value: "Arial, Helvetica, sans-serif" },
+      { label: "Inter", value: "Inter, Arial, sans-serif" },
+      { label: "Helvetica Neue", value: "'Helvetica Neue', Arial, sans-serif" },
+      { label: "Verdana", value: "Verdana, Geneva, sans-serif" },
+      { label: "Georgia", value: "Georgia, serif" }
     ];
     return "<label>" + escapeHtml(label) + "<select data-variant-index=\"" + index + "\" data-field=\"" + field + "\">" + options.map(function (option) {
-      return "<option value=\"" + escapeHtml(option) + "\"" + (option === value ? " selected" : "") + ">" + escapeHtml(option.split(",")[0]) + "</option>";
+      return "<option value=\"" + escapeHtmlAttr(option.value) + "\"" + (option.value === value ? " selected" : "") + ">" + escapeHtml(option.label) + "</option>";
     }).join("") + "</select></label>";
+  }
+
+  function editorFontWeightSelect(field, index, label, value) {
+    return editorOptionSelect(field, index, label, String(value || 400), [
+      { label: "Regular (400)", value: "400" },
+      { label: "Medium (500)", value: "500" },
+      { label: "Semi-bold (600)", value: "600" },
+      { label: "Bold (700)", value: "700" },
+      { label: "Extra-bold (800)", value: "800" }
+    ]);
   }
 
   function editorAlignmentSelect(field, index, label, value) {
@@ -1720,6 +1741,9 @@
     root.style.setProperty("--ll-popup-accent", variant.brandAccentColor || "#06b00b");
     root.style.setProperty("--ll-popup-button-bg", variant.accentColor || "#1f6feb");
     root.style.setProperty("--ll-popup-font", variant.fontFamily || "Arial, Helvetica, sans-serif");
+    root.style.setProperty("--ll-popup-headline-weight", String(variant.headlineFontWeight || 700));
+    root.style.setProperty("--ll-popup-body-weight", String(variant.bodyFontWeight || 400));
+    root.style.setProperty("--ll-popup-button-weight", String(variant.buttonFontWeight || 700));
     root.style.setProperty("--ll-popup-align", variant.textAlign || "left");
     setPopupTextSizeVariables(root, variant);
 
@@ -2146,6 +2170,8 @@
       setOptionalPixelVariable(root, "--ll-popup-choice-font-size", step.choiceButtonFontSize || 16, 12, 28);
       root.style.setProperty("--ll-popup-choice-columns", step.answerLayout === "stacked" ? "1" : "2");
       root.style.setProperty("--ll-popup-choice-transform", step.choiceButtonTransform === "uppercase" ? "uppercase" : "none");
+      root.style.setProperty("--ll-popup-question-weight", String(step.questionFontWeight || variant.bodyFontWeight || 400));
+      root.style.setProperty("--ll-popup-choice-weight", String(step.choiceButtonFontWeight || variant.buttonFontWeight || 700));
       var image = root.querySelector(".ll-popup-image");
       if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
       var progress = flowPreviewPosition(steps, index, step.progressScope || "all");
@@ -2655,7 +2681,7 @@
 
       if (publishedVariant && fingerprint === publishedFingerprint) {
         variant.trackingVersion = getVariantTrackingVersion(publishedVariant);
-        variant.trackingFingerprint = publishedVariant.trackingFingerprint || publishedFingerprint;
+        variant.trackingFingerprint = publishedFingerprint;
         return;
       }
 
@@ -4011,6 +4037,9 @@
       brandAccentColor: variant.brandAccentColor || "",
       accentColor: variant.accentColor || "",
       fontFamily: variant.fontFamily || "",
+      headlineFontWeight: variant.headlineFontWeight || 700,
+      bodyFontWeight: variant.bodyFontWeight || 400,
+      buttonFontWeight: variant.buttonFontWeight || 700,
       textAlign: variant.textAlign || "",
       trafficSplit: variant.trafficSplit || "",
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
@@ -4381,6 +4410,9 @@
         return item.id === variant.id;
       }) || {};
       variant.fontFamily = variant.fontFamily || "Arial, Helvetica, sans-serif";
+      variant.headlineFontWeight = variant.headlineFontWeight || 700;
+      variant.bodyFontWeight = variant.bodyFontWeight || 400;
+      variant.buttonFontWeight = variant.buttonFontWeight || 700;
       variant.textAlign = variant.textAlign || originalVariant.textAlign || "left";
       variant.height = variant.height || originalVariant.height || "";
       variant.sizeToImage = Boolean(variant.sizeToImage || originalVariant.sizeToImage);
