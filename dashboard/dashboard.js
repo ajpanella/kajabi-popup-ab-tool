@@ -782,6 +782,7 @@
       editorCheckbox(path + "enabled", variantIndex, "Step enabled", step.enabled !== false),
       editorOptionSelect(path + "type", variantIndex, "Step type", step.type, [{label:"Single question",value:"question"},{label:"Combined questions",value:"questions"},{label:"Lead form",value:"lead"},{label:"Message / result",value:"message"}]),
       editorInput(path + "imageUrl", variantIndex, "Hero image URL", step.imageUrl || "", "url"),
+      editorRichText(path + "eyebrowHtml", variantIndex, "Eyebrow", step.eyebrowHtml || "", false, path + "eyebrowFontSize", step.eyebrowFontSize, 15, variant.brandAccentColor),
       editorRichText(path + "headlineHtml", variantIndex, "Headline", step.headlineHtml || "", false, path + "headlineFontSize", step.headlineFontSize || variant.headlineFontSize, 32, variant.textColor),
       editorRichText(path + "subheadlineHtml", variantIndex, "Subheadline", step.subheadlineHtml || "", false, path + "subheadlineFontSize", step.subheadlineFontSize || variant.subheadlineFontSize, 17, variant.textColor),
       editorRichText(path + "valueLineHtml", variantIndex, "Value line", step.valueLineHtml || "", false, path + "valueLineFontSize", step.valueLineFontSize || variant.valueLineFontSize, 15, variant.brandAccentColor),
@@ -791,6 +792,9 @@
       step.type === "question" ? editorOptionSelect(path + "field", variantIndex, "Question", step.field, questionOptions) : "",
       step.type === "question" ? editorInput(path + "questionLabel", variantIndex, "Question text", step.questionLabel || "", "text") : "",
       step.type === "question" ? editorOptionSelect(path + "answerStyle", variantIndex, "Answer style", step.answerStyle || "dropdown", [{label:"Dropdown",value:"dropdown"},{label:"Choice buttons",value:"ranges"},{label:"Number field",value:"number"},{label:"Text field",value:"text"}]) : "",
+      step.type === "question" && step.answerStyle === "ranges" ? editorOptionSelect(path + "answerLayout", variantIndex, "Choice button layout", step.answerLayout || "grid", [{label:"Stacked (one column)",value:"stacked"},{label:"Grid (two columns)",value:"grid"}]) : "",
+      step.type === "question" && step.answerStyle === "ranges" ? editorCompactSizeInput(path + "choiceButtonFontSize", variantIndex, "Choice button size", step.choiceButtonFontSize, 16) : "",
+      step.type === "question" && step.answerStyle === "ranges" ? editorOptionSelect(path + "choiceButtonTransform", variantIndex, "Choice button capitalization", step.choiceButtonTransform || "none", [{label:"As written",value:"none"},{label:"ALL CAPS",value:"uppercase"}]) : "",
       step.type === "question" ? editorInput(path + "placeholder", variantIndex, "Placeholder", step.placeholder || "", "text") : "",
       step.type === "question" && step.answerStyle === "ranges" ? editorTextarea(path + "optionsText", variantIndex, "Choice buttons (Label | calculator value, one per line)", step.optionsText || defaultFlowOptionsText(step.field)) : "",
       step.type === "question" ? editorCheckbox(path + "required", variantIndex, "Required", step.required !== false) : "",
@@ -850,7 +854,7 @@
   }
 
   function makeBlankFlowStep(type, variant) {
-    return {id:flowStepId(),name:"New Question",type:type,enabled:true,field:"custom",questionLabel:"Your question",answerStyle:"text",placeholder:"",required:true,autoAdvance:false,headlineHtml:"",subheadlineHtml:"",valueLineHtml:"",imageUrl:variant.imageUrl || "",buttonText:"Continue",buttonColor:variant.accentColor || "",progressColor:variant.brandAccentColor || "",progressEnabled:true,progressLabel:"Step {current} of {total}",showBack:true};
+    return {id:flowStepId(),name:"New Question",type:type,enabled:true,field:"custom",questionLabel:"Your question",answerStyle:"text",answerLayout:"grid",choiceButtonFontSize:16,choiceButtonTransform:"none",placeholder:"",required:true,autoAdvance:false,eyebrowHtml:"",eyebrowFontSize:15,headlineHtml:"",subheadlineHtml:"",valueLineHtml:"",imageUrl:variant.imageUrl || "",buttonText:"Continue",buttonColor:variant.accentColor || "",progressColor:variant.brandAccentColor || "",progressEnabled:true,progressLabel:"Step {current} of {total}",showBack:true};
   }
 
   function applyFlowPreset(variant, preset) {
@@ -875,7 +879,7 @@
       quiz.leadButtonText = lead.buttonText || quiz.leadButtonText; quiz.leadHeadline = htmlToPlainText(lead.headlineHtml); quiz.leadSubheadline = htmlToPlainText(lead.subheadlineHtml);
     }
     var first = steps[0];
-    if (first) { variant.headlineHtml = first.headlineHtml || ""; variant.headline = htmlToPlainText(first.headlineHtml); variant.subheadlineHtml = first.subheadlineHtml || ""; variant.subheadline = htmlToPlainText(first.subheadlineHtml); variant.valueLineHtml = first.valueLineHtml || ""; variant.imageUrl = first.imageUrl || variant.imageUrl; }
+    if (first) { variant.headlineHtml = first.headlineHtml || ""; variant.headline = htmlToPlainText(first.headlineHtml); variant.subheadlineHtml = first.subheadlineHtml || ""; variant.subheadline = htmlToPlainText(first.subheadlineHtml); variant.valueLineHtml = first.valueLineHtml || ""; variant.imageUrl = first.imageUrl || ""; }
   }
 
   function editorColorInput(field, index, label, value, disabled) {
@@ -1759,8 +1763,8 @@
       ? renderProteinTargetPreviewHtml(quiz, getSampleProteinTarget(quiz))
       : "";
     copy.innerHTML = step === "lead" && isProteinPlan && !isSingleStep
-      ? targetPreview + "<h2 class=\"ll-popup-headline\">" + escapeHtml(quiz.leadHeadline) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(quiz.leadSubheadline) + "</p>"
-      : "<h2 class=\"ll-popup-headline\">" + sanitizeRichHtml(variant.headlineHtml || escapeHtml(variant.headline || "")) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || "")) + "</p>" + (variant.valueLineHtml || variant.valueLine ? "<p class=\"ll-popup-value-line\">" + sanitizeRichHtml(variant.valueLineHtml || escapeHtml(variant.valueLine || "")) + "</p>" : "");
+      ? targetPreview + "<p class=\"ll-popup-eyebrow\" hidden></p><h2 class=\"ll-popup-headline\">" + escapeHtml(quiz.leadHeadline) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(quiz.leadSubheadline) + "</p>"
+      : "<p class=\"ll-popup-eyebrow\" hidden></p><h2 class=\"ll-popup-headline\">" + sanitizeRichHtml(variant.headlineHtml || escapeHtml(variant.headline || "")) + "</h2><p class=\"ll-popup-subheadline\">" + sanitizeRichHtml(variant.subheadlineHtml || escapeHtml(variant.subheadline || "")) + "</p>" + (variant.valueLineHtml || variant.valueLine ? "<p class=\"ll-popup-value-line\">" + sanitizeRichHtml(variant.valueLineHtml || escapeHtml(variant.valueLine || "")) + "</p>" : "");
     copy.querySelector(".ll-popup-headline").style.textAlign = variant.textAlign || "left";
     copy.querySelector(".ll-popup-subheadline").style.textAlign = variant.textAlign || "left";
     var valueLine = copy.querySelector(".ll-popup-value-line");
@@ -1963,6 +1967,7 @@
     }
     var quizData = {};
     var root = container.closest(".ll-popup-root");
+    var eyebrow = root && root.querySelector(".ll-popup-eyebrow");
     var headline = root && root.querySelector(".ll-popup-headline");
     var subheadline = root && root.querySelector(".ll-popup-subheadline");
     var valueLine = root && root.querySelector(".ll-popup-value-line");
@@ -2117,6 +2122,7 @@
   function renderFlowPlanPreviewForm(container, variant, initialStep) {
     var steps = variant.flowSteps.filter(function (step) { return step && step.enabled !== false; });
     var root = container.closest(".ll-popup-root");
+    var eyebrow = root && root.querySelector(".ll-popup-eyebrow");
     var headline = root && root.querySelector(".ll-popup-headline");
     var subheadline = root && root.querySelector(".ll-popup-subheadline");
     var valueLine = root && root.querySelector(".ll-popup-value-line");
@@ -2125,6 +2131,7 @@
     function renderStep(index) {
       var step = steps[index];
       if (!step) return;
+      if (eyebrow) { eyebrow.innerHTML = sanitizeRichHtml(step.eyebrowHtml || ""); eyebrow.hidden = !step.eyebrowHtml; }
       if (headline) headline.innerHTML = sanitizeRichHtml(step.headlineHtml || "");
       if (subheadline) { subheadline.innerHTML = sanitizeRichHtml(step.subheadlineHtml || ""); subheadline.hidden = !step.subheadlineHtml; }
       setPopupValueLine(valueLine, step.valueLineHtml || "");
@@ -2132,9 +2139,13 @@
       root.style.setProperty("--ll-popup-button-bg", step.buttonColor || variant.accentColor || "#1f6feb");
       root.style.setProperty("--ll-popup-accent", step.progressColor || variant.brandAccentColor || "#06b00b");
       setOptionalPixelVariable(root, "--ll-popup-headline-size", step.headlineFontSize || variant.headlineFontSize, 18, 72);
+      setOptionalPixelVariable(root, "--ll-popup-eyebrow-size", step.eyebrowFontSize || 15, 10, 28);
       setOptionalPixelVariable(root, "--ll-popup-subheadline-size", step.subheadlineFontSize || variant.subheadlineFontSize, 12, 36);
       setOptionalPixelVariable(root, "--ll-popup-value-line-size", step.valueLineFontSize || variant.valueLineFontSize, 11, 32);
       setOptionalPixelVariable(root, "--ll-popup-button-size", step.buttonFontSize || variant.buttonFontSize, 12, 28);
+      setOptionalPixelVariable(root, "--ll-popup-choice-font-size", step.choiceButtonFontSize || 16, 12, 28);
+      root.style.setProperty("--ll-popup-choice-columns", step.answerLayout === "stacked" ? "1" : "2");
+      root.style.setProperty("--ll-popup-choice-transform", step.choiceButtonTransform === "uppercase" ? "uppercase" : "none");
       var image = root.querySelector(".ll-popup-image");
       if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
       var progress = flowPreviewPosition(steps, index, step.progressScope || "all");
@@ -4325,6 +4336,11 @@
   function loadDraftConfig() {
     try {
       var draft = JSON.parse(localStorage.getItem(DRAFT_KEY)) || null;
+      var resetToken = originalConfig.dashboardDraftResetToken || "";
+      if (draft && resetToken && draft.dashboardDraftResetToken !== resetToken) {
+        draft = cloneConfig(originalConfig);
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      }
       if (draft && originalConfig.leadMagnetMode === "protein_plan" && draft.leadMagnetMode !== "protein_plan") {
         draft = Object.assign(cloneConfig(originalConfig), {
           webhookUrl: draft.webhookUrl || originalConfig.webhookUrl || "",

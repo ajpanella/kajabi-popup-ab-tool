@@ -94,6 +94,12 @@
     copy.className = "ll-popup-copy";
     copy.style.textAlign = variant.textAlign || "left";
 
+    var eyebrow = document.createElement("p");
+    eyebrow.className = "ll-popup-eyebrow";
+    eyebrow.innerHTML = sanitizeRichHtml(variant.eyebrowHtml || "");
+    eyebrow.style.textAlign = variant.textAlign || "left";
+    eyebrow.hidden = !variant.eyebrowHtml;
+
     var headline = document.createElement("h2");
     headline.className = "ll-popup-headline";
     headline.id = "ll-popup-headline";
@@ -111,6 +117,7 @@
     valueLine.style.textAlign = variant.textAlign || "left";
     if (!variant.valueLine && !variant.valueLineHtml) valueLine.hidden = true;
 
+    copy.appendChild(eyebrow);
     copy.appendChild(headline);
     copy.appendChild(subheadline);
     copy.appendChild(valueLine);
@@ -242,6 +249,7 @@
     var quizData = {};
     var proteinQuiz = getProteinQuizConfig(variant);
     var root = container.closest(".ll-popup-root");
+    var eyebrow = root && root.querySelector(".ll-popup-eyebrow");
     var headline = root && root.querySelector(".ll-popup-headline");
     var subheadline = root && root.querySelector(".ll-popup-subheadline");
     var valueLine = root && root.querySelector(".ll-popup-value-line");
@@ -411,6 +419,7 @@
     var answers = {};
     var currentIndex = 0;
     var root = container.closest(".ll-popup-root");
+    var eyebrow = root && root.querySelector(".ll-popup-eyebrow");
     var headline = root && root.querySelector(".ll-popup-headline");
     var subheadline = root && root.querySelector(".ll-popup-subheadline");
     var valueLine = root && root.querySelector(".ll-popup-value-line");
@@ -419,7 +428,7 @@
     function renderStep(index) {
       currentIndex = Math.max(0, Math.min(index, steps.length - 1));
       var step = steps[currentIndex];
-      applyFlowStepCopy(root, step, headline, subheadline, valueLine);
+      applyFlowStepCopy(root, step, eyebrow, headline, subheadline, valueLine);
       var target = calculateFlowProteinTarget(answers);
       renderProteinTargetPreview(root, {showQuizStep:true,targetPreviewStyle:step.targetPreviewStyle || "off",targetPreviewLabel:step.targetPreviewLabel || "Your Daily Target:"}, target);
       container.innerHTML = [
@@ -504,7 +513,8 @@
     }
   }
 
-  function applyFlowStepCopy(root, step, headline, subheadline, valueLine) {
+  function applyFlowStepCopy(root, step, eyebrow, headline, subheadline, valueLine) {
+    if (eyebrow) { eyebrow.innerHTML = sanitizeRichHtml(step.eyebrowHtml || ""); eyebrow.hidden = !step.eyebrowHtml; }
     if (headline) headline.innerHTML = sanitizeRichHtml(step.headlineHtml || "");
     if (subheadline) { subheadline.innerHTML = sanitizeRichHtml(step.subheadlineHtml || ""); subheadline.hidden = !step.subheadlineHtml; }
     setPopupValueLine(valueLine, step.valueLineHtml || "");
@@ -513,9 +523,13 @@
       root.style.setProperty("--ll-popup-button-bg", step.buttonColor || variant.accentColor || "#1f6feb");
       root.style.setProperty("--ll-popup-accent", step.progressColor || variant.brandAccentColor || "#06b00b");
       setOptionalPixelVariable(root, "--ll-popup-headline-size", step.headlineFontSize || variant.headlineFontSize, 18, 72);
+      setOptionalPixelVariable(root, "--ll-popup-eyebrow-size", step.eyebrowFontSize || 15, 10, 28);
       setOptionalPixelVariable(root, "--ll-popup-subheadline-size", step.subheadlineFontSize || variant.subheadlineFontSize, 12, 36);
       setOptionalPixelVariable(root, "--ll-popup-value-line-size", step.valueLineFontSize || variant.valueLineFontSize, 11, 32);
       setOptionalPixelVariable(root, "--ll-popup-button-size", step.buttonFontSize || variant.buttonFontSize, 12, 28);
+      setOptionalPixelVariable(root, "--ll-popup-choice-font-size", step.choiceButtonFontSize || 16, 12, 28);
+      root.style.setProperty("--ll-popup-choice-columns", step.answerLayout === "stacked" ? "1" : "2");
+      root.style.setProperty("--ll-popup-choice-transform", step.choiceButtonTransform === "uppercase" ? "uppercase" : "none");
     }
     var image = root && root.querySelector(".ll-popup-image");
     if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
