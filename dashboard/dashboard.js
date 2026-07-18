@@ -564,6 +564,10 @@
 
   function onEditorInput(event) {
     var target = event.target;
+    if (target && target.matches && target.matches('input[data-rich-command="foreColor"]')) {
+      applyRichCommand(target);
+      return;
+    }
     if (!target || !target.dataset || target.dataset.variantIndex === undefined) return;
 
     var variant = activeVariants()[Number(target.dataset.variantIndex)];
@@ -785,7 +789,7 @@
       editorCheckbox(path + "enabled", variantIndex, "Step enabled", step.enabled !== false),
       editorOptionSelect(path + "type", variantIndex, "Step type", step.type, [{label:"Single question",value:"question"},{label:"Combined questions",value:"questions"},{label:"Lead form",value:"lead"},{label:"Message / result",value:"message"}]),
       editorInput(path + "imageUrl", variantIndex, "Hero image URL", step.imageUrl || "", "url"),
-      editorRichText(path + "eyebrowHtml", variantIndex, "Eyebrow", step.eyebrowHtml || "", false, path + "eyebrowFontSize", step.eyebrowFontSize, 15, variant.brandAccentColor),
+      editorRichText(path + "eyebrowHtml", variantIndex, "Eyebrow", step.eyebrowHtml || "", false, path + "eyebrowFontSize", step.eyebrowFontSize, 15, step.eyebrowColor || variant.eyebrowColor || "#6b7280"),
       editorRichText(path + "headlineHtml", variantIndex, "Headline", step.headlineHtml || "", false, path + "headlineFontSize", step.headlineFontSize || variant.headlineFontSize, 32, variant.textColor),
       editorRichText(path + "subheadlineHtml", variantIndex, "Subheadline", step.subheadlineHtml || "", false, path + "subheadlineFontSize", step.subheadlineFontSize || variant.subheadlineFontSize, 17, variant.textColor),
       editorRichText(path + "valueLineHtml", variantIndex, "Value line", step.valueLineHtml || "", false, path + "valueLineFontSize", step.valueLineFontSize || variant.valueLineFontSize, 15, variant.brandAccentColor),
@@ -964,6 +968,14 @@
 
     editor.focus();
     if (control.dataset.richCommand === "foreColor") {
+      var selection = window.getSelection();
+      var selectionInsideEditor = selection && selection.rangeCount && editor.contains(selection.anchorNode) && !selection.isCollapsed;
+      if (!selectionInsideEditor) {
+        var range = document.createRange();
+        range.selectNodeContents(editor);
+        selection.removeAllRanges();
+        selection.addRange(range);
+      }
       document.execCommand("styleWithCSS", false, true);
       document.execCommand("foreColor", false, control.value);
     } else {
@@ -1739,6 +1751,7 @@
     root.style.setProperty("--ll-popup-bg", variant.backgroundColor || "#ffffff");
     root.style.setProperty("--ll-popup-text", variant.textColor || "#172026");
     root.style.setProperty("--ll-popup-accent", variant.brandAccentColor || "#06b00b");
+    root.style.setProperty("--ll-popup-eyebrow-color", variant.eyebrowColor || "#6b7280");
     root.style.setProperty("--ll-popup-button-bg", variant.accentColor || "#1f6feb");
     root.style.setProperty("--ll-popup-font", variant.fontFamily || "Arial, Helvetica, sans-serif");
     root.style.setProperty("--ll-popup-headline-weight", String(variant.headlineFontWeight || 700));
@@ -2162,6 +2175,7 @@
       root.style.setProperty("--ll-popup-bg", step.backgroundColor || variant.backgroundColor || "#ffffff");
       root.style.setProperty("--ll-popup-button-bg", step.buttonColor || variant.accentColor || "#1f6feb");
       root.style.setProperty("--ll-popup-accent", step.progressColor || variant.brandAccentColor || "#06b00b");
+      root.style.setProperty("--ll-popup-eyebrow-color", step.eyebrowColor || variant.eyebrowColor || "#6b7280");
       setOptionalPixelVariable(root, "--ll-popup-headline-size", step.headlineFontSize || variant.headlineFontSize, 18, 72);
       setOptionalPixelVariable(root, "--ll-popup-eyebrow-size", step.eyebrowFontSize || 15, 10, 28);
       setOptionalPixelVariable(root, "--ll-popup-subheadline-size", step.subheadlineFontSize || variant.subheadlineFontSize, 12, 36);
@@ -4417,6 +4431,7 @@
       variant.height = variant.height || originalVariant.height || "";
       variant.sizeToImage = Boolean(variant.sizeToImage || originalVariant.sizeToImage);
       variant.brandAccentColor = variant.brandAccentColor || originalVariant.brandAccentColor || "#06b00b";
+      variant.eyebrowColor = variant.eyebrowColor || originalVariant.eyebrowColor || "#6b7280";
       variant.headlineHtml = variant.headlineHtml || originalVariant.headlineHtml || escapeHtml(variant.headline || "");
       variant.headlineFontSize = variant.headlineFontSize || originalVariant.headlineFontSize || "";
       variant.subheadlineHtml = variant.subheadlineHtml || originalVariant.subheadlineHtml || escapeHtml(variant.subheadline || "");
@@ -4427,6 +4442,9 @@
       variant.buttonFontSize = variant.buttonFontSize || originalVariant.buttonFontSize || "";
       variant.imageAlt = variant.imageAlt || "";
       variant.proteinQuiz = Object.assign(getProteinQuizDefaults(), value.proteinQuiz || {}, originalVariant.proteinQuiz || {}, variant.proteinQuiz || {});
+      (variant.flowSteps || []).forEach(function (step) {
+        step.eyebrowColor = step.eyebrowColor || variant.eyebrowColor || "#6b7280";
+      });
     });
     return value;
   }

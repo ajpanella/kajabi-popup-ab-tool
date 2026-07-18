@@ -52,6 +52,7 @@
     root.style.setProperty("--ll-popup-bg", variant.backgroundColor || "#ffffff");
     root.style.setProperty("--ll-popup-text", variant.textColor || "#172026");
     root.style.setProperty("--ll-popup-accent", variant.brandAccentColor || "#06b00b");
+    root.style.setProperty("--ll-popup-eyebrow-color", variant.eyebrowColor || "#6b7280");
     root.style.setProperty("--ll-popup-button-bg", variant.accentColor || "#1f6feb");
     root.style.setProperty("--ll-popup-font", variant.fontFamily || "Arial, Helvetica, sans-serif");
     root.style.setProperty("--ll-popup-headline-weight", String(variant.headlineFontWeight || 700));
@@ -525,6 +526,7 @@
       root.style.setProperty("--ll-popup-bg", step.backgroundColor || variant.backgroundColor || "#ffffff");
       root.style.setProperty("--ll-popup-button-bg", step.buttonColor || variant.accentColor || "#1f6feb");
       root.style.setProperty("--ll-popup-accent", step.progressColor || variant.brandAccentColor || "#06b00b");
+      root.style.setProperty("--ll-popup-eyebrow-color", step.eyebrowColor || variant.eyebrowColor || "#6b7280");
       setOptionalPixelVariable(root, "--ll-popup-headline-size", step.headlineFontSize || variant.headlineFontSize, 18, 72);
       setOptionalPixelVariable(root, "--ll-popup-eyebrow-size", step.eyebrowFontSize || 15, 10, 28);
       setOptionalPixelVariable(root, "--ll-popup-subheadline-size", step.subheadlineFontSize || variant.subheadlineFontSize, 12, 36);

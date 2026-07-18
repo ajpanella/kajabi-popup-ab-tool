@@ -109,7 +109,7 @@
 
 .ll-popup-eyebrow {
   margin: 0;
-  color: var(--ll-popup-accent);
+  color: var(--ll-popup-eyebrow-color, #6b7280);
   font-size: var(--ll-popup-eyebrow-size, 15px);
   font-weight: var(--ll-popup-headline-weight, 700);
   line-height: 1.3;
