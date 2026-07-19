@@ -470,7 +470,7 @@
       var card = document.createElement("article");
       card.className = "dash-editor-card";
       card.innerHTML = [
-        "<div class=\"dash-editor-title\"><h3>Variant " + escapeHtml(variant.id) + "</h3><span>" + escapeHtml(label) + "</span></div>",
+        "<div class=\"dash-editor-title\"><div><span class=\"dash-variant-kicker\">Variant " + escapeHtml(variant.id) + "</span><h3>Popup Experience</h3></div><span class=\"dash-editor-summary\">" + escapeHtml(label) + "</span></div>",
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("headlineHtml", index, "Headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("subheadlineHtml", index, "Subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("valueLineHtml", index, "Value Line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
@@ -496,8 +496,8 @@
         editorCompactSizeInput("buttonFontSize", index, "Default button size", variant.buttonFontSize, 16),
         "</div></details>",
         renderProteinFlowEditor(variant, index),
-        "<button class=\"dash-test-popup-button\" data-test-popup=\"" + index + "\" type=\"button\">Load Variant Preview (Dashboard Only)</button>",
-        "<button class=\"dash-save-test\" data-save-test=\"" + index + "\" type=\"button\">Save Draft + Log Version</button>"
+        "<div class=\"dash-variant-actions\"><button class=\"dash-test-popup-button\" data-test-popup=\"" + index + "\" type=\"button\">Load Variant Preview</button>",
+        "<button class=\"dash-save-test\" data-save-test=\"" + index + "\" type=\"button\">Save Draft + Log Version</button></div>"
       ].join("");
       els.editors.appendChild(card);
     });
@@ -592,7 +592,7 @@
     if (shouldRerenderEditorsForField(key)) {
       renderEditors();
     } else {
-      var label = target.closest(".dash-editor-card").querySelector(".dash-editor-title span");
+      var label = target.closest(".dash-editor-card").querySelector(".dash-editor-summary");
       if (label) label.textContent = buildVariantLabel(variant);
     }
     renderPreviews(previewMode);
@@ -778,54 +778,88 @@
     if (!step) return "";
     var path = "flowSteps." + stepIndex + ".";
     var questionOptions = [{label:"Target Weight",value:"targetWeight"},{label:"Strength Training",value:"strengthDays"},{label:"Age",value:"age"},{label:"Custom Question",value:"custom"}];
+    var setupControls = [
+      editorInput(path + "name", variantIndex, "Internal step name", step.name || "", "text"),
+      editorOptionSelect(path + "type", variantIndex, "Step type", step.type, [{label:"Single question",value:"question"},{label:"Combined questions",value:"questions"},{label:"Lead form",value:"lead"},{label:"Message / result",value:"message"}]),
+      editorCheckbox(path + "enabled", variantIndex, "Step enabled", step.enabled !== false)
+    ].join("");
+    var contentControls = [
+      editorRichText(path + "eyebrowHtml", variantIndex, "Eyebrow", step.eyebrowHtml || "", false, path + "eyebrowFontSize", step.eyebrowFontSize, 15, step.eyebrowColor || variant.eyebrowColor || "#6b7280"),
+      editorRichText(path + "headlineHtml", variantIndex, "Headline", step.headlineHtml || "", false, path + "headlineFontSize", step.headlineFontSize || variant.headlineFontSize, 32, variant.textColor),
+      editorRichText(path + "subheadlineHtml", variantIndex, "Subheadline", step.subheadlineHtml || "", false, path + "subheadlineFontSize", step.subheadlineFontSize || variant.subheadlineFontSize, 17, variant.textColor),
+      editorRichText(path + "valueLineHtml", variantIndex, "Value line", step.valueLineHtml || "", false, path + "valueLineFontSize", step.valueLineFontSize || variant.valueLineFontSize, 15, variant.brandAccentColor)
+    ].join("");
+    var appearanceControls = [
+      editorInput(path + "imageUrl", variantIndex, "Hero image URL", step.imageUrl || "", "url"),
+      editorInput(path + "backgroundColor", variantIndex, "Step background", step.backgroundColor || variant.backgroundColor || "#ffffff", "color"),
+      editorInput(path + "buttonColor", variantIndex, "Step button color", step.buttonColor || variant.accentColor || "#1f6feb", "color"),
+      editorInput(path + "progressColor", variantIndex, "Progress color", step.progressColor || variant.brandAccentColor || "#06b00b", "color")
+    ].join("");
+    var responseControls = [];
+    if (step.type === "question") {
+      responseControls.push(editorOptionSelect(path + "field", variantIndex, "Question", step.field, questionOptions));
+      responseControls.push(editorInput(path + "questionLabel", variantIndex, "Question text", step.questionLabel || "", "text"));
+      responseControls.push(editorOptionSelect(path + "answerStyle", variantIndex, "Answer style", step.answerStyle || "dropdown", [{label:"Dropdown",value:"dropdown"},{label:"Choice buttons",value:"ranges"},{label:"Number field",value:"number"},{label:"Text field",value:"text"}]));
+      if (step.answerStyle === "ranges") {
+        responseControls.push(editorOptionSelect(path + "answerLayout", variantIndex, "Choice button layout", step.answerLayout || "grid", [{label:"Stacked (one column)",value:"stacked"},{label:"Grid (two columns)",value:"grid"}]));
+        responseControls.push(editorCompactSizeInput(path + "choiceButtonFontSize", variantIndex, "Choice button size", step.choiceButtonFontSize, 16));
+      }
+      responseControls.push(editorFontWeightSelect(path + "questionFontWeight", variantIndex, "Question weight", step.questionFontWeight || variant.bodyFontWeight || 400));
+      if (step.answerStyle === "ranges") {
+        responseControls.push(editorFontWeightSelect(path + "choiceButtonFontWeight", variantIndex, "Choice button weight", step.choiceButtonFontWeight || variant.buttonFontWeight || 700));
+        responseControls.push(editorOptionSelect(path + "choiceButtonTransform", variantIndex, "Choice capitalization", step.choiceButtonTransform || "none", [{label:"As written",value:"none"},{label:"ALL CAPS",value:"uppercase"}]));
+      }
+      responseControls.push(editorInput(path + "placeholder", variantIndex, "Placeholder", step.placeholder || "", "text"));
+      if (step.answerStyle === "ranges") responseControls.push(editorTextarea(path + "optionsText", variantIndex, "Choice buttons (Label | calculator value, one per line)", step.optionsText || defaultFlowOptionsText(step.field)));
+      responseControls.push(editorCheckbox(path + "required", variantIndex, "Required", step.required !== false));
+      responseControls.push(editorCheckbox(path + "autoAdvance", variantIndex, "Advance immediately after a choice", Boolean(step.autoAdvance)));
+    }
+    if (step.type === "questions") {
+      responseControls.push(editorInput(path + "targetWeightLabel", variantIndex, "Target weight label", step.targetWeightLabel || "Target weight in lbs", "text"));
+      responseControls.push(editorInput(path + "targetWeightPlaceholder", variantIndex, "Target weight placeholder", step.targetWeightPlaceholder || "155", "text"));
+      responseControls.push(editorInput(path + "strengthDaysLabel", variantIndex, "Strength days label", step.strengthDaysLabel || "Strength training days", "text"));
+      responseControls.push(editorInput(path + "strengthDaysPlaceholder", variantIndex, "Strength days placeholder", step.strengthDaysPlaceholder || "Select days", "text"));
+      responseControls.push(editorInput(path + "ageLabel", variantIndex, "Age label", step.ageLabel || "Age", "text"));
+      responseControls.push(editorInput(path + "agePlaceholder", variantIndex, "Age placeholder", step.agePlaceholder || "48", "text"));
+    }
+    if (step.type === "lead") {
+      responseControls.push(editorCheckbox(path + "showFirstName", variantIndex, "Collect first name", (step.fields || []).indexOf("name") >= 0));
+      responseControls.push(editorCheckbox(path + "showEmail", variantIndex, "Collect email", (step.fields || []).indexOf("email") >= 0));
+      responseControls.push(editorInput(path + "firstNamePlaceholder", variantIndex, "First name placeholder", step.firstNamePlaceholder || "First Name", "text"));
+      responseControls.push(editorInput(path + "emailPlaceholder", variantIndex, "Email placeholder", step.emailPlaceholder || "Email", "text"));
+      responseControls.push(editorProteinTargetPreviewSelect(path + "targetPreviewStyle", variantIndex, "Protein target display", step.targetPreviewStyle || "off"));
+    }
+    var actionControls = editorTextWithSize(path + "buttonText", path + "buttonFontSize", variantIndex, "Button CTA", step.buttonText || "Continue", step.buttonFontSize || variant.buttonFontSize, 16);
+    var navigationControls = [
+      editorCheckbox(path + "progressEnabled", variantIndex, "Show progress bar", Boolean(step.progressEnabled)),
+      editorOptionSelect(path + "progressScope", variantIndex, "Progress counts", step.progressScope || "all", [{label:"All visible steps",value:"all"},{label:"Questions only",value:"questions"}], !step.progressEnabled),
+      editorInput(path + "progressLabel", variantIndex, "Progress label", step.progressLabel || "Step {current} of {total}", "text", !step.progressEnabled),
+      editorCheckbox(path + "showBack", variantIndex, "Show back arrow", stepIndex > 0 && step.showBack !== false, stepIndex === 0)
+    ].join("");
     return [
-      "<div class=\"dash-step-editor\"><div class=\"dash-step-editor-head\"><div><span>STEP " + (stepIndex + 1) + "</span><h4>" + escapeHtml(step.name || "Popup step") + "</h4></div><div class=\"dash-step-actions\">",
+      "<div class=\"dash-step-editor dash-step-type-" + escapeHtmlAttr(step.type || "question") + "\"><div class=\"dash-step-editor-head\"><div class=\"dash-step-identity\"><span>STEP " + (stepIndex + 1) + "</span><h4>" + escapeHtml(step.name || "Popup step") + "</h4><small>" + escapeHtml(flowStepTypeLabel(step)) + "</small></div><div class=\"dash-step-actions\">",
       stepIndex > 0 ? flowActionButton("up", "↑", variantIndex, stepIndex, "Move earlier") : "",
       stepIndex < variant.flowSteps.length - 1 ? flowActionButton("down", "↓", variantIndex, stepIndex, "Move later") : "",
       flowActionButton("duplicate", "Duplicate", variantIndex, stepIndex, "Duplicate step"),
       variant.flowSteps.length > 1 ? flowActionButton("delete", "Delete", variantIndex, stepIndex, "Delete step") : "",
       "</div></div><div class=\"dash-step-settings\">",
-      editorInput(path + "name", variantIndex, "Internal step name", step.name || "", "text"),
-      editorCheckbox(path + "enabled", variantIndex, "Step enabled", step.enabled !== false),
-      editorOptionSelect(path + "type", variantIndex, "Step type", step.type, [{label:"Single question",value:"question"},{label:"Combined questions",value:"questions"},{label:"Lead form",value:"lead"},{label:"Message / result",value:"message"}]),
-      editorInput(path + "imageUrl", variantIndex, "Hero image URL", step.imageUrl || "", "url"),
-      editorRichText(path + "eyebrowHtml", variantIndex, "Eyebrow", step.eyebrowHtml || "", false, path + "eyebrowFontSize", step.eyebrowFontSize, 15, step.eyebrowColor || variant.eyebrowColor || "#6b7280"),
-      editorRichText(path + "headlineHtml", variantIndex, "Headline", step.headlineHtml || "", false, path + "headlineFontSize", step.headlineFontSize || variant.headlineFontSize, 32, variant.textColor),
-      editorRichText(path + "subheadlineHtml", variantIndex, "Subheadline", step.subheadlineHtml || "", false, path + "subheadlineFontSize", step.subheadlineFontSize || variant.subheadlineFontSize, 17, variant.textColor),
-      editorRichText(path + "valueLineHtml", variantIndex, "Value line", step.valueLineHtml || "", false, path + "valueLineFontSize", step.valueLineFontSize || variant.valueLineFontSize, 15, variant.brandAccentColor),
-      editorInput(path + "backgroundColor", variantIndex, "Step background (optional)", step.backgroundColor || variant.backgroundColor || "#ffffff", "color"),
-      editorInput(path + "buttonColor", variantIndex, "Step button color", step.buttonColor || variant.accentColor || "#1f6feb", "color"),
-      editorInput(path + "progressColor", variantIndex, "Progress color", step.progressColor || variant.brandAccentColor || "#06b00b", "color"),
-      step.type === "question" ? editorOptionSelect(path + "field", variantIndex, "Question", step.field, questionOptions) : "",
-      step.type === "question" ? editorInput(path + "questionLabel", variantIndex, "Question text", step.questionLabel || "", "text") : "",
-      step.type === "question" ? editorOptionSelect(path + "answerStyle", variantIndex, "Answer style", step.answerStyle || "dropdown", [{label:"Dropdown",value:"dropdown"},{label:"Choice buttons",value:"ranges"},{label:"Number field",value:"number"},{label:"Text field",value:"text"}]) : "",
-      step.type === "question" && step.answerStyle === "ranges" ? editorOptionSelect(path + "answerLayout", variantIndex, "Choice button layout", step.answerLayout || "grid", [{label:"Stacked (one column)",value:"stacked"},{label:"Grid (two columns)",value:"grid"}]) : "",
-      step.type === "question" && step.answerStyle === "ranges" ? editorCompactSizeInput(path + "choiceButtonFontSize", variantIndex, "Choice button size", step.choiceButtonFontSize, 16) : "",
-      step.type === "question" ? editorFontWeightSelect(path + "questionFontWeight", variantIndex, "Question weight", step.questionFontWeight || variant.bodyFontWeight || 400) : "",
-      step.type === "question" && step.answerStyle === "ranges" ? editorFontWeightSelect(path + "choiceButtonFontWeight", variantIndex, "Choice button weight", step.choiceButtonFontWeight || variant.buttonFontWeight || 700) : "",
-      step.type === "question" && step.answerStyle === "ranges" ? editorOptionSelect(path + "choiceButtonTransform", variantIndex, "Choice button capitalization", step.choiceButtonTransform || "none", [{label:"As written",value:"none"},{label:"ALL CAPS",value:"uppercase"}]) : "",
-      step.type === "question" ? editorInput(path + "placeholder", variantIndex, "Placeholder", step.placeholder || "", "text") : "",
-      step.type === "question" && step.answerStyle === "ranges" ? editorTextarea(path + "optionsText", variantIndex, "Choice buttons (Label | calculator value, one per line)", step.optionsText || defaultFlowOptionsText(step.field)) : "",
-      step.type === "question" ? editorCheckbox(path + "required", variantIndex, "Required", step.required !== false) : "",
-      step.type === "question" ? editorCheckbox(path + "autoAdvance", variantIndex, "Advance immediately after a choice", Boolean(step.autoAdvance)) : "",
-      step.type === "questions" ? editorInput(path + "targetWeightLabel", variantIndex, "Target weight label", step.targetWeightLabel || "Target weight in lbs", "text") : "",
-      step.type === "questions" ? editorInput(path + "targetWeightPlaceholder", variantIndex, "Target weight placeholder", step.targetWeightPlaceholder || "155", "text") : "",
-      step.type === "questions" ? editorInput(path + "strengthDaysLabel", variantIndex, "Strength days label", step.strengthDaysLabel || "Strength training days", "text") : "",
-      step.type === "questions" ? editorInput(path + "strengthDaysPlaceholder", variantIndex, "Strength days placeholder", step.strengthDaysPlaceholder || "Select days", "text") : "",
-      step.type === "questions" ? editorInput(path + "ageLabel", variantIndex, "Age label", step.ageLabel || "Age", "text") : "",
-      step.type === "questions" ? editorInput(path + "agePlaceholder", variantIndex, "Age placeholder", step.agePlaceholder || "48", "text") : "",
-      step.type === "lead" ? editorCheckbox(path + "showFirstName", variantIndex, "Collect first name", (step.fields || []).indexOf("name") >= 0) : "",
-      step.type === "lead" ? editorCheckbox(path + "showEmail", variantIndex, "Collect email", (step.fields || []).indexOf("email") >= 0) : "",
-      step.type === "lead" ? editorInput(path + "firstNamePlaceholder", variantIndex, "First name placeholder", step.firstNamePlaceholder || "First Name", "text") : "",
-      step.type === "lead" ? editorInput(path + "emailPlaceholder", variantIndex, "Email placeholder", step.emailPlaceholder || "Email", "text") : "",
-      step.type === "lead" ? editorProteinTargetPreviewSelect(path + "targetPreviewStyle", variantIndex, "Protein target display", step.targetPreviewStyle || "off") : "",
-      editorTextWithSize(path + "buttonText", path + "buttonFontSize", variantIndex, "Button CTA", step.buttonText || "Continue", step.buttonFontSize || variant.buttonFontSize, 16),
-      "<div class=\"dash-flow-divider\"><span>Progress & navigation</span></div>",
-      editorCheckbox(path + "progressEnabled", variantIndex, "Show progress bar", Boolean(step.progressEnabled)),
-      editorOptionSelect(path + "progressScope", variantIndex, "Progress counts", step.progressScope || "all", [{label:"All visible steps",value:"all"},{label:"Questions only",value:"questions"}], !step.progressEnabled),
-      editorInput(path + "progressLabel", variantIndex, "Progress label", step.progressLabel || "Step {current} of {total}", "text", !step.progressEnabled),
-      editorCheckbox(path + "showBack", variantIndex, "Show back arrow", stepIndex > 0 && step.showBack !== false, stepIndex === 0),
+      flowSettingsGroup("01", "Step Setup", setupControls, "dash-setting-group-setup"),
+      flowSettingsGroup("02", "Popup Content", contentControls, "dash-setting-group-content"),
+      flowSettingsGroup("03", "Appearance", appearanceControls, "dash-setting-group-appearance"),
+      flowSettingsGroup("04", step.type === "lead" ? "Form Fields" : "Question & Answers", responseControls.join(""), "dash-setting-group-response"),
+      flowSettingsGroup("05", "Call to Action", actionControls, "dash-setting-group-action"),
+      flowSettingsGroup("06", "Progress & Navigation", navigationControls, "dash-setting-group-navigation"),
       "</div></div>"
+    ].join("");
+  }
+
+  function flowSettingsGroup(index, title, controls, className) {
+    if (!controls) return "";
+    return [
+      "<section class=\"dash-setting-group " + escapeHtmlAttr(className || "") + "\">",
+      "<div class=\"dash-setting-group-heading\"><span>" + escapeHtml(index) + "</span><h5>" + escapeHtml(title) + "</h5></div>",
+      "<div class=\"dash-setting-grid\">" + controls + "</div>",
+      "</section>"
     ].join("");
   }
 

@@ -5,15 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=33">
-    <link rel="stylesheet" href="./dashboard.css?v=51">
+    <link rel="stylesheet" href="./dashboard.css?v=52">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260718-3"></script>
   </head>
   <body>
     <header class="dash-header">
       <div>
-        <p class="dash-eyebrow">Kajabi Popup A/B Test</p>
-        <h1>Performance Dashboard</h1>
+        <p class="dash-eyebrow">Longevity Lifestyle OS</p>
+        <h1>Popup Test Studio</h1>
       </div>
       <div class="dash-header-links">
         <a class="dash-doc-link" id="tracking-sheet-link" href="#" target="_blank" rel="noreferrer">Tracking Sheet</a>
@@ -23,50 +23,63 @@
 
     <main class="dash-layout">
       <section class="dash-panel dash-controls" aria-label="Dashboard controls">
-        <label>
-          Published CSV URL
-          <input id="csv-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/e/.../pub?output=csv">
-        </label>
-        <button id="load-data" type="button">Refresh Data</button>
-        <p id="csv-load-status" class="dash-load-status" aria-live="polite"></p>
+        <div class="dash-rail-heading">
+          <span>Data view</span>
+          <strong>Performance Filters</strong>
+        </div>
+        <div class="dash-control-group dash-control-source">
+          <label>
+            Published CSV URL
+            <input id="csv-url" type="url" placeholder="Google Sheets CSV URL">
+          </label>
+          <button id="load-data" type="button">Refresh Data</button>
+          <p id="csv-load-status" class="dash-load-status" aria-live="polite"></p>
+        </div>
 
-        <label>
-          Test ID
-          <select id="filter-test-id"></select>
-        </label>
-        <label>
-          Variant
-          <select id="filter-variant"></select>
-        </label>
-        <label>
-          Version
-          <select id="filter-version"></select>
-        </label>
-        <label>
-          Start date
-          <input id="filter-start" type="date">
-        </label>
-        <label>
-          End date
-          <input id="filter-end" type="date">
-        </label>
-        <label>
-          Page URL
-          <input id="filter-page-url" type="search" placeholder="Contains...">
-        </label>
-        <label>
-          Device
-          <select id="filter-device">
-            <option value="">All devices</option>
-            <option value="desktop">Desktop</option>
-            <option value="tablet">Tablet</option>
-            <option value="mobile">Mobile</option>
-          </select>
-        </label>
+        <div class="dash-control-group">
+          <span class="dash-control-group-title">Active dataset</span>
+          <label>
+            Test ID
+            <select id="filter-test-id"></select>
+          </label>
+          <label>
+            Variant
+            <select id="filter-variant"></select>
+          </label>
+          <label>
+            Version
+            <select id="filter-version"></select>
+          </label>
+        </div>
+
+        <div class="dash-control-group">
+          <span class="dash-control-group-title">Audience slice</span>
+          <label>
+            Start date
+            <input id="filter-start" type="date">
+          </label>
+          <label>
+            End date
+            <input id="filter-end" type="date">
+          </label>
+          <label>
+            Page URL
+            <input id="filter-page-url" type="search" placeholder="Contains...">
+          </label>
+          <label>
+            Device
+            <select id="filter-device">
+              <option value="">All devices</option>
+              <option value="desktop">Desktop</option>
+              <option value="tablet">Tablet</option>
+              <option value="mobile">Mobile</option>
+            </select>
+          </label>
+        </div>
       </section>
 
       <section class="dash-content">
-        <section class="dash-panel">
+        <section class="dash-panel dash-install-panel">
           <div class="dash-section-heading">
             <div>
               <p class="dash-eyebrow">Install</p>
@@ -81,11 +94,11 @@
           <textarea id="embed-code" class="dash-code-box" readonly></textarea>
         </section>
 
-        <section class="dash-panel">
+        <section class="dash-panel dash-builder-panel">
           <div class="dash-section-heading">
             <div>
-              <p class="dash-eyebrow">Editor</p>
-              <h2>Popup Details</h2>
+              <p class="dash-eyebrow">Test Builder</p>
+              <h2>Popup Configuration</h2>
             </div>
             <div class="dash-action-row">
               <button id="reset-config" class="dash-secondary-button" type="button">Reset Draft</button>
@@ -102,75 +115,100 @@
               <strong>GitHub Publish</strong>
               <span>Publish dashboard edits to the hosted popup/variants.js file without changing the Kajabi embed. Local dashboard uses your signed-in GitHub app; hosted dashboard needs a token.</span>
             </div>
-            <div class="dash-global-editor">
-              <label>
-                Repository owner
-                <input id="github-owner" type="text" autocomplete="off" value="ajpanella">
-              </label>
-              <label>
-                Repository name
-                <input id="github-repo" type="text" autocomplete="off" value="kajabi-popup-ab-tool">
-              </label>
-              <label>
-                Branch
-                <input id="github-branch" type="text" autocomplete="off" value="main">
-              </label>
-              <label>
-                Publish path
-                <input id="github-path" type="text" autocomplete="off" value="popup/variants.js">
-              </label>
-              <label class="dash-global-wide">
-                GitHub fine-grained token (hosted dashboard only)
-                <input id="github-token" type="password" autocomplete="off" placeholder="Contents: Read and write">
-              </label>
-              <label class="dash-global-wide">
-                Commit message
-                <input id="github-message" type="text" value="Publish popup variants from dashboard">
-              </label>
-            </div>
+            <details class="dash-advanced-panel">
+              <summary>GitHub connection settings</summary>
+              <div class="dash-global-editor">
+                <label>
+                  Repository owner
+                  <input id="github-owner" type="text" autocomplete="off" value="ajpanella">
+                </label>
+                <label>
+                  Repository name
+                  <input id="github-repo" type="text" autocomplete="off" value="kajabi-popup-ab-tool">
+                </label>
+                <label>
+                  Branch
+                  <input id="github-branch" type="text" autocomplete="off" value="main">
+                </label>
+                <label>
+                  Publish path
+                  <input id="github-path" type="text" autocomplete="off" value="popup/variants.js">
+                </label>
+                <label class="dash-global-wide">
+                  GitHub fine-grained token (hosted dashboard only)
+                  <input id="github-token" type="password" autocomplete="off" placeholder="Contents: Read and write">
+                </label>
+                <label class="dash-global-wide">
+                  Commit message
+                  <input id="github-message" type="text" value="Publish popup variants from dashboard">
+                </label>
+              </div>
+            </details>
             <button id="publish-github" class="dash-save-test" type="button">Save & Publish to GitHub</button>
             <p id="github-publish-status" class="dash-publish-status"></p>
           </div>
-          <div class="dash-global-editor">
-            <label>
-              Webhook URL
-              <input id="webhook-url" type="url" placeholder="Google Apps Script Web App URL">
-            </label>
-            <label>
-              Lead magnet mode
-              <select id="lead-magnet-mode">
-                <option value="">Standard opt-in</option>
-                <option value="protein_plan">Protein plan quiz</option>
-              </select>
-            </label>
-            <label>
-              Lead webhook URL
-              <input id="lead-webhook-url" type="url" placeholder="Zapier Catch Hook URL">
-            </label>
-            <label>
-              Protein plan URL
-              <input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/personalized-protein-plan">
-            </label>
-            <label>
-              Delay seconds
-              <input id="delay-seconds" type="number" min="0" step="1" placeholder="35">
-            </label>
-            <label>
-              Reopen after close seconds (0 = off)
-              <input id="reopen-after-close-seconds" type="number" min="0" step="1" placeholder="35">
-            </label>
-            <label>
-              Scroll trigger % (0 = off)
-              <input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="0">
-            </label>
-            <label>
-              New publish version
-              <input id="config-version" type="text" placeholder="v1">
-            </label>
-            <label>
-              Change note
-              <input id="change-note" type="text" placeholder="What changed in this version?">
-            </label>
+          <div class="dash-settings-band dash-test-config">
+            <div class="dash-subsection-heading">
+              <span>Setup</span>
+              <strong>Delivery & Tracking</strong>
+            </div>
+            <div class="dash-global-editor">
+              <label>
+                Tracking webhook URL
+                <input id="webhook-url" type="url" placeholder="Google Apps Script Web App URL">
+              </label>
+              <label>
+                Lead magnet mode
+                <select id="lead-magnet-mode">
+                  <option value="">Standard opt-in</option>
+                  <option value="protein_plan">Protein plan quiz</option>
+                </select>
+              </label>
+              <label>
+                Lead webhook URL
+                <input id="lead-webhook-url" type="url" placeholder="Zapier Catch Hook URL">
+              </label>
+              <label>
+                Destination URL
+                <input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/personalized-protein-plan">
+              </label>
+            </div>
+          </div>
+          <div class="dash-settings-band dash-trigger-config">
+            <div class="dash-subsection-heading">
+              <span>Behavior</span>
+              <strong>Timing & Triggers</strong>
+            </div>
+            <div class="dash-global-editor dash-three-column-grid">
+              <label>
+                Delay seconds
+                <input id="delay-seconds" type="number" min="0" step="1" placeholder="35">
+              </label>
+              <label>
+                Reopen after close (seconds)
+                <input id="reopen-after-close-seconds" type="number" min="0" step="1" placeholder="35">
+              </label>
+              <label>
+                Scroll trigger %
+                <input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="0">
+              </label>
+            </div>
+          </div>
+          <div class="dash-settings-band dash-version-config">
+            <div class="dash-subsection-heading">
+              <span>History</span>
+              <strong>Version Notes</strong>
+            </div>
+            <div class="dash-global-editor">
+              <label>
+                New publish version
+                <input id="config-version" type="text" placeholder="v1">
+              </label>
+              <label>
+                Change note
+                <input id="change-note" type="text" placeholder="What changed in this version?">
+              </label>
+            </div>
           </div>
           <div class="dash-palette">
             <div class="dash-palette-head">
@@ -418,6 +456,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=103"></script>
+    <script src="./dashboard.js?v=104"></script>
   </body>
 </html>
