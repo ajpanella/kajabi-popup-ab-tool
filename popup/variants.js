@@ -60,11 +60,11 @@
         "firstNamePlaceholder": "First Name",
         "emailLabel": "Email",
         "emailPlaceholder": "Email",
-        "leadButtonText": "SHOW MY FREE PROTEIN PLAN",
+        "leadButtonText": "Build My Free Plan",
         "backButtonText": "Back"
       },
       "trackingVersion": "7/18/2026 - Poppins Stacked Target Weight + Email",
-      "trackingFingerprint": "{\"headline\":\"You've Got a Free 7-Day High-Protein Plan\",\"headlineHtml\":\"You've Got a Free <span style=\\\"color: #4f8f8f;\\\">7-Day High-Protein Plan</span>\",\"headlineFontSize\":48,\"subheadline\":\"\",\"subheadlineHtml\":\"\",\"subheadlineFontSize\":20,\"valueLine\":\"\",\"valueLineHtml\":\"\",\"valueLineFontSize\":16,\"buttonText\":\"SHOW MY FREE PROTEIN PLAN\",\"buttonFontSize\":18,\"imageUrl\":\"\",\"imageAlt\":\"\",\"width\":560,\"height\":\"\",\"sizeToImage\":false,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1f2d37\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#06b00b\",\"fontFamily\":\"Poppins, Arial, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":600,\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2\",\"progressStepOneText\":\"\",\"progressStepTwoLabel\":\"Step 2 of 2\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"1 of 2\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"\",\"showQuizStep\":true,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Free Protein Plan Is Ready to Personalize\",\"leadSubheadline\":\"Enter your email to open your personalized 7-day meal plan and grocery list.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"SHOW MY FREE PROTEIN PLAN\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"id\":\"step_target_weight_stacked\",\"name\":\"Target Weight\",\"type\":\"question\",\"enabled\":true,\"field\":\"targetWeight\",\"eyebrowHtml\":\"YOUR FREE PERSONALIZED PROTEIN PLAN\",\"eyebrowFontSize\":16,\"headlineHtml\":\"You've Got a Free <span style=\\\"color: #4f8f8f;\\\">7-Day High-Protein Plan</span>\",\"headlineFontSize\":48,\"subheadlineHtml\":\"\",\"valueLineHtml\":\"\",\"imageUrl\":\"\",\"backgroundColor\":\"#fbfaf7\",\"buttonColor\":\"#06b00b\",\"progressColor\":\"#06b00b\",\"questionLabel\":\"What target weight are you working toward?\",\"placeholder\":\"Select your target weight\",\"answerStyle\":\"ranges\",\"answerLayout\":\"stacked\",\"choiceButtonFontSize\":18,\"choiceButtonTransform\":\"uppercase\",\"optionsText\":\"UNDER 120 LBS | 110\\n120-149 LBS | 135\\n150-179 LBS | 165\\n180+ LBS | 190\",\"required\":true,\"autoAdvance\":true,\"buttonText\":\"Continue\",\"progressEnabled\":true,\"progressScope\":\"all\",\"progressLabel\":\"Step 1 of 2\",\"showBack\":false,\"questionFontWeight\":400,\"choiceButtonFontWeight\":600},{\"id\":\"step_email_stacked\",\"name\":\"Email\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"eyebrowHtml\":\"YOUR FREE PERSONALIZED PROTEIN PLAN\",\"eyebrowFontSize\":16,\"headlineHtml\":\"Your Free Protein Plan Is Ready to Personalize\",\"headlineFontSize\":40,\"subheadlineHtml\":\"Enter your email to open your personalized 7-day meal plan and grocery list.\",\"subheadlineFontSize\":19,\"valueLineHtml\":\"\",\"imageUrl\":\"\",\"backgroundColor\":\"#fbfaf7\",\"buttonColor\":\"#06b00b\",\"progressColor\":\"#06b00b\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"showFirstName\":false,\"showEmail\":true,\"buttonText\":\"SHOW MY FREE PROTEIN PLAN\",\"buttonFontSize\":18,\"progressEnabled\":true,\"progressScope\":\"all\",\"progressLabel\":\"Step 2 of 2\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"\",\"showBack\":true}]}",
+      "trackingFingerprint": "{\"headline\":\"You've Got a Free 7-Day High-Protein Plan\",\"headlineHtml\":\"You've Got a Free <span style=\\\"color: #4f8f8f;\\\">7-Day High-Protein Plan</span>\",\"headlineFontSize\":48,\"subheadline\":\"\",\"subheadlineHtml\":\"\",\"subheadlineFontSize\":20,\"valueLine\":\"\",\"valueLineHtml\":\"\",\"valueLineFontSize\":16,\"buttonText\":\"SHOW MY FREE PROTEIN PLAN\",\"buttonFontSize\":18,\"imageUrl\":\"\",\"imageAlt\":\"\",\"width\":560,\"height\":\"\",\"sizeToImage\":false,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1f2d37\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#06b00b\",\"fontFamily\":\"Poppins, Arial, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":600,\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2\",\"progressStepOneText\":\"\",\"progressStepTwoLabel\":\"Step 2 of 2\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"1 of 2\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"\",\"showQuizStep\":true,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Free Protein Plan Is Ready to Personalize\",\"leadSubheadline\":\"Enter your email to open your personalized 7-day meal plan and grocery list.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"id\":\"step_target_weight_stacked\",\"name\":\"Target Weight\",\"type\":\"question\",\"enabled\":true,\"field\":\"targetWeight\",\"eyebrowHtml\":\"YOUR FREE PERSONALIZED PROTEIN PLAN\",\"eyebrowFontSize\":16,\"headlineHtml\":\"You've Got a Free <span style=\\\"color: #4f8f8f;\\\">7-Day High-Protein Plan</span>\",\"headlineFontSize\":\"52\",\"subheadlineHtml\":\"\",\"valueLineHtml\":\"\",\"imageUrl\":\"\",\"backgroundColor\":\"#fbfaf7\",\"buttonColor\":\"#06b00b\",\"progressColor\":\"#06b00b\",\"questionLabel\":\"What best describes your ideal weight?\",\"placeholder\":\"Select your target weight\",\"answerStyle\":\"ranges\",\"answerLayout\":\"stacked\",\"choiceButtonFontSize\":18,\"choiceButtonTransform\":\"uppercase\",\"optionsText\":\"UNDER 120 LBS | 110\\n120-149 LBS | 135\\n150-179 LBS | 165\\n180+ LBS | 190\",\"required\":true,\"autoAdvance\":true,\"buttonText\":\"Continue\",\"progressEnabled\":true,\"progressScope\":\"all\",\"progressLabel\":\"Step 1 of 2\",\"showBack\":false,\"questionFontWeight\":400,\"choiceButtonFontWeight\":600,\"eyebrowColor\":\"#6b7280\"},{\"id\":\"step_email_stacked\",\"name\":\"Email\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"eyebrowHtml\":\"YOUR FREE PERSONALIZED PROTEIN PLAN\",\"eyebrowFontSize\":16,\"headlineHtml\":\"Your Free Protein Plan Is Ready to Personalize\",\"headlineFontSize\":40,\"subheadlineHtml\":\"Enter your email to open your personalized 7-day meal plan and grocery list.\",\"subheadlineFontSize\":19,\"valueLineHtml\":\"\",\"imageUrl\":\"\",\"backgroundColor\":\"#fbfaf7\",\"buttonColor\":\"#06b00b\",\"progressColor\":\"#06b00b\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"showFirstName\":false,\"showEmail\":true,\"buttonText\":\"Build My Free Plan\",\"buttonFontSize\":18,\"progressEnabled\":true,\"progressScope\":\"all\",\"progressLabel\":\"Step 2 of 2\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"\",\"showBack\":true,\"eyebrowColor\":\"#6b7280\"}]}",
       "valueLine": "",
       "headlineHtml": "You've Got a Free <span style=\"color: #4f8f8f;\">7-Day High-Protein Plan</span>",
       "headlineFontSize": 48,
@@ -83,14 +83,14 @@
           "eyebrowHtml": "YOUR FREE PERSONALIZED PROTEIN PLAN",
           "eyebrowFontSize": 16,
           "headlineHtml": "You've Got a Free <span style=\"color: #4f8f8f;\">7-Day High-Protein Plan</span>",
-          "headlineFontSize": 48,
+          "headlineFontSize": "52",
           "subheadlineHtml": "",
           "valueLineHtml": "",
           "imageUrl": "",
           "backgroundColor": "#fbfaf7",
           "buttonColor": "#06b00b",
           "progressColor": "#06b00b",
-          "questionLabel": "What target weight are you working toward?",
+          "questionLabel": "What best describes your ideal weight?",
           "placeholder": "Select your target weight",
           "answerStyle": "ranges",
           "answerLayout": "stacked",
@@ -105,7 +105,8 @@
           "progressLabel": "Step 1 of 2",
           "showBack": false,
           "questionFontWeight": 400,
-          "choiceButtonFontWeight": 600
+          "choiceButtonFontWeight": 600,
+          "eyebrowColor": "#6b7280"
         },
         {
           "id": "step_email_stacked",
@@ -132,19 +133,21 @@
           "emailPlaceholder": "Email",
           "showFirstName": false,
           "showEmail": true,
-          "buttonText": "SHOW MY FREE PROTEIN PLAN",
+          "buttonText": "Build My Free Plan",
           "buttonFontSize": 18,
           "progressEnabled": true,
           "progressScope": "all",
           "progressLabel": "Step 2 of 2",
           "targetPreviewStyle": "off",
           "targetPreviewLabel": "",
-          "showBack": true
+          "showBack": true,
+          "eyebrowColor": "#6b7280"
         }
       ],
       "headlineFontWeight": 700,
       "bodyFontWeight": 400,
-      "buttonFontWeight": 600
+      "buttonFontWeight": 600,
+      "eyebrowColor": "#6b7280"
     },
     {
       "id": "B",
@@ -198,8 +201,8 @@
         "leadButtonText": "Build My Free Plan",
         "backButtonText": "Back"
       },
-      "trackingVersion": "7/7/2026 - Single Step",
-      "trackingFingerprint": "{\"headline\":\"Eat More Protein Without Complicated Meals\",\"headlineHtml\":\"Eat More Protein <i>Without</i> Complicated Meals\",\"headlineFontSize\":44,\"subheadline\":\"Get a free 7-day high-protein meal plan with simple meals, a personalized grocery list, and protein already calculated.\",\"subheadlineHtml\":\"<span style=\\\"color: rgb(5, 5, 5);\\\">Get a </span><b>free 7-day high-protein meal plan</b><span style=\\\"color: rgb(5, 5, 5);\\\"> with simple meals, a personalized grocery list, and protein already calculated.</span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"Eat More Protein <i>Without</i> Complicated Meals\",\"subheadlineHtml\":\"<span style=\\\"color: rgb(5, 5, 5);\\\">Get a </span><b>free 7-day high-protein meal plan</b><span style=\\\"color: rgb(5, 5, 5);\\\"> with simple meals, a personalized grocery list, and protein already calculated.</span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true}]}",
+      "trackingVersion": "7/18/2026 - Poppins Stacked Target Weight + Email",
+      "trackingFingerprint": "{\"headline\":\"Eat More Protein Without Complicated Meals\",\"headlineHtml\":\"Eat More Protein <i>Without</i> Complicated Meals\",\"headlineFontSize\":44,\"subheadline\":\"Get a free 7-day high-protein meal plan with simple meals, a personalized grocery list, and protein already calculated.\",\"subheadlineHtml\":\"<span style=\\\"color: rgb(5, 5, 5);\\\">Get a </span><b>free 7-day high-protein meal plan</b><span style=\\\"color: rgb(5, 5, 5);\\\"> with simple meals, a personalized grocery list, and protein already calculated.</span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"trafficSplit\":50,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"Eat More Protein <i>Without</i> Complicated Meals\",\"subheadlineHtml\":\"<span style=\\\"color: rgb(5, 5, 5);\\\">Get a </span><b>free 7-day high-protein meal plan</b><span style=\\\"color: rgb(5, 5, 5);\\\"> with simple meals, a personalized grocery list, and protein already calculated.</span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
       "valueLine": "Simple meals, daily protein target, and grocery list included.",
       "headlineHtml": "Eat More Protein <i>Without</i> Complicated Meals",
       "headlineFontSize": 44,
@@ -231,20 +234,25 @@
           "targetPreviewStyle": "off",
           "targetPreviewLabel": "Your Daily Target:",
           "showFirstName": false,
-          "showEmail": true
+          "showEmail": true,
+          "eyebrowColor": "#6b7280"
         }
-      ]
+      ],
+      "headlineFontWeight": 700,
+      "bodyFontWeight": 400,
+      "buttonFontWeight": 700,
+      "eyebrowColor": "#6b7280"
     }
   ],
   "configVersion": "7/18/2026 - Poppins Stacked Target Weight + Email",
   "dashboardDraftResetToken": "2026-07-18-poppins-stacked-variant-a",
-  "changeNote": "A - Poppins typography + stacked target-weight choices + email",
+  "changeNote": "A - Poppins font + stacked target-weight quiz + email",
   "savedColors": [
     "#07b00c",
     "#ea8011",
     "#fcfcfc",
     "#050505",
-    "#1f6feb",
+    "#a2a7ae",
     "#0f766e",
     "#f0782e",
     "#fbfaf7",
@@ -289,7 +297,8 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-07-18T23:22:17.530Z",
-  "reopenAfterCloseSeconds": 35
+  "draftSavedAt": "2026-07-19T00:43:01.110Z",
+  "reopenAfterCloseSeconds": 35,
+  "trackingCsvUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTL2htdRxc9IM_ok_bTcrYPMccocLdF0I8_yNIZRkkRp3a23yCQDA4gBuWzByWQNGLVxtniZJvAAlAY/pub?output=csv"
 };
 })();
