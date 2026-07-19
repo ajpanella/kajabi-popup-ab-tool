@@ -2673,7 +2673,7 @@
   }
 
   function ensureFreshPublishVersion() {
-    config.configVersion = els.configVersion.value.trim() || formatDateVersion(new Date());
+    config.configVersion = formatDateVersion(new Date());
     els.configVersion.value = config.configVersion;
     return "";
   }
@@ -2700,7 +2700,7 @@
       }
 
       if (variant.trackingFingerprint !== fingerprint) {
-        variant.trackingVersion = config.configVersion || "v1";
+        variant.trackingVersion = nextAvailableTrackingVersion(config.configVersion || "v1", variant.id, publishedVariant);
         variant.trackingFingerprint = fingerprint;
         changed.push(variant.id);
       }
@@ -2708,6 +2708,21 @@
 
     if (!changed.length) return "No variant content changed; existing tracking versions were retained. ";
     return "Started a new tracking version for Variant " + changed.join(" and ") + "; unchanged variants keep their existing data. ";
+  }
+
+  function nextAvailableTrackingVersion(baseVersion, variantId, publishedVariant) {
+    var base = String(baseVersion || "v1");
+    var used = rows.filter(function (row) {
+      return row.variant === variantId;
+    }).map(function (row) {
+      return row.configVersion || "unversioned";
+    });
+    if (publishedVariant) used.push(getVariantTrackingVersion(publishedVariant));
+    if (used.indexOf(base) < 0) return base;
+
+    var revision = 2;
+    while (used.indexOf(base + " #" + revision) >= 0) revision += 1;
+    return base + " #" + revision;
   }
 
   function canUseLocalPublisher() {
@@ -4057,8 +4072,15 @@
       textAlign: variant.textAlign || "",
       trafficSplit: variant.trafficSplit || "",
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
-      flowSteps: cloneConfig(variant.flowSteps || [])
+      flowSteps: canonicalFlowStepsForFingerprint(variant)
     };
+  }
+
+  function canonicalFlowStepsForFingerprint(variant) {
+    return cloneConfig(variant.flowSteps || []).map(function (step) {
+      step.eyebrowColor = step.eyebrowColor || variant.eyebrowColor || "#6b7280";
+      return step;
+    });
   }
 
   function initializeVariantTracking() {
@@ -4074,6 +4096,12 @@
       variant.trackingVersion = normalizeTrackedVersion(variant.trackingVersion);
       if (!variant.trackingFingerprint) {
         variant.trackingFingerprint = variantFingerprint(originalVariant);
+      }
+
+      var publishedFingerprint = variantFingerprint(originalVariant);
+      if (variantFingerprint(variant) === publishedFingerprint) {
+        variant.trackingVersion = getVariantTrackingVersion(originalVariant);
+        variant.trackingFingerprint = publishedFingerprint;
       }
     });
   }
