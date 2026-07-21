@@ -455,9 +455,10 @@
         });
         form.querySelectorAll("[data-flow-answer]").forEach(function (button) {
           button.addEventListener("click", function () {
-            var input = form.elements[step.field];
+            var answerKey = flowAnswerKey(step);
+            var input = form.elements[answerKey];
             if (input) input.value = button.dataset.value;
-            answers[step.field + "Range"] = button.textContent.trim();
+            answers[answerKey + "Range"] = button.textContent.trim();
             form.requestSubmit();
           });
         });
@@ -482,7 +483,7 @@
     }
 
     function renderFlowQuestionControl(step) {
-      var field = step.field || "custom";
+      var field = flowAnswerKey(step);
       var options = getFlowRuntimeOptions(step);
       if (step.answerStyle === "ranges") return "<input type=\"hidden\" name=\"" + escapeHtmlAttr(field) + "\"><div class=\"ll-popup-answer-grid\">" + options.ranges.map(function (option) { return "<button type=\"button\" data-flow-answer data-value=\"" + escapeHtmlAttr(option.value) + "\">" + escapeHtml(option.label) + "</button>"; }).join("") + "</div>";
       if (step.answerStyle === "dropdown") return "<select name=\"" + escapeHtmlAttr(field) + "\"" + (step.required === false ? "" : " required") + "><option value=\"\">" + escapeHtml(step.placeholder || "Select one") + "</option>" + options.dropdown.map(function (option) { return "<option value=\"" + escapeHtmlAttr(option.value) + "\">" + escapeHtml(option.label) + "</option>"; }).join("") + "</select>";
@@ -497,7 +498,8 @@
     function collectFlowStepAnswers(form, step, target) {
       if (step.type === "lead") { target.name = getFormValue(form, "name"); target.email = getFormValue(form, "email"); return; }
       if (step.type === "questions") { target.targetWeight = getFormValue(form, "targetWeight"); target.strengthDays = getFormValue(form, "strengthDays"); target.age = getFormValue(form, "age"); trackEvent("popup_quiz_submit", getProteinTrackingFields(target)); return; }
-      target[step.field] = getFormValue(form, step.field);
+      var answerKey = flowAnswerKey(step);
+      target[answerKey] = getFormValue(form, answerKey);
       var remainingQuestions = steps.slice(currentIndex + 1).some(function (item) { return item.type === "question" || item.type === "questions"; });
       if (!remainingQuestions) trackEvent("popup_quiz_submit", getProteinTrackingFields(target));
     }
@@ -513,7 +515,11 @@
     }
 
     function buildProteinLeadPayload(data, target) {
-      return {name:data.name || "",email:data.email || "",targetWeightLbs:data.targetWeight || "",TargetWeight:data.targetWeight || "",age:data.age || "",Age:data.age || "",strengthDays:data.strengthDays || "",StrengthDays:data.strengthDays || "",targetWeightRange:data.targetWeightRange || "",TargetWeightRange:data.targetWeightRange || "",ageRange:data.ageRange || "",AgeRange:data.ageRange || "",strengthDaysRange:data.strengthDaysRange || "",StrengthDaysRange:data.strengthDaysRange || "",customAnswers:JSON.stringify(data),proteinTargetRange:target && target.rangeText || "",ProteinTargetRange:target && target.rangeText || "",proteinDailyGoalGrams:target && target.dailyGoalGrams || "",ProteinDailyGoalGrams:target && target.dailyGoalGrams || "",source:"protein_popup",ctaVariant:"show_my_protein_plan",popupVariant:variant.id};
+      var payload = {name:data.name || "",email:data.email || "",targetWeightLbs:data.targetWeight || "",TargetWeight:data.targetWeight || "",age:data.age || "",Age:data.age || "",strengthDays:data.strengthDays || "",StrengthDays:data.strengthDays || "",targetWeightRange:data.targetWeightRange || "",TargetWeightRange:data.targetWeightRange || "",ageRange:data.ageRange || "",AgeRange:data.ageRange || "",strengthDaysRange:data.strengthDaysRange || "",StrengthDaysRange:data.strengthDaysRange || "",customAnswers:JSON.stringify(data),proteinTargetRange:target && target.rangeText || "",ProteinTargetRange:target && target.rangeText || "",proteinDailyGoalGrams:target && target.dailyGoalGrams || "",ProteinDailyGoalGrams:target && target.dailyGoalGrams || "",source:"protein_popup",ctaVariant:"show_my_protein_plan",popupVariant:variant.id};
+      Object.keys(data || {}).forEach(function (key) {
+        if (payload[key] === undefined) payload[key] = data[key];
+      });
+      return payload;
     }
   }
 
@@ -574,6 +580,14 @@
 
   function getFormValue(form, name) {
     return form && form.elements && form.elements[name] ? form.elements[name].value : "";
+  }
+
+  function flowAnswerKey(step) {
+    if (step && step.field !== "custom") return step.field || "customAnswer";
+    var key = String(step && step.answerKey || "customAnswer").trim().replace(/[^A-Za-z0-9_]/g, "_");
+    if (!key) key = "customAnswer";
+    if (/^[0-9]/.test(key)) key = "answer_" + key;
+    return key;
   }
 
   function setPopupValueLine(element, text) {

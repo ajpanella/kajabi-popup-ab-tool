@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=33">
-    <link rel="stylesheet" href="./dashboard.css?v=53">
+    <link rel="stylesheet" href="./dashboard.css?v=54">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260718-3"></script>
   </head>
@@ -461,6 +461,25 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=105"></script>
+    <aside id="draft-preview-drawer" class="dash-draft-preview-drawer" aria-hidden="true" hidden>
+      <header class="dash-draft-preview-header">
+        <div>
+          <span id="draft-preview-variant" class="dash-draft-preview-variant">Variant A</span>
+          <strong>Draft Preview</strong>
+          <small>Updates as you edit</small>
+        </div>
+        <button id="draft-preview-close" class="dash-draft-preview-close" type="button" aria-label="Close draft preview">&times;</button>
+      </header>
+      <div class="dash-draft-preview-controls">
+        <div id="draft-preview-device" class="dash-toggle" role="group" aria-label="Draft preview device">
+          <button type="button" data-draft-device="desktop" class="is-active">Desktop</button>
+          <button type="button" data-draft-device="mobile">Mobile</button>
+        </div>
+        <div id="draft-preview-steps" class="dash-draft-preview-steps" aria-label="Draft preview step"></div>
+      </div>
+      <div id="draft-preview-stage" class="dash-preview-stage dash-draft-preview-stage"></div>
+    </aside>
+
+    <script src="./dashboard.js?v=106"></script>
   </body>
 </html>

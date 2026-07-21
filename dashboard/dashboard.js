@@ -27,6 +27,8 @@
   var previewMode = "desktop";
   var previewStep = 0;
   var selectedFlowSteps = {};
+  var draftPreviewState = { open: false, variantId: "", device: "desktop" };
+  var draftPreviewTimer = null;
   var lastColorTarget = null;
   var versionFilterInitialized = false;
   var fullHistorySort = { key: "published", direction: "desc" };
@@ -81,6 +83,12 @@
     quizStepPreview: document.getElementById("quiz-step-preview"),
     leadStepPreview: document.getElementById("lead-step-preview"),
     flowPreviewTabs: document.getElementById("flow-preview-tabs"),
+    draftPreviewDrawer: document.getElementById("draft-preview-drawer"),
+    draftPreviewVariant: document.getElementById("draft-preview-variant"),
+    draftPreviewClose: document.getElementById("draft-preview-close"),
+    draftPreviewDevice: document.getElementById("draft-preview-device"),
+    draftPreviewSteps: document.getElementById("draft-preview-steps"),
+    draftPreviewStage: document.getElementById("draft-preview-stage"),
     warning: document.getElementById("sample-warning"),
     hiddenMetricsStatus: document.getElementById("hidden-metrics-status"),
     showHiddenMetrics: document.getElementById("show-hidden-metrics"),
@@ -206,6 +214,23 @@
   els.flowPreviewTabs.addEventListener("click", function (event) {
     var button = event.target.closest("[data-preview-flow-step]");
     if (button) setPreviewStep(Number(button.dataset.previewFlowStep));
+  });
+
+  els.draftPreviewClose.addEventListener("click", closeDraftPreview);
+  els.draftPreviewDevice.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-draft-device]");
+    if (!button) return;
+    draftPreviewState.device = button.dataset.draftDevice === "mobile" ? "mobile" : "desktop";
+    renderDraftPreview();
+  });
+  els.draftPreviewSteps.addEventListener("click", function (event) {
+    var button = event.target.closest("[data-draft-step]");
+    if (!button) return;
+    var variant = getDraftPreviewVariant();
+    if (!variant) return;
+    selectedFlowSteps[variant.id] = Number(button.dataset.draftStep || 0);
+    renderEditors();
+    renderDraftPreview();
   });
 
   if (defaultCsvUrl) loadCsv();
@@ -472,6 +497,7 @@
       card.open = true;
       card.innerHTML = [
         "<summary class=\"dash-editor-title\"><div class=\"dash-variant-heading-main\"><span class=\"dash-variant-kicker\">Variant " + escapeHtml(variant.id) + "</span><h3>Popup Experience</h3></div><span class=\"dash-editor-summary\">" + escapeHtml(label) + "</span><span class=\"dash-collapse-icon\" aria-hidden=\"true\"></span></summary>",
+        renderVariantStickyToolbar(variant, index),
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("headlineHtml", index, "Headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("subheadlineHtml", index, "Subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("valueLineHtml", index, "Value Line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
@@ -502,6 +528,7 @@
       ].join("");
       els.editors.appendChild(card);
     });
+    if (draftPreviewState.open) scheduleDraftPreview(draftPreviewState.variantId);
   }
 
   function onGlobalConfigInput() {
@@ -595,8 +622,10 @@
     } else {
       var label = target.closest(".dash-editor-card").querySelector(".dash-editor-summary");
       if (label) label.textContent = buildVariantLabel(variant);
+      updateVariantToolbarStatus(variant, target.closest(".dash-editor-card"));
     }
     renderPreviews(previewMode);
+    scheduleDraftPreview(variant.id);
     renderEmbedCode();
     populateFilters();
     updateDashboard();
@@ -630,6 +659,23 @@
   }
 
   function onEditorClick(event) {
+    var draftPreviewButton = event.target.closest("[data-draft-preview-toggle]");
+    if (draftPreviewButton) {
+      var draftVariant = activeVariants()[Number(draftPreviewButton.dataset.variantIndex)];
+      if (draftVariant) toggleDraftPreview(draftVariant);
+      return;
+    }
+
+    var draftDeviceButton = event.target.closest("[data-toolbar-draft-device]");
+    if (draftDeviceButton) {
+      var deviceVariant = activeVariants()[Number(draftDeviceButton.dataset.variantIndex)];
+      if (deviceVariant) {
+        draftPreviewState.device = draftDeviceButton.dataset.toolbarDraftDevice === "mobile" ? "mobile" : "desktop";
+        openDraftPreview(deviceVariant);
+      }
+      return;
+    }
+
     var flowAction = event.target.closest("[data-flow-action]");
     if (flowAction) {
       handleFlowAction(flowAction);
@@ -679,6 +725,127 @@
     if (event.target && event.target.type === "color") {
       lastColorTarget = event.target;
     }
+  }
+
+  function renderVariantStickyToolbar(variant, index) {
+    var steps = ensureFlowSteps(variant);
+    var selected = Math.min(Number(selectedFlowSteps[variant.id] || 0), Math.max(0, steps.length - 1));
+    var isPreviewing = draftPreviewState.open && draftPreviewState.variantId === variant.id;
+    var status = getVariantDraftStatus(variant);
+    return [
+      "<div class=\"dash-variant-sticky-toolbar\" data-toolbar-variant=\"" + escapeHtmlAttr(variant.id) + "\">",
+      "<div class=\"dash-toolbar-context\"><span class=\"dash-toolbar-variant\">Variant " + escapeHtml(variant.id) + "</span><span class=\"dash-toolbar-status " + status.className + "\">" + escapeHtml(status.label) + "</span></div>",
+      "<div class=\"dash-toolbar-steps\" role=\"group\" aria-label=\"Variant " + escapeHtmlAttr(variant.id) + " steps\">",
+      steps.map(function (step, stepIndex) {
+        return "<button type=\"button\" class=\"dash-toolbar-step" + (selected === stepIndex ? " is-active" : "") + "\" data-flow-action=\"select\" data-step-index=\"" + stepIndex + "\" data-variant-index=\"" + index + "\"><span>" + (stepIndex + 1) + "</span>" + escapeHtml(step.name || step.type || "Step") + "</button>";
+      }).join(""),
+      "</div>",
+      "<div class=\"dash-toolbar-preview-actions\"><div class=\"dash-toolbar-device\" role=\"group\" aria-label=\"Draft preview device\"><button type=\"button\" data-toolbar-draft-device=\"desktop\" data-variant-index=\"" + index + "\" class=\"" + (draftPreviewState.device === "desktop" ? "is-active" : "") + "\">Desktop</button><button type=\"button\" data-toolbar-draft-device=\"mobile\" data-variant-index=\"" + index + "\" class=\"" + (draftPreviewState.device === "mobile" ? "is-active" : "") + "\">Mobile</button></div>",
+      "<button type=\"button\" class=\"dash-toolbar-preview-button" + (isPreviewing ? " is-active" : "") + "\" data-draft-preview-toggle data-variant-index=\"" + index + "\">" + (isPreviewing ? "Close Preview" : "Preview Draft") + "</button></div>",
+      "</div>"
+    ].join("");
+  }
+
+  function getVariantDraftStatus(variant) {
+    var published = publishedActiveVariants().find(function (candidate) {
+      return candidate.id === variant.id;
+    });
+    if (!published) return { label: "New draft", className: "is-draft" };
+    return variantFingerprint(variant) === variantFingerprint(published)
+      ? { label: "Matches live", className: "is-live" }
+      : { label: "Draft changes", className: "is-draft" };
+  }
+
+  function updateVariantToolbarStatus(variant, card) {
+    if (!card) return;
+    var status = getVariantDraftStatus(variant);
+    var element = card.querySelector(".dash-toolbar-status");
+    if (!element) return;
+    element.textContent = status.label;
+    element.classList.toggle("is-live", status.className === "is-live");
+    element.classList.toggle("is-draft", status.className === "is-draft");
+  }
+
+  function toggleDraftPreview(variant) {
+    if (draftPreviewState.open && draftPreviewState.variantId === variant.id) {
+      closeDraftPreview();
+      return;
+    }
+    openDraftPreview(variant);
+  }
+
+  function openDraftPreview(variant) {
+    draftPreviewState.open = true;
+    draftPreviewState.variantId = variant.id;
+    els.draftPreviewDrawer.hidden = false;
+    els.draftPreviewDrawer.setAttribute("aria-hidden", "false");
+    document.body.classList.add("dash-has-draft-preview");
+    syncDraftPreviewToolbarButtons();
+    renderDraftPreview();
+  }
+
+  function closeDraftPreview() {
+    draftPreviewState.open = false;
+    els.draftPreviewDrawer.hidden = true;
+    els.draftPreviewDrawer.setAttribute("aria-hidden", "true");
+    document.body.classList.remove("dash-has-draft-preview");
+    if (draftPreviewTimer) window.clearTimeout(draftPreviewTimer);
+    draftPreviewTimer = null;
+    syncDraftPreviewToolbarButtons();
+  }
+
+  function getDraftPreviewVariant() {
+    return activeVariants().find(function (variant) {
+      return variant.id === draftPreviewState.variantId;
+    }) || null;
+  }
+
+  function scheduleDraftPreview(variantId) {
+    if (!draftPreviewState.open || (variantId && draftPreviewState.variantId !== variantId)) return;
+    if (draftPreviewTimer) window.clearTimeout(draftPreviewTimer);
+    draftPreviewTimer = window.setTimeout(function () {
+      draftPreviewTimer = null;
+      renderDraftPreview();
+    }, 120);
+  }
+
+  function renderDraftPreview() {
+    if (!draftPreviewState.open) return;
+    var variant = getDraftPreviewVariant();
+    if (!variant) {
+      closeDraftPreview();
+      return;
+    }
+    var steps = ensureFlowSteps(variant);
+    var selected = Math.min(Number(selectedFlowSteps[variant.id] || 0), Math.max(0, steps.length - 1));
+    selectedFlowSteps[variant.id] = selected;
+    els.draftPreviewVariant.textContent = "Variant " + variant.id;
+    els.draftPreviewSteps.innerHTML = steps.map(function (step, stepIndex) {
+      return "<button type=\"button\" data-draft-step=\"" + stepIndex + "\" class=\"" + (selected === stepIndex ? "is-active" : "") + "\"><span>" + (stepIndex + 1) + "</span>" + escapeHtml(step.name || step.type || "Step") + "</button>";
+    }).join("");
+    Array.from(els.draftPreviewDevice.querySelectorAll("[data-draft-device]")).forEach(function (button) {
+      button.classList.toggle("is-active", button.dataset.draftDevice === draftPreviewState.device);
+    });
+    els.draftPreviewStage.className = "dash-preview-stage dash-draft-preview-stage" + (draftPreviewState.device === "mobile" ? " is-mobile" : "");
+    els.draftPreviewStage.innerHTML = "";
+    var preview = buildPreview(variant, selected);
+    els.draftPreviewStage.appendChild(preview);
+    var previewImage = preview.querySelector(".ll-popup-image");
+    if (previewImage && previewImage.complete) sizePreviewToImage(preview, previewImage, variant);
+    scheduleDashboardPreviewFit(preview);
+    syncDraftPreviewToolbarButtons();
+  }
+
+  function syncDraftPreviewToolbarButtons() {
+    Array.from(els.editors.querySelectorAll("[data-draft-preview-toggle]")).forEach(function (button) {
+      var variant = activeVariants()[Number(button.dataset.variantIndex)];
+      var active = Boolean(variant && draftPreviewState.open && draftPreviewState.variantId === variant.id);
+      button.classList.toggle("is-active", active);
+      button.textContent = active ? "Close Preview" : "Preview Draft";
+    });
+    Array.from(els.editors.querySelectorAll("[data-toolbar-draft-device]")).forEach(function (button) {
+      button.classList.toggle("is-active", button.dataset.toolbarDraftDevice === draftPreviewState.device);
+    });
   }
 
   function renderProteinFlowEditor(variant, index) {
@@ -778,7 +945,7 @@
   function renderFlowStepEditor(variant, step, stepIndex, variantIndex) {
     if (!step) return "";
     var path = "flowSteps." + stepIndex + ".";
-    var questionOptions = [{label:"Target Weight",value:"targetWeight"},{label:"Strength Training",value:"strengthDays"},{label:"Age",value:"age"},{label:"Custom Question",value:"custom"}];
+    var questionOptions = [{label:"Calculator: Target weight",value:"targetWeight"},{label:"Calculator: Strength training days",value:"strengthDays"},{label:"Calculator: Age",value:"age"},{label:"Custom answer",value:"custom"}];
     var setupControls = [
       editorInput(path + "name", variantIndex, "Internal step name", step.name || "", "text"),
       editorOptionSelect(path + "type", variantIndex, "Step type", step.type, [{label:"Single question",value:"question"},{label:"Combined questions",value:"questions"},{label:"Lead form",value:"lead"},{label:"Message / result",value:"message"}]),
@@ -798,7 +965,9 @@
     ].join("");
     var responseControls = [];
     if (step.type === "question") {
-      responseControls.push(editorOptionSelect(path + "field", variantIndex, "Question", step.field, questionOptions));
+      responseControls.push(editorOptionSelect(path + "field", variantIndex, "Answer destination", step.field, questionOptions));
+      responseControls.push("<p class=\"dash-field-mapping-note\">Choose a calculator field only when this answer should populate that exact protein-plan input. Use Custom answer for goals, preferences, or any other research question.</p>");
+      if (step.field === "custom") responseControls.push(editorInput(path + "answerKey", variantIndex, "Custom answer key", step.answerKey || "customAnswer", "text"));
       responseControls.push(editorInput(path + "questionLabel", variantIndex, "Question text", step.questionLabel || "", "text"));
       responseControls.push(editorOptionSelect(path + "answerStyle", variantIndex, "Answer style", step.answerStyle || "dropdown", [{label:"Dropdown",value:"dropdown"},{label:"Choice buttons",value:"ranges"},{label:"Number field",value:"number"},{label:"Text field",value:"text"}]));
       if (step.answerStyle === "ranges") {
@@ -898,7 +1067,7 @@
   }
 
   function makeBlankFlowStep(type, variant) {
-    return {id:flowStepId(),name:"New Question",type:type,enabled:true,field:"custom",questionLabel:"Your question",answerStyle:"text",answerLayout:"grid",choiceButtonFontSize:16,choiceButtonTransform:"none",placeholder:"",required:true,autoAdvance:false,eyebrowHtml:"",eyebrowFontSize:15,headlineHtml:"",subheadlineHtml:"",valueLineHtml:"",imageUrl:variant.imageUrl || "",buttonText:"Continue",buttonColor:variant.accentColor || "",progressColor:variant.brandAccentColor || "",progressEnabled:true,progressLabel:"Step {current} of {total}",showBack:true};
+    return {id:flowStepId(),name:"New Question",type:type,enabled:true,field:"custom",answerKey:"customAnswer",questionLabel:"Your question",answerStyle:"text",answerLayout:"grid",choiceButtonFontSize:16,choiceButtonTransform:"none",placeholder:"",required:true,autoAdvance:false,eyebrowHtml:"",eyebrowFontSize:15,headlineHtml:"",subheadlineHtml:"",valueLineHtml:"",imageUrl:variant.imageUrl || "",buttonText:"Continue",buttonColor:variant.accentColor || "",progressColor:variant.brandAccentColor || "",progressEnabled:true,progressLabel:"Step {current} of {total}",showBack:true};
   }
 
   function applyFlowPreset(variant, preset) {
@@ -1856,7 +2025,7 @@
     modal.appendChild(content);
     root.appendChild(modal);
     if (isProteinPlan && Array.isArray(variant.flowSteps) && variant.flowSteps.length) {
-      renderProteinPlanPreviewForm(form, variant);
+      renderProteinPlanPreviewForm(form, variant, step);
     }
     return root;
   }
@@ -2032,9 +2201,9 @@
     });
   }
 
-  function renderProteinPlanPreviewForm(container, variant) {
+  function renderProteinPlanPreviewForm(container, variant, initialStep) {
     if (Array.isArray(variant.flowSteps) && variant.flowSteps.length) {
-      renderFlowPlanPreviewForm(container, variant, Number(previewStep || 0));
+      renderFlowPlanPreviewForm(container, variant, Number(initialStep == null ? previewStep : initialStep));
       return;
     }
     var quizData = {};
