@@ -467,10 +467,11 @@
     activeVariants().forEach(function (variant, index) {
       ensureFlowSteps(variant);
       var label = buildVariantLabel(variant);
-      var card = document.createElement("article");
+      var card = document.createElement("details");
       card.className = "dash-editor-card";
+      card.open = true;
       card.innerHTML = [
-        "<div class=\"dash-editor-title\"><div><span class=\"dash-variant-kicker\">Variant " + escapeHtml(variant.id) + "</span><h3>Popup Experience</h3></div><span class=\"dash-editor-summary\">" + escapeHtml(label) + "</span></div>",
+        "<summary class=\"dash-editor-title\"><div class=\"dash-variant-heading-main\"><span class=\"dash-variant-kicker\">Variant " + escapeHtml(variant.id) + "</span><h3>Popup Experience</h3></div><span class=\"dash-editor-summary\">" + escapeHtml(label) + "</span><span class=\"dash-collapse-icon\" aria-hidden=\"true\"></span></summary>",
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("headlineHtml", index, "Headline", variant.headlineHtml || escapeHtml(variant.headline || ""), false, "headlineFontSize", variant.headlineFontSize, 32, variant.textColor || "#172026"),
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("subheadlineHtml", index, "Subheadline", variant.subheadlineHtml || escapeHtml(variant.subheadline || ""), false, "subheadlineFontSize", variant.subheadlineFontSize, 17, variant.textColor || "#172026"),
         config.leadMagnetMode === "protein_plan" ? "" : editorRichText("valueLineHtml", index, "Value Line", variant.valueLineHtml || escapeHtml(variant.valueLine || ""), false, "valueLineFontSize", variant.valueLineFontSize, 15, variant.brandAccentColor || "#06b00b"),
@@ -856,10 +857,10 @@
   function flowSettingsGroup(index, title, controls, className) {
     if (!controls) return "";
     return [
-      "<section class=\"dash-setting-group " + escapeHtmlAttr(className || "") + "\">",
-      "<div class=\"dash-setting-group-heading\"><span>" + escapeHtml(index) + "</span><h5>" + escapeHtml(title) + "</h5></div>",
+      "<details class=\"dash-setting-group " + escapeHtmlAttr(className || "") + "\" open>",
+      "<summary class=\"dash-setting-group-heading\"><span>" + escapeHtml(index) + "</span><h5>" + escapeHtml(title) + "</h5><i aria-hidden=\"true\"></i></summary>",
       "<div class=\"dash-setting-grid\">" + controls + "</div>",
-      "</section>"
+      "</details>"
     ].join("");
   }
 

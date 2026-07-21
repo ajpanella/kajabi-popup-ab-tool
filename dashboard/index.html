@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Kajabi Popup A/B Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=33">
-    <link rel="stylesheet" href="./dashboard.css?v=52">
+    <link rel="stylesheet" href="./dashboard.css?v=53">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260718-3"></script>
   </head>
@@ -79,12 +79,15 @@
       </section>
 
       <section class="dash-content">
-        <section class="dash-panel dash-install-panel">
-          <div class="dash-section-heading">
+        <details class="dash-panel dash-install-panel dash-collapsible-panel">
+          <summary class="dash-section-heading">
             <div>
               <p class="dash-eyebrow">Install</p>
               <h2>Embed Code</h2>
             </div>
+            <span class="dash-collapse-label">One-time setup</span>
+          </summary>
+          <div class="dash-panel-action-strip">
             <button id="copy-embed" class="dash-secondary-button" type="button">Copy Embed</button>
           </div>
           <label class="dash-wide-label">
@@ -92,7 +95,7 @@
             <input id="asset-base-url" type="url" placeholder="https://ajpanella.github.io/kajabi-popup-ab-tool">
           </label>
           <textarea id="embed-code" class="dash-code-box" readonly></textarea>
-        </section>
+        </details>
 
         <section class="dash-panel dash-builder-panel">
           <div class="dash-section-heading">
@@ -147,11 +150,11 @@
             <button id="publish-github" class="dash-save-test" type="button">Save & Publish to GitHub</button>
             <p id="github-publish-status" class="dash-publish-status"></p>
           </div>
-          <div class="dash-settings-band dash-test-config">
-            <div class="dash-subsection-heading">
+          <details class="dash-settings-band dash-test-config" open>
+            <summary class="dash-subsection-heading">
               <span>Setup</span>
               <strong>Delivery & Tracking</strong>
-            </div>
+            </summary>
             <div class="dash-global-editor">
               <label>
                 Tracking webhook URL
@@ -173,12 +176,12 @@
                 <input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/personalized-protein-plan">
               </label>
             </div>
-          </div>
-          <div class="dash-settings-band dash-trigger-config">
-            <div class="dash-subsection-heading">
+          </details>
+          <details class="dash-settings-band dash-trigger-config" open>
+            <summary class="dash-subsection-heading">
               <span>Behavior</span>
               <strong>Timing & Triggers</strong>
-            </div>
+            </summary>
             <div class="dash-global-editor dash-three-column-grid">
               <label>
                 Delay seconds
@@ -193,12 +196,12 @@
                 <input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="0">
               </label>
             </div>
-          </div>
-          <div class="dash-settings-band dash-version-config">
-            <div class="dash-subsection-heading">
+          </details>
+          <details class="dash-settings-band dash-version-config" open>
+            <summary class="dash-subsection-heading">
               <span>History</span>
               <strong>Version Notes</strong>
-            </div>
+            </summary>
             <div class="dash-global-editor">
               <label>
                 New publish version
@@ -209,26 +212,27 @@
                 <input id="change-note" type="text" placeholder="What changed in this version?">
               </label>
             </div>
-          </div>
-          <div class="dash-palette">
-            <div class="dash-palette-head">
+          </details>
+          <details class="dash-palette" open>
+            <summary class="dash-palette-head">
               <strong>Saved Colors</strong>
               <span>The first four saved colors appear beside each color picker.</span>
-            </div>
+            </summary>
             <div id="saved-colors" class="dash-palette-grid"></div>
-          </div>
+          </details>
           <div id="variant-editors" class="dash-editor-grid"></div>
         </section>
 
-        <section class="dash-panel">
-          <div class="dash-section-heading">
+        <details class="dash-panel dash-collapsible-panel">
+          <summary class="dash-section-heading">
             <div>
               <p class="dash-eyebrow">Insights</p>
               <h2>Recommendation Helper</h2>
             </div>
-          </div>
+            <span class="dash-collapse-label">Testing guidance</span>
+          </summary>
           <div id="recommendation-list" class="dash-recommendations"></div>
-        </section>
+        </details>
 
         <section class="dash-panel dash-idea-bank">
           <div class="dash-section-heading">
@@ -283,15 +287,16 @@
           <div id="idea-list" class="dash-idea-list"></div>
         </section>
 
-        <section class="dash-panel">
-          <div class="dash-section-heading">
+        <details class="dash-panel dash-collapsible-panel">
+          <summary class="dash-section-heading">
             <div>
               <p class="dash-eyebrow">History</p>
               <h2>Historical Variations</h2>
             </div>
-          </div>
+            <span class="dash-collapse-label">Recent snapshots</span>
+          </summary>
           <div id="variation-history" class="dash-history-grid"></div>
-        </section>
+        </details>
 
         <section class="dash-panel dash-wide-panel">
           <div class="dash-section-heading">
@@ -456,6 +461,6 @@
       </section>
     </main>
 
-    <script src="./dashboard.js?v=104"></script>
+    <script src="./dashboard.js?v=105"></script>
   </body>
 </html>
