@@ -2384,6 +2384,7 @@ summary:focus-visible {
   min-width: 0;
   padding: 10px 12px;
   overflow: hidden;
+  color: inherit;
   font-size: 13px;
   font-weight: 800;
   text-overflow: ellipsis;
