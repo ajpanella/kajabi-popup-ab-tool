@@ -411,7 +411,7 @@ body.ll-popup-lock-scroll {
   border-radius: 6px;
   background: var(--ll-popup-reminder-bg, #06b00b);
   box-shadow: 0 10px 28px rgba(23, 32, 38, 0.24);
-  color: #ffffff;
+  color: var(--ll-popup-reminder-text, #ffffff);
   font-family: var(--ll-popup-reminder-font, Arial, Helvetica, sans-serif);
   opacity: 0;
   transform: translateY(14px);

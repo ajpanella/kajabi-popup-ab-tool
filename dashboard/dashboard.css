@@ -2372,7 +2372,7 @@ summary:focus-visible {
   border-radius: 6px;
   background: var(--dash-reminder-color, var(--dash-green));
   box-shadow: 0 6px 16px rgba(20, 45, 30, 0.16);
-  color: #ffffff;
+  color: var(--dash-reminder-text-color, #ffffff);
 }
 
 .dash-reminder-preview.is-disabled {
@@ -2402,7 +2402,7 @@ summary:focus-visible {
 
 .dash-reminder-setting-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1.25fr 1.2fr 0.8fr 0.8fr 1.1fr;
   gap: 12px;
   align-items: end;
 }

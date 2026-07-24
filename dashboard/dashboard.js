@@ -647,18 +647,20 @@
     var enabled = variant.reminderEnabled !== false;
     var textValue = variant.reminderText || "Free Protein Plan";
     var colorValue = variant.reminderColor || variant.accentColor || "#06b00b";
+    var textColorValue = variant.reminderTextColor || "#ffffff";
     var reopenSeconds = Number(variant.reopenAfterCloseSeconds);
     if (!Number.isFinite(reopenSeconds)) reopenSeconds = Number(config.reopenAfterCloseSeconds || 0);
     return [
       "<section class=\"dash-reminder-settings\">",
       "<div class=\"dash-reminder-settings-head\">",
       "<div><span>After close</span><strong>Reminder Tab & Reopen</strong></div>",
-      "<div class=\"dash-reminder-preview" + (enabled ? "" : " is-disabled") + "\" data-reminder-preview style=\"--dash-reminder-color:" + escapeHtmlAttr(colorValue) + "\"><span data-reminder-preview-text>" + escapeHtml(textValue) + "</span><b aria-hidden=\"true\">&times;</b></div>",
+      "<div class=\"dash-reminder-preview" + (enabled ? "" : " is-disabled") + "\" data-reminder-preview style=\"--dash-reminder-color:" + escapeHtmlAttr(colorValue) + ";--dash-reminder-text-color:" + escapeHtmlAttr(textColorValue) + "\"><span data-reminder-preview-text>" + escapeHtml(textValue) + "</span><b aria-hidden=\"true\">&times;</b></div>",
       "</div>",
       "<div class=\"dash-reminder-setting-grid\">",
       editorCheckbox("reminderEnabled", index, "Show reminder tab after popup closes", enabled),
       editorInput("reminderText", index, "Reminder tab text", textValue, "text", !enabled),
       editorInput("reminderColor", index, "Reminder tab color", colorValue, "color", !enabled),
+      editorInput("reminderTextColor", index, "Reminder text color", textColorValue, "color", !enabled),
       editorInput("reopenAfterCloseSeconds", index, "Reopen full popup after (seconds)", String(Math.max(0, Number(reopenSeconds || 0))), "number"),
       "</div>",
       "<p>Use 0 to disable automatic reopening. The reminder tab can still reopen the popup when clicked.</p>",
@@ -672,6 +674,7 @@
     if (!preview) return;
     preview.classList.toggle("is-disabled", variant.reminderEnabled === false);
     preview.style.setProperty("--dash-reminder-color", variant.reminderColor || variant.accentColor || "#06b00b");
+    preview.style.setProperty("--dash-reminder-text-color", variant.reminderTextColor || "#ffffff");
     var textNode = preview.querySelector("[data-reminder-preview-text]");
     if (textNode) textNode.textContent = variant.reminderText || "Free Protein Plan";
   }
@@ -4313,6 +4316,7 @@
       reminderEnabled: variant.reminderEnabled !== false,
       reminderText: variant.reminderText || "Free Protein Plan",
       reminderColor: variant.reminderColor || variant.accentColor || "#06b00b",
+      reminderTextColor: variant.reminderTextColor || "#ffffff",
       reopenAfterCloseSeconds: Number.isFinite(Number(variant.reopenAfterCloseSeconds)) ? Math.max(0, Number(variant.reopenAfterCloseSeconds)) : Math.max(0, Number(config.reopenAfterCloseSeconds || 0)),
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
       flowSteps: canonicalFlowStepsForFingerprint(variant)
@@ -4717,6 +4721,7 @@
       }
       variant.reminderText = variant.reminderText || originalVariant.reminderText || "Free Protein Plan";
       variant.reminderColor = variant.reminderColor || originalVariant.reminderColor || variant.accentColor || "#06b00b";
+      variant.reminderTextColor = variant.reminderTextColor || originalVariant.reminderTextColor || "#ffffff";
       variant.reopenAfterCloseSeconds = Number(variant.reopenAfterCloseSeconds);
       if (!Number.isFinite(variant.reopenAfterCloseSeconds)) {
         var originalReopenSeconds = Number(originalVariant.reopenAfterCloseSeconds);

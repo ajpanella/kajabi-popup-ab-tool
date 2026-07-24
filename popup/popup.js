@@ -207,6 +207,7 @@
     reminder.className = "ll-popup-reminder";
     reminder.setAttribute("aria-label", "Reopen offer");
     reminder.style.setProperty("--ll-popup-reminder-bg", variant.reminderColor || variant.accentColor || "#06b00b");
+    reminder.style.setProperty("--ll-popup-reminder-text", variant.reminderTextColor || "#ffffff");
     reminder.style.setProperty("--ll-popup-reminder-font", variant.fontFamily || "Arial, Helvetica, sans-serif");
 
     var reopenButton = document.createElement("button");
@@ -1235,6 +1236,7 @@
       reminderEnabled: variant.reminderEnabled !== false,
       reminderText: variant.reminderText || "Free Protein Plan",
       reminderColor: variant.reminderColor || variant.accentColor || "#06b00b",
+      reminderTextColor: variant.reminderTextColor || "#ffffff",
       reopenAfterCloseSeconds: variantReopenSeconds(),
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
       flowSteps: cloneConfig(variant.flowSteps || [])
