@@ -69,7 +69,6 @@
     leadWebhookUrl: document.getElementById("lead-webhook-url"),
     proteinPlanUrl: document.getElementById("protein-plan-url"),
     delaySeconds: document.getElementById("delay-seconds"),
-    reopenAfterCloseSeconds: document.getElementById("reopen-after-close-seconds"),
     scrollDepth: document.getElementById("scroll-depth"),
     configVersion: document.getElementById("config-version"),
     changeNote: document.getElementById("change-note"),
@@ -152,7 +151,7 @@
     els.compareLiveHistory.setAttribute("aria-pressed", compareFullHistoryToLive ? "true" : "false");
     updateDashboard();
   });
-  [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.reopenAfterCloseSeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
+  [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
     element.addEventListener("input", onGlobalConfigInput);
   });
   els.editors.addEventListener("input", onEditorInput);
@@ -484,7 +483,6 @@
     var delayMs = Number(config.triggers && config.triggers.delayMs);
     var scrollDepth = Number(config.triggers && config.triggers.scrollDepth);
     els.delaySeconds.value = Math.round((Number.isFinite(delayMs) ? delayMs : 35000) / 1000);
-    els.reopenAfterCloseSeconds.value = Math.max(0, Number(config.reopenAfterCloseSeconds || 0));
     els.scrollDepth.value = Math.round((Number.isFinite(scrollDepth) ? scrollDepth : 0.5) * 100);
     els.configVersion.value = config.configVersion || "v1";
     els.changeNote.value = config.changeNote || "";
@@ -521,6 +519,7 @@
         editorCompactSizeInput("subheadlineFontSize", index, "Default subheadline size", variant.subheadlineFontSize, 17),
         editorCompactSizeInput("valueLineFontSize", index, "Default value line size", variant.valueLineFontSize, 15),
         editorCompactSizeInput("buttonFontSize", index, "Default button size", variant.buttonFontSize, 16),
+        renderReminderSettings(variant, index),
         "</div></details>",
         renderProteinFlowEditor(variant, index),
         "<div class=\"dash-variant-actions\"><button class=\"dash-test-popup-button\" data-test-popup=\"" + index + "\" type=\"button\">Load Variant Preview</button>",
@@ -539,7 +538,6 @@
     config.proteinPlanUrl = els.proteinPlanUrl.value.trim();
     config.triggers = config.triggers || {};
     config.triggers.delayMs = Math.max(0, Number(els.delaySeconds.value || 0)) * 1000;
-    config.reopenAfterCloseSeconds = Math.max(0, Number(els.reopenAfterCloseSeconds.value || 0));
     config.triggers.scrollDepth = Math.min(1, Math.max(0, Number(els.scrollDepth.value || 0) / 100));
     config.configVersion = els.configVersion.value.trim() || "v1";
     config.changeNote = els.changeNote.value.trim();
@@ -603,7 +601,7 @@
 
     var key = target.dataset.field;
     var value = target.isContentEditable ? sanitizeRichHtml(target.innerHTML) : (target.type === "checkbox" ? target.checked : target.value);
-    if (key === "width" || key === "height" || key === "trafficSplit" || key === "headlineFontSize" || key === "subheadlineFontSize" || key === "valueLineFontSize" || key === "buttonFontSize") value = value === "" ? "" : Number(value);
+    if (key === "width" || key === "height" || key === "trafficSplit" || key === "headlineFontSize" || key === "subheadlineFontSize" || key === "valueLineFontSize" || key === "buttonFontSize" || key === "reopenAfterCloseSeconds") value = value === "" ? "" : Number(value);
     setNestedValue(variant, key, value);
     syncLegacyVariantFromFlow(variant);
     if (key === "headlineHtml") {
@@ -623,6 +621,7 @@
       var label = target.closest(".dash-editor-card").querySelector(".dash-editor-summary");
       if (label) label.textContent = buildVariantLabel(variant);
       updateVariantToolbarStatus(variant, target.closest(".dash-editor-card"));
+      updateReminderSettingPreview(variant, target.closest(".dash-editor-card"));
     }
     renderPreviews(previewMode);
     scheduleDraftPreview(variant.id);
@@ -639,8 +638,42 @@
       "proteinQuiz.showEmail",
       "proteinQuiz.multiStepEnabled",
       "proteinQuiz.progressEnabled",
-      "proteinQuiz.targetPreviewStyle"
+      "proteinQuiz.targetPreviewStyle",
+      "reminderEnabled"
     ].indexOf(key) >= 0;
+  }
+
+  function renderReminderSettings(variant, index) {
+    var enabled = variant.reminderEnabled !== false;
+    var textValue = variant.reminderText || "Free Protein Plan";
+    var colorValue = variant.reminderColor || variant.accentColor || "#06b00b";
+    var reopenSeconds = Number(variant.reopenAfterCloseSeconds);
+    if (!Number.isFinite(reopenSeconds)) reopenSeconds = Number(config.reopenAfterCloseSeconds || 0);
+    return [
+      "<section class=\"dash-reminder-settings\">",
+      "<div class=\"dash-reminder-settings-head\">",
+      "<div><span>After close</span><strong>Reminder Tab & Reopen</strong></div>",
+      "<div class=\"dash-reminder-preview" + (enabled ? "" : " is-disabled") + "\" data-reminder-preview style=\"--dash-reminder-color:" + escapeHtmlAttr(colorValue) + "\"><span data-reminder-preview-text>" + escapeHtml(textValue) + "</span><b aria-hidden=\"true\">&times;</b></div>",
+      "</div>",
+      "<div class=\"dash-reminder-setting-grid\">",
+      editorCheckbox("reminderEnabled", index, "Show reminder tab after popup closes", enabled),
+      editorInput("reminderText", index, "Reminder tab text", textValue, "text", !enabled),
+      editorInput("reminderColor", index, "Reminder tab color", colorValue, "color", !enabled),
+      editorInput("reopenAfterCloseSeconds", index, "Reopen full popup after (seconds)", String(Math.max(0, Number(reopenSeconds || 0))), "number"),
+      "</div>",
+      "<p>Use 0 to disable automatic reopening. The reminder tab can still reopen the popup when clicked.</p>",
+      "</section>"
+    ].join("");
+  }
+
+  function updateReminderSettingPreview(variant, card) {
+    if (!card) return;
+    var preview = card.querySelector("[data-reminder-preview]");
+    if (!preview) return;
+    preview.classList.toggle("is-disabled", variant.reminderEnabled === false);
+    preview.style.setProperty("--dash-reminder-color", variant.reminderColor || variant.accentColor || "#06b00b");
+    var textNode = preview.querySelector("[data-reminder-preview-text]");
+    if (textNode) textNode.textContent = variant.reminderText || "Free Protein Plan";
   }
 
   function setNestedValue(target, path, value) {
@@ -4242,7 +4275,9 @@
       variant.sizeToImage ? "Size to image" : "",
       "Font: " + String(variant.fontFamily || "Arial").split(",")[0],
       "Align: " + (variant.textAlign || "left"),
-      variant.imageUrl ? "Image" : "No image"
+      variant.imageUrl ? "Image" : "No image",
+      variant.reminderEnabled === false ? "No reminder tab" : "Reminder: " + (variant.reminderText || "Free Protein Plan"),
+      "Reopen: " + Math.max(0, Number(Number.isFinite(Number(variant.reopenAfterCloseSeconds)) ? variant.reopenAfterCloseSeconds : config.reopenAfterCloseSeconds || 0)) + "s"
     ];
     return parts.filter(Boolean).join(" | ");
   }
@@ -4275,6 +4310,10 @@
       buttonFontWeight: variant.buttonFontWeight || 700,
       textAlign: variant.textAlign || "",
       trafficSplit: variant.trafficSplit || "",
+      reminderEnabled: variant.reminderEnabled !== false,
+      reminderText: variant.reminderText || "Free Protein Plan",
+      reminderColor: variant.reminderColor || variant.accentColor || "#06b00b",
+      reopenAfterCloseSeconds: Number.isFinite(Number(variant.reopenAfterCloseSeconds)) ? Math.max(0, Number(variant.reopenAfterCloseSeconds)) : Math.max(0, Number(config.reopenAfterCloseSeconds || 0)),
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
       flowSteps: canonicalFlowStepsForFingerprint(variant)
     };
@@ -4673,6 +4712,16 @@
       variant.valueLineFontSize = variant.valueLineFontSize || originalVariant.valueLineFontSize || "";
       variant.buttonFontSize = variant.buttonFontSize || originalVariant.buttonFontSize || "";
       variant.imageAlt = variant.imageAlt || "";
+      if (variant.reminderEnabled === undefined) {
+        variant.reminderEnabled = originalVariant.reminderEnabled === undefined ? true : originalVariant.reminderEnabled !== false;
+      }
+      variant.reminderText = variant.reminderText || originalVariant.reminderText || "Free Protein Plan";
+      variant.reminderColor = variant.reminderColor || originalVariant.reminderColor || variant.accentColor || "#06b00b";
+      variant.reopenAfterCloseSeconds = Number(variant.reopenAfterCloseSeconds);
+      if (!Number.isFinite(variant.reopenAfterCloseSeconds)) {
+        var originalReopenSeconds = Number(originalVariant.reopenAfterCloseSeconds);
+        variant.reopenAfterCloseSeconds = Number.isFinite(originalReopenSeconds) ? originalReopenSeconds : Math.max(0, Number(value.reopenAfterCloseSeconds || 0));
+      }
       variant.proteinQuiz = Object.assign(getProteinQuizDefaults(), value.proteinQuiz || {}, originalVariant.proteinQuiz || {}, variant.proteinQuiz || {});
       (variant.flowSteps || []).forEach(function (step) {
         step.eyebrowColor = step.eyebrowColor || variant.eyebrowColor || "#6b7280";

@@ -10,6 +10,8 @@
   var COOLDOWN_KEY = STORAGE_PREFIX + "cooldown_until";
   var hasShown = false;
   var closeReopenCount = 0;
+  var reopenTimer = null;
+  var reminderElement = null;
   var variant = getAssignedVariant();
 
   if (!variant || isInCooldown()) return;
@@ -36,6 +38,8 @@
 
   function showPopup() {
     if (hasShown || isInCooldown() || document.querySelector(".ll-popup-root")) return;
+    clearReopenTimer();
+    removeReminderTab();
     hasShown = true;
     window.removeEventListener("scroll", onScroll);
 
@@ -152,6 +156,8 @@
     trackEvent("popup_view");
 
     function closePopup() {
+      if (root.dataset.closing === "true") return;
+      root.dataset.closing = "true";
       root.classList.remove("ll-popup-is-visible");
       document.body.classList.remove("ll-popup-lock-scroll");
       window.removeEventListener("resize", onResize);
@@ -169,17 +175,85 @@
   }
 
   function scheduleCloseReopenOrCooldown() {
-    var reopenSeconds = Number(config.reopenAfterCloseSeconds);
-    if (Number.isFinite(reopenSeconds) && reopenSeconds > 0 && closeReopenCount < 1) {
+    var reopenSeconds = variantReopenSeconds();
+    var reminderEnabled = variant.reminderEnabled !== false;
+    if (closeReopenCount < 1 && (reminderEnabled || reopenSeconds > 0)) {
       closeReopenCount += 1;
-      window.setTimeout(function () {
-        hasShown = false;
-        showPopup();
-      }, reopenSeconds * 1000);
+      if (reminderEnabled) showReminderTab();
+      if (reopenSeconds > 0) {
+        reopenTimer = window.setTimeout(function () {
+          reopenTimer = null;
+          removeReminderTab();
+          hasShown = false;
+          showPopup();
+        }, reopenSeconds * 1000);
+      }
       return;
     }
 
     setCooldown(config.cooldownDaysAfterClose || 7);
+  }
+
+  function variantReopenSeconds() {
+    var reopenSeconds = Number(variant.reopenAfterCloseSeconds);
+    if (!Number.isFinite(reopenSeconds)) reopenSeconds = Number(config.reopenAfterCloseSeconds);
+    return Number.isFinite(reopenSeconds) ? Math.max(0, reopenSeconds) : 0;
+  }
+
+  function showReminderTab() {
+    removeReminderTab();
+
+    var reminder = document.createElement("aside");
+    reminder.className = "ll-popup-reminder";
+    reminder.setAttribute("aria-label", "Reopen offer");
+    reminder.style.setProperty("--ll-popup-reminder-bg", variant.reminderColor || variant.accentColor || "#06b00b");
+    reminder.style.setProperty("--ll-popup-reminder-font", variant.fontFamily || "Arial, Helvetica, sans-serif");
+
+    var reopenButton = document.createElement("button");
+    reopenButton.className = "ll-popup-reminder-main";
+    reopenButton.type = "button";
+    reopenButton.textContent = variant.reminderText || "Free Protein Plan";
+    reopenButton.addEventListener("click", function () {
+      clearReopenTimer();
+      removeReminderTab();
+      hasShown = false;
+      trackEvent("popup_reminder_click");
+      showPopup();
+    });
+
+    var dismissButton = document.createElement("button");
+    dismissButton.className = "ll-popup-reminder-close";
+    dismissButton.type = "button";
+    dismissButton.setAttribute("aria-label", "Dismiss offer");
+    dismissButton.innerHTML = "&times;";
+    dismissButton.addEventListener("click", function (event) {
+      event.stopPropagation();
+      clearReopenTimer();
+      removeReminderTab();
+      setCooldown(config.cooldownDaysAfterClose || 7);
+      trackEvent("popup_reminder_close");
+    });
+
+    reminder.appendChild(reopenButton);
+    reminder.appendChild(dismissButton);
+    document.body.appendChild(reminder);
+    reminderElement = reminder;
+    window.requestAnimationFrame(function () {
+      reminder.classList.add("ll-popup-reminder-is-visible");
+    });
+    trackEvent("popup_reminder_view");
+  }
+
+  function removeReminderTab() {
+    if (!reminderElement) return;
+    if (reminderElement.parentNode) reminderElement.parentNode.removeChild(reminderElement);
+    reminderElement = null;
+  }
+
+  function clearReopenTimer() {
+    if (reopenTimer === null) return;
+    window.clearTimeout(reopenTimer);
+    reopenTimer = null;
   }
 
   function injectKajabiForm(container) {
@@ -1158,6 +1232,10 @@
       buttonFontWeight: variant.buttonFontWeight || 700,
       textAlign: variant.textAlign || "",
       trafficSplit: variant.trafficSplit || "",
+      reminderEnabled: variant.reminderEnabled !== false,
+      reminderText: variant.reminderText || "Free Protein Plan",
+      reminderColor: variant.reminderColor || variant.accentColor || "#06b00b",
+      reopenAfterCloseSeconds: variantReopenSeconds(),
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
       flowSteps: cloneConfig(variant.flowSteps || [])
     });

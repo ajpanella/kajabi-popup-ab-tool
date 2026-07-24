@@ -398,6 +398,72 @@ body.ll-popup-lock-scroll {
   overflow: hidden;
 }
 
+.ll-popup-reminder {
+  position: fixed;
+  left: max(14px, env(safe-area-inset-left));
+  bottom: max(14px, env(safe-area-inset-bottom));
+  z-index: 2147482990;
+  display: flex;
+  align-items: stretch;
+  max-width: min(340px, calc(100vw - 28px));
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  background: var(--ll-popup-reminder-bg, #06b00b);
+  box-shadow: 0 10px 28px rgba(23, 32, 38, 0.24);
+  color: #ffffff;
+  font-family: var(--ll-popup-reminder-font, Arial, Helvetica, sans-serif);
+  opacity: 0;
+  transform: translateY(14px);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.ll-popup-reminder.ll-popup-reminder-is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.ll-popup-reminder-main,
+.ll-popup-reminder-close {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.ll-popup-reminder-main {
+  min-width: 0;
+  padding: 13px 14px;
+  font-size: 16px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-align: left;
+}
+
+.ll-popup-reminder-close {
+  flex: 0 0 42px;
+  width: 42px;
+  min-height: 44px;
+  border-left: 1px solid rgba(255, 255, 255, 0.34);
+  padding: 0;
+  font-size: 24px;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.ll-popup-reminder-main:hover,
+.ll-popup-reminder-close:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.ll-popup-reminder-main:focus-visible,
+.ll-popup-reminder-close:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -4px;
+}
+
 @media (max-width: 640px) {
   .ll-popup-root {
     align-items: flex-end;
