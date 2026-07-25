@@ -11,7 +11,7 @@
   var GITHUB_BRANCH_KEY = "ll_popup_dashboard_github_branch";
   var GITHUB_PATH_KEY = "ll_popup_dashboard_github_path";
   var GITHUB_TOKEN_KEY = "ll_popup_dashboard_github_token";
-  var LATEST_TWO_VERSIONS = "__latest_two_versions";
+  var LATEST_LIVE_VERSIONS = "__latest_live_versions";
   var HIDDEN_HISTORY_KEY = "ll_popup_dashboard_hidden_history";
   var HIDDEN_METRICS_KEY = "ll_popup_dashboard_hidden_metrics";
   var IDEA_BANK_KEY = "ll_popup_dashboard_idea_bank_v1";
@@ -70,6 +70,9 @@
     proteinPlanUrl: document.getElementById("protein-plan-url"),
     delaySeconds: document.getElementById("delay-seconds"),
     scrollDepth: document.getElementById("scroll-depth"),
+    variantMode: document.getElementById("variant-mode"),
+    balanceTraffic: document.getElementById("balance-traffic"),
+    trafficSummary: document.getElementById("traffic-summary"),
     configVersion: document.getElementById("config-version"),
     changeNote: document.getElementById("change-note"),
     savedColors: document.getElementById("saved-colors"),
@@ -153,6 +156,15 @@
   });
   [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
     element.addEventListener("input", onGlobalConfigInput);
+  });
+  els.variantMode.addEventListener("change", onVariantModeChange);
+  els.balanceTraffic.addEventListener("click", function () {
+    rebalanceActiveTraffic();
+    saveDraftConfig();
+    renderEditors();
+    renderPreviews(previewMode);
+    populateFilters();
+    updateDashboard();
   });
   els.editors.addEventListener("input", onEditorInput);
   els.editors.addEventListener("click", onEditorClick);
@@ -476,6 +488,8 @@
 
   function renderEditors() {
     els.editors.innerHTML = "";
+    els.variantMode.value = currentVariantMode();
+    updateTrafficSummary();
     els.webhookUrl.value = config.webhookUrl || "";
     els.leadMagnetMode.value = config.leadMagnetMode || "";
     els.leadWebhookUrl.value = config.leadWebhookUrl || "";
@@ -546,6 +560,57 @@
     renderEmbedCode();
     populateFilters();
     updateDashboard();
+  }
+
+  function onVariantModeChange() {
+    ensureVariantSlots(config);
+    var enableC = els.variantMode.value === "abc";
+    var variantC = config.variants[2];
+    variantC.active = enableC;
+    if (!enableC) variantC.trafficSplit = 0;
+    rebalanceActiveTraffic();
+    config.changeNote = enableC ? "Enabled A/B/C split test" : "Returned to A/B split test";
+    saveDraftConfig();
+    closeDraftPreview();
+    renderEditors();
+    renderPreviews(previewMode);
+    renderEmbedCode();
+    populateFilters();
+    updateDashboard();
+  }
+
+  function currentVariantMode() {
+    return (config.variants || []).some(function (variant) {
+      return variant.id === "C" && variant.active !== false;
+    }) ? "abc" : "ab";
+  }
+
+  function rebalanceActiveTraffic() {
+    var variants = activeVariants();
+    if (!variants.length) return;
+    var base = Math.floor(100 / variants.length);
+    var remainder = 100 - (base * variants.length);
+    variants.forEach(function (variant, index) {
+      variant.trafficSplit = base + (index < remainder ? 1 : 0);
+    });
+    (config.variants || []).filter(function (variant) {
+      return variant.active === false;
+    }).forEach(function (variant) {
+      variant.trafficSplit = 0;
+    });
+    updateTrafficSummary();
+  }
+
+  function updateTrafficSummary() {
+    if (!els.trafficSummary) return;
+    var variants = activeVariants();
+    var total = variants.reduce(function (sum, variant) {
+      return sum + Math.max(0, Number(variant.trafficSplit || 0));
+    }, 0);
+    els.trafficSummary.textContent = variants.map(function (variant) {
+      var normalized = total > 0 ? Math.round((Number(variant.trafficSplit || 0) / total) * 100) : 0;
+      return variant.id + " " + normalized + "%";
+    }).join(" / ");
   }
 
   function getProteinQuizConfig(variant) {
@@ -622,6 +687,7 @@
       if (label) label.textContent = buildVariantLabel(variant);
       updateVariantToolbarStatus(variant, target.closest(".dash-editor-card"));
       updateReminderSettingPreview(variant, target.closest(".dash-editor-card"));
+      if (key === "trafficSplit") updateTrafficSummary();
     }
     renderPreviews(previewMode);
     scheduleDraftPreview(variant.id);
@@ -1366,7 +1432,7 @@
       return row.variant;
     }))), "All variants");
 
-    setOptions(els.version, unique(["", LATEST_TWO_VERSIONS, originalConfig.configVersion, config.configVersion].concat(publishedActiveVariants().map(function (variant) {
+    setOptions(els.version, unique(["", LATEST_LIVE_VERSIONS, originalConfig.configVersion, config.configVersion].concat(publishedActiveVariants().map(function (variant) {
       return getVariantTrackingVersion(variant);
     })).concat(activeVariants().map(function (variant) {
       return getVariantTrackingVersion(variant);
@@ -1375,7 +1441,7 @@
     }))), "All versions");
 
     if (!versionFilterInitialized) {
-      els.version.value = LATEST_TWO_VERSIONS;
+      els.version.value = LATEST_LIVE_VERSIONS;
       versionFilterInitialized = true;
     }
   }
@@ -1398,7 +1464,7 @@
   }
 
   function optionLabel(value) {
-    if (value === LATEST_TWO_VERSIONS) return "Current live variants";
+    if (value === LATEST_LIVE_VERSIONS) return "Current live variants";
     return value;
   }
 
@@ -1422,14 +1488,14 @@
     var start = els.start.value ? new Date(els.start.value + "T00:00:00") : null;
     var end = els.end.value ? new Date(els.end.value + "T23:59:59") : null;
     var pageNeedle = els.pageUrl.value.trim().toLowerCase();
-    var liveVersions = els.version.value === LATEST_TWO_VERSIONS ? getLiveVariantVersions() : null;
+    var liveVersions = els.version.value === LATEST_LIVE_VERSIONS ? getLiveVariantVersions() : null;
 
     return data.filter(function (row) {
       var timestamp = row.timestamp ? new Date(row.timestamp) : null;
       if (els.testId.value && row.testId !== els.testId.value) return false;
       if (els.variant.value && row.variant !== els.variant.value) return false;
       if (liveVersions && (row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
-      if (els.version.value && els.version.value !== LATEST_TWO_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
+      if (els.version.value && els.version.value !== LATEST_LIVE_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
       if (els.device.value && row.deviceType !== els.device.value) return false;
       if (start && timestamp && timestamp < start) return false;
       if (end && timestamp && timestamp > end) return false;
@@ -1442,14 +1508,14 @@
     var start = els.start.value ? new Date(els.start.value + "T00:00:00") : null;
     var end = els.end.value ? new Date(els.end.value + "T23:59:59") : null;
     var pageNeedle = els.pageUrl.value.trim().toLowerCase();
-    var liveVersions = els.version.value === LATEST_TWO_VERSIONS ? getLiveVariantVersions() : null;
+    var liveVersions = els.version.value === LATEST_LIVE_VERSIONS ? getLiveVariantVersions() : null;
 
     return data.filter(function (row) {
       var timestamp = row.timestamp ? new Date(row.timestamp) : null;
       if (els.testId.value && row.testId !== els.testId.value) return false;
       if (els.variant.value && row.variant !== els.variant.value) return false;
       if (liveVersions && (row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
-      if (els.version.value && els.version.value !== LATEST_TWO_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
+      if (els.version.value && els.version.value !== LATEST_LIVE_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
       if (els.device.value && row.deviceType !== els.device.value) return false;
       if (start && timestamp && timestamp < start) return false;
       if (end && timestamp && timestamp > end) return false;
@@ -1588,7 +1654,7 @@
   }
 
   function buildUnchangedSinceLastUpdateMetrics(filteredRows, visibleMetrics) {
-    if (els.version.value !== LATEST_TWO_VERSIONS) return [];
+    if (els.version.value !== LATEST_LIVE_VERSIONS) return [];
 
     var publishVersion = originalConfig.configVersion || config.configVersion || "";
     if (!publishVersion) return [];
@@ -1946,6 +2012,7 @@
     els.previews.innerHTML = "";
     els.previews.classList.toggle("is-compare", mode === "compare");
     els.previews.classList.toggle("is-mobile", mode === "mobile");
+    els.previews.style.setProperty("--dash-preview-columns", String(Math.max(1, activeVariants().length)));
     activeVariants().forEach(function (variant) {
       var card = document.createElement("article");
       card.className = "dash-preview-card";
@@ -2904,7 +2971,7 @@
       .then(function (result) {
         var commitSha = result.commit && result.commit.sha ? result.commit.sha.slice(0, 7) : "published";
         promotePublishedConfig();
-        showLatestTwoVersions();
+        showCurrentLiveVersions();
         setPublishStatus(versionMessage + "Published popup/variants.js to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
       .catch(function (error) {
@@ -2918,9 +2985,9 @@
     return "";
   }
 
-  function showLatestTwoVersions() {
+  function showCurrentLiveVersions() {
     populateFilters();
-    els.version.value = LATEST_TWO_VERSIONS;
+    els.version.value = LATEST_LIVE_VERSIONS;
     updateDashboard();
   }
 
@@ -2992,7 +3059,7 @@
       .then(function (body) {
         var note = body.status === "unchanged" ? "No file changes were needed." : "Published popup/variants.js to GitHub.";
         promotePublishedConfig();
-        showLatestTwoVersions();
+        showCurrentLiveVersions();
         setPublishStatus((versionMessage || "") + note + " GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
       .catch(function (error) {
@@ -3130,14 +3197,13 @@
       return;
     }
 
+    var livePerformance = getCurrentLiveVariantPerformance();
+    var targetVariantId = livePerformance.length >= 2
+      ? livePerformance[0].variant
+      : ((activeVariants().find(function (variant) { return variant.id !== winner.variant; }) || activeVariants()[0] || {}).id);
     var targetIndex = config.variants.findIndex(function (variant) {
-      return variant.id === winner.variant;
+      return variant.id === targetVariantId;
     });
-    if (targetIndex < 0) {
-      targetIndex = config.variants.findIndex(function (variant) {
-        return variant.active !== false;
-      });
-    }
     if (targetIndex < 0) {
       window.alert("I found a winner, but there is no active variant slot to restore it into.");
       return;
@@ -3168,7 +3234,7 @@
     renderEmbedCode();
     populateFilters();
     updateDashboard();
-    window.alert("Restored Variant " + restored.id + " from the best eligible test: " + formatPercent(winner.leadRate) + " lead conversion across " + formatNumber(winner.views) + " views.");
+    window.alert("Restored the best eligible historical design into Variant " + restored.id + " as a draft: " + formatPercent(winner.leadRate) + " lead conversion across " + formatNumber(winner.views) + " views. Nothing is live until you publish.");
   }
 
   function findWinningVariant(data) {
@@ -3429,7 +3495,7 @@
       return {
         title: "Load data to generate a next-test brief",
         summary: "Once the dashboard has event rows, the coach will identify the lower-performing live variant and suggest one clean change.",
-        actions: ["Load published CSV data.", "Keep each A/B test limited to one meaningful change.", "Publish only when Variant A and Variant B are clearly named."],
+        actions: ["Load published CSV data.", "Keep each split test limited to one meaningful change per challenger.", "Clearly name every active variant before publishing."],
         keep: ["Current tracking setup", "One-variable testing discipline", "Current live embed"],
         why: "The coach needs views and leads before it can compare variants responsibly."
       };
@@ -3437,11 +3503,11 @@
 
     if (live.length < 2) {
       return {
-        title: "Let both live variants collect data",
-        summary: "The coach sees traffic, but it needs both live variants represented before recommending which one to edit.",
-        actions: ["Confirm both live variants are active.", "Wait until each live variant has meaningful views.", strongest ? "Watch whether " + strongest.label + " continues leading." : "Avoid interpreting isolated rows too aggressively."],
+        title: "Let every live variant collect data",
+        summary: "The coach sees traffic, but it needs at least two live variants represented before recommending which one to edit.",
+        actions: ["Confirm the intended variants are active.", "Wait until each live variant has meaningful views.", strongest ? "Watch whether " + strongest.label + " continues leading." : "Avoid interpreting isolated rows too aggressively."],
         keep: ["Current live winner", "Current traffic split", "Current tracking version names"],
-        why: "A true A/B test needs a live comparison, not just historical pattern data."
+        why: "A split test needs a live comparison, not just historical pattern data."
       };
     }
 
@@ -3640,7 +3706,7 @@
       tone: "neutral",
       label: "Live Read",
       title: "Live " + live[0].variant + " is currently ahead",
-      body: formatPercent(live[0].cvr) + " CVR across " + formatNumber(live[0].views) + " views. Use this as directional until both live variants have enough traffic."
+      body: formatPercent(live[0].cvr) + " CVR across " + formatNumber(live[0].views) + " views. Use this as directional until every live variant has enough traffic."
     }];
   }
 
@@ -3681,7 +3747,7 @@
     }
 
     var lowerPerformer = livePerformance[0];
-    var higherPerformer = livePerformance[1];
+    var higherPerformer = livePerformance[livePerformance.length - 1];
     var slotId = lowerPerformer.variant;
     var confirmed = window.confirm(
       "Restore this historical design into lower-performing Variant " + slotId + "?\n\n" +
@@ -3694,7 +3760,7 @@
     var targetIndex = (config.variants || []).findIndex(function (variant) {
       return variant.id === slotId;
     });
-    if (targetIndex < 0) targetIndex = slotId === "B" ? 1 : 0;
+    if (targetIndex < 0) targetIndex = slotId === "C" ? 2 : (slotId === "B" ? 1 : 0);
 
     var current = config.variants[targetIndex] || { id: slotId, name: "Variant " + slotId, active: true, trafficSplit: 50 };
     var restored = Object.assign({}, current, cloneConfig(item.snapshot), {
@@ -4693,6 +4759,7 @@
     if (!Number.isFinite(value.triggers.scrollDepth)) value.triggers.scrollDepth = 0.5;
     value.savedColors = (value.savedColors || originalConfig.savedColors || defaultColors).slice(0, 10).concat(defaultColors).slice(0, 10);
     value.variants = value.variants || [];
+    ensureVariantSlots(value);
     normalizeVariantSlotIdentities(value);
     value.variants.forEach(function (variant) {
       var originalVariant = (originalConfig.variants || []).find(function (item) {
@@ -4735,10 +4802,39 @@
     return value;
   }
 
+  function ensureVariantSlots(targetConfig) {
+    var variants = targetConfig && Array.isArray(targetConfig.variants) ? targetConfig.variants : [];
+    if (!variants.length) variants.push({ id: "A", name: "Variant A", active: true, trafficSplit: 50 });
+    if (variants.length < 2) {
+      var variantB = cloneConfig(variants[0]);
+      variantB.id = "B";
+      variantB.name = "Variant B";
+      variantB.active = true;
+      variantB.trafficSplit = 50;
+      variantB.trackingVersion = "";
+      variantB.trackingFingerprint = "";
+      variants.push(variantB);
+    }
+    if (variants.length < 3) {
+      var source = variants[1] || variants[0];
+      var variantC = cloneConfig(source);
+      variantC.id = "C";
+      variantC.name = "Variant C";
+      variantC.active = false;
+      variantC.trafficSplit = 0;
+      variantC.trackingVersion = "";
+      variantC.trackingFingerprint = "";
+      variants.push(variantC);
+    }
+    targetConfig.variants = variants;
+    return variants;
+  }
+
   function normalizeVariantSlotIdentities(targetConfig) {
     var variants = targetConfig && Array.isArray(targetConfig.variants) ? targetConfig.variants : [];
     if (variants[0]) variants[0].id = "A";
     if (variants[1]) variants[1].id = "B";
+    if (variants[2]) variants[2].id = "C";
     return variants;
   }
 

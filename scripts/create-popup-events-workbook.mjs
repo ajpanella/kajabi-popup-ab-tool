@@ -65,7 +65,7 @@ events.getRange("L:X").format.columnWidthPx = 150;
 
 const readme = workbook.worksheets.add("Setup Notes");
 readme.showGridLines = false;
-readme.getRange("A1:D1").values = [["Kajabi Popup A/B Tracker", "", "", ""]];
+readme.getRange("A1:D1").values = [["Kajabi Popup Split-Test Tracker", "", "", ""]];
 readme.getRange("A1:D1").merge();
 readme.getRange("A1").format = {
   fill: "#111827",

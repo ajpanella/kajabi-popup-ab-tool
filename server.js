@@ -181,5 +181,5 @@ const server = http.createServer((request, response) => {
 });
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`Kajabi popup A/B tool running at http://localhost:${port}/dashboard/`);
+  console.log(`Kajabi popup split-test tool running at http://localhost:${port}/dashboard/`);
 });

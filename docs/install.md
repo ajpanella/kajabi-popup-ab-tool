@@ -1,4 +1,4 @@
-# Kajabi Popup A/B Tool Install
+# Kajabi Popup Split-Test Tool Install
 
 ## 1. Configure the popup
 
@@ -122,7 +122,7 @@ Kajabi can keep using the same embed code forever. When you change copy, image, 
 
 Before publishing a meaningful change, update `configVersion` in the dashboard, for example `v2-headline-image-test`, and write a short `changeNote`. Popup events will include both fields, plus a `variantSnapshot`, so historical results remain analyzable after the live popup changes.
 
-Changing `configVersion` also starts a fresh 30-day variant assignment for that version, so the new version can run its own clean A/B split.
+Changing `configVersion` also starts a fresh 30-day variant assignment for that version, so the new version can run its own clean A/B or A/B/C split.
 
 The dashboard's `Save Draft + Log Version` button records a `variant_save_test` row with a readable `variantLabel`, such as CTA text, colors, width, font, text alignment, image status, and quiz-flow details. Use it before publishing a new version so the Sheet has a marker for exactly what changed.
 

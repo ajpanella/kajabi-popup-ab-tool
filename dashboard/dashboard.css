@@ -1478,7 +1478,36 @@ body {
 }
 
 .dash-preview-grid.is-compare {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--dash-preview-columns, 2), minmax(0, 1fr));
+}
+
+.dash-traffic-control {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px 12px;
+  align-items: center;
+  min-width: 0;
+}
+
+.dash-traffic-control > span {
+  color: #64748b;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.dash-traffic-control > strong {
+  grid-column: 1 / -1;
+  color: var(--dash-green-dark);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.dash-traffic-control .dash-secondary-button {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 12px;
 }
 
 .dash-preview-grid.is-mobile {

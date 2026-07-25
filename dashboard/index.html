@@ -3,9 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kajabi Popup A/B Dashboard</title>
+    <title>Kajabi Popup Split-Test Dashboard</title>
     <link rel="stylesheet" href="../popup/popup.css?v=35">
-    <link rel="stylesheet" href="./dashboard.css?v=57">
+    <link rel="stylesheet" href="./dashboard.css?v=58">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260718-3"></script>
   </head>
@@ -183,6 +183,18 @@
               <strong>Timing & Triggers</strong>
             </summary>
             <div class="dash-global-editor">
+              <label>
+                Test format
+                <select id="variant-mode">
+                  <option value="ab">A/B test</option>
+                  <option value="abc">A/B/C test</option>
+                </select>
+              </label>
+              <div class="dash-traffic-control">
+                <span>Traffic allocation</span>
+                <button id="balance-traffic" class="dash-secondary-button" type="button">Balance Evenly</button>
+                <strong id="traffic-summary">A 50% / B 50%</strong>
+              </div>
               <label>
                 Delay seconds
                 <input id="delay-seconds" type="number" min="0" step="1" placeholder="35">
@@ -476,6 +488,6 @@
       <div id="draft-preview-stage" class="dash-preview-stage dash-draft-preview-stage"></div>
     </aside>
 
-    <script src="./dashboard.js?v=108"></script>
+    <script src="./dashboard.js?v=109"></script>
   </body>
 </html>
