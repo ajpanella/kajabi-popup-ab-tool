@@ -1490,11 +1490,12 @@
     var pageNeedle = els.pageUrl.value.trim().toLowerCase();
     var liveVersions = els.version.value === LATEST_LIVE_VERSIONS ? getLiveVariantVersions() : null;
 
-    return data.filter(function (row) {
+    var candidates = liveVersions ? data.map(remapLiveTrackingRow).filter(Boolean) : data;
+
+    return candidates.filter(function (row) {
       var timestamp = row.timestamp ? new Date(row.timestamp) : null;
       if (els.testId.value && row.testId !== els.testId.value) return false;
       if (els.variant.value && row.variant !== els.variant.value) return false;
-      if (liveVersions && (row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
       if (els.version.value && els.version.value !== LATEST_LIVE_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
       if (els.device.value && row.deviceType !== els.device.value) return false;
       if (start && timestamp && timestamp < start) return false;
@@ -1510,11 +1511,12 @@
     var pageNeedle = els.pageUrl.value.trim().toLowerCase();
     var liveVersions = els.version.value === LATEST_LIVE_VERSIONS ? getLiveVariantVersions() : null;
 
-    return data.filter(function (row) {
+    var candidates = liveVersions ? data.map(remapLiveTrackingRow).filter(Boolean) : data;
+
+    return candidates.filter(function (row) {
       var timestamp = row.timestamp ? new Date(row.timestamp) : null;
       if (els.testId.value && row.testId !== els.testId.value) return false;
       if (els.variant.value && row.variant !== els.variant.value) return false;
-      if (liveVersions && (row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
       if (els.version.value && els.version.value !== LATEST_LIVE_VERSIONS && (row.configVersion || "unversioned") !== els.version.value) return false;
       if (els.device.value && row.deviceType !== els.device.value) return false;
       if (start && timestamp && timestamp < start) return false;
@@ -1636,6 +1638,20 @@
         cvr: fullConversionRate,
         lift: 0
       };
+    });
+
+    result.sort(function (a, b) {
+      var liveVariants = publishedActiveVariants();
+      var aIndex = liveVariants.findIndex(function (variant) {
+        return variant.id === a.variant && getVariantTrackingVersion(variant) === a.configVersion;
+      });
+      var bIndex = liveVariants.findIndex(function (variant) {
+        return variant.id === b.variant && getVariantTrackingVersion(variant) === b.configVersion;
+      });
+      if (aIndex >= 0 && bIndex >= 0) return aIndex - bIndex;
+      if (aIndex >= 0) return -1;
+      if (bIndex >= 0) return 1;
+      return metricRowKey(a).localeCompare(metricRowKey(b), undefined, { numeric: true, sensitivity: "base" });
     });
 
     var controlRates = {};
@@ -3197,10 +3213,7 @@
       return;
     }
 
-    var livePerformance = getCurrentLiveVariantPerformance();
-    var targetVariantId = livePerformance.length >= 2
-      ? livePerformance[0].variant
-      : ((activeVariants().find(function (variant) { return variant.id !== winner.variant; }) || activeVariants()[0] || {}).id);
+    var targetVariantId = "A";
     var targetIndex = config.variants.findIndex(function (variant) {
       return variant.id === targetVariantId;
     });
@@ -3210,11 +3223,19 @@
     }
 
     var current = config.variants[targetIndex] || {};
+    var trackingSources = mergeTrackingSources(current.trackingSources, winner.variant === "A" ? [] : [{
+      variant: winner.variant,
+      configVersion: winner.configVersion
+    }]);
     var restored = Object.assign({}, current, winner.snapshot, {
-      id: current.id || winner.variant,
+      id: "A",
+      name: "Control - Winning Variant",
       active: current.active !== false,
-      trafficSplit: current.trafficSplit
+      trafficSplit: current.trafficSplit,
+      trackingVersion: winner.configVersion,
+      trackingSources: trackingSources
     });
+    restored.trackingFingerprint = variantFingerprint(restored);
 
     config.variants[targetIndex] = restored;
     config.configVersion = "restored-" + new Date().toISOString().slice(0, 10) + "-" + sanitizeKey(restored.id || "winner");
@@ -3234,7 +3255,7 @@
     renderEmbedCode();
     populateFilters();
     updateDashboard();
-    window.alert("Restored the best eligible historical design into Variant " + restored.id + " as a draft: " + formatPercent(winner.leadRate) + " lead conversion across " + formatNumber(winner.views) + " views. Nothing is live until you publish.");
+    window.alert("Restored the best eligible historical design into Variant A as the control draft: " + formatPercent(winner.leadRate) + " lead conversion across " + formatNumber(winner.views) + " views. Its prior tracking history will follow it to A after publishing. Nothing is live until you publish.");
   }
 
   function findWinningVariant(data) {
@@ -3790,12 +3811,13 @@
   }
 
   function getCurrentLiveVariantPerformance() {
-    var liveVersions = getLiveVariantVersions();
     var currentTestId = originalConfig.testId || config.testId || "";
-    var liveRows = rows.filter(function (row) {
+    var liveRows = rows.map(remapLiveTrackingRow).filter(function (row) {
+      if (!row) return false;
       if (currentTestId && row.testId !== currentTestId) return false;
-      return liveVersions[row.variant] && (row.configVersion || "unversioned") === liveVersions[row.variant];
+      return true;
     });
+    var liveVersions = getLiveVariantVersions();
 
     return buildMetrics(liveRows, publishedActiveVariants()).filter(function (item) {
       return liveVersions[item.variant] === item.configVersion;
@@ -4489,6 +4511,42 @@
     }, {});
   }
 
+  function mergeTrackingSources(existing, additions) {
+    var seen = {};
+    return (Array.isArray(existing) ? existing : []).concat(Array.isArray(additions) ? additions : []).filter(function (source) {
+      var variantId = String(source && source.variant || "").trim();
+      var rawVersion = String(source && source.configVersion || "").trim();
+      var version = normalizeTrackedVersion(rawVersion);
+      var key = variantId + "::" + version;
+      if (!variantId || !rawVersion || seen[key]) return false;
+      seen[key] = true;
+      source.variant = variantId;
+      source.configVersion = version;
+      return true;
+    });
+  }
+
+  function remapLiveTrackingRow(row) {
+    if (!row) return null;
+    var rowVariant = String(row.variant || "Unknown");
+    var rowVersion = normalizeTrackedVersion(row.configVersion || "unversioned");
+    var matchedVariant = publishedActiveVariants().find(function (variant) {
+      if (variant.id === rowVariant && getVariantTrackingVersion(variant) === rowVersion) return true;
+      return (variant.trackingSources || []).some(function (source) {
+        return String(source.variant || "") === rowVariant
+          && normalizeTrackedVersion(source.configVersion || "") === rowVersion;
+      });
+    });
+    if (!matchedVariant) return null;
+    if (matchedVariant.id === rowVariant && getVariantTrackingVersion(matchedVariant) === rowVersion) return row;
+    return Object.assign({}, row, {
+      variant: matchedVariant.id,
+      configVersion: getVariantTrackingVersion(matchedVariant),
+      trackingSourceVariant: rowVariant,
+      trackingSourceVersion: rowVersion
+    });
+  }
+
   function normalizeTrackedVersion(value) {
     var version = String(value || "");
     var automatic = version.match(/^test-(\d{4})(\d{2})(\d{2})(?:\d{4})?$/);
@@ -4789,6 +4847,7 @@
       variant.reminderText = variant.reminderText || originalVariant.reminderText || "Free Protein Plan";
       variant.reminderColor = variant.reminderColor || originalVariant.reminderColor || variant.accentColor || "#06b00b";
       variant.reminderTextColor = variant.reminderTextColor || originalVariant.reminderTextColor || "#ffffff";
+      variant.trackingSources = mergeTrackingSources(variant.trackingSources, originalVariant.trackingSources);
       variant.reopenAfterCloseSeconds = Number(variant.reopenAfterCloseSeconds);
       if (!Number.isFinite(variant.reopenAfterCloseSeconds)) {
         var originalReopenSeconds = Number(originalVariant.reopenAfterCloseSeconds);
