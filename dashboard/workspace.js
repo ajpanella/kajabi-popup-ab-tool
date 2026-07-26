@@ -2,6 +2,7 @@
   "use strict";
 
   var selectedVariantId = "A";
+  var activeEditorTabs = {};
   var editorObserverTimer = null;
   var settingsDrawer = document.getElementById("studio-settings-drawer");
   var settingsScrim = document.getElementById("studio-settings-scrim");
@@ -90,6 +91,13 @@
       if (button) selectVariant(button.dataset.workspaceVariant);
     });
 
+    editors.addEventListener("click", function (event) {
+      var button = event.target.closest("[data-studio-editor-tab]");
+      if (!button) return;
+      activeEditorTabs[button.dataset.studioVariant] = button.dataset.studioEditorTab;
+      activateEditorTab(button.closest(".dash-editor-card"), button.dataset.studioEditorTab);
+    });
+
     editors.addEventListener("input", markDraftChanged);
     editors.addEventListener("change", markDraftChanged);
     settingsDrawer.addEventListener("input", markDraftChanged);
@@ -130,6 +138,7 @@
     }).join("");
     cards.forEach(function (item) {
       organizeFlowRail(item.card);
+      organizeStepEditorTabs(item.card, item.id);
       item.card.classList.toggle("is-workspace-active", item.id === selectedVariantId);
       item.card.open = true;
     });
@@ -268,6 +277,84 @@
       if (element) rail.appendChild(element);
     });
     flow.insertBefore(rail, flow.firstChild);
+  }
+
+  function organizeStepEditorTabs(card, variantId) {
+    var stepEditor = card && card.querySelector(".dash-step-editor");
+    var settings = stepEditor && stepEditor.querySelector(":scope > .dash-step-settings");
+    if (!stepEditor || !settings) return;
+
+    if (stepEditor.querySelector(":scope > .studio-step-editor-tabs")) {
+      activateEditorTab(card, activeEditorTabs[variantId] || "content");
+      return;
+    }
+
+    var definitions = [
+      { id: "content", label: "Content", icon: "file-text", selectors: [".dash-setting-group-setup", ".dash-setting-group-content"] },
+      { id: "form", label: "Form", icon: "list-checks", selectors: [".dash-setting-group-response", ".dash-setting-group-action"] },
+      { id: "design", label: "Design", icon: "palette", selectors: [".dash-setting-group-appearance"] },
+      { id: "behavior", label: "Behavior", icon: "route", selectors: [".dash-setting-group-navigation"] }
+    ];
+    var tablist = document.createElement("div");
+    tablist.className = "studio-step-editor-tabs";
+    tablist.setAttribute("role", "tablist");
+    tablist.setAttribute("aria-label", "Step editor sections");
+    var panels = document.createElement("div");
+    panels.className = "studio-editor-tab-panels";
+
+    definitions.forEach(function (definition) {
+      var button = document.createElement("button");
+      button.type = "button";
+      button.className = "studio-step-editor-tab";
+      button.dataset.studioEditorTab = definition.id;
+      button.dataset.studioVariant = variantId;
+      button.setAttribute("role", "tab");
+      button.innerHTML = '<i data-lucide="' + definition.icon + '"></i><span>' + definition.label + '</span>';
+      tablist.appendChild(button);
+
+      var panel = document.createElement("section");
+      panel.className = "studio-editor-tab-panel";
+      panel.dataset.studioEditorPanel = definition.id;
+      panel.setAttribute("role", "tabpanel");
+      definition.selectors.forEach(function (selector) {
+        var group = settings.querySelector(":scope > " + selector);
+        if (group) {
+          group.open = true;
+          panel.appendChild(group);
+        }
+      });
+      panels.appendChild(panel);
+    });
+
+    var designPanel = card.querySelector(":scope > .dash-design-panel");
+    var designTarget = panels.querySelector('[data-studio-editor-panel="design"]');
+    var behaviorTarget = panels.querySelector('[data-studio-editor-panel="behavior"]');
+    if (designPanel) {
+      var reminder = designPanel.querySelector(".dash-reminder-settings");
+      designPanel.open = true;
+      if (designTarget) designTarget.appendChild(designPanel);
+      if (reminder && behaviorTarget) behaviorTarget.appendChild(reminder);
+    }
+
+    settings.classList.add("studio-tabbed-settings");
+    settings.appendChild(panels);
+    stepEditor.insertBefore(tablist, settings);
+    activateEditorTab(card, activeEditorTabs[variantId] || "content");
+    refreshIcons();
+  }
+
+  function activateEditorTab(card, tabId) {
+    if (!card) return;
+    var available = Array.from(card.querySelectorAll("[data-studio-editor-tab]"));
+    if (!available.some(function (button) { return button.dataset.studioEditorTab === tabId; })) tabId = "content";
+    available.forEach(function (button) {
+      var active = button.dataset.studioEditorTab === tabId;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-selected", active ? "true" : "false");
+    });
+    Array.from(card.querySelectorAll("[data-studio-editor-panel]")).forEach(function (panel) {
+      panel.classList.toggle("is-active", panel.dataset.studioEditorPanel === tabId);
+    });
   }
 
   function titleCase(value) {

@@ -793,8 +793,104 @@ body.ll-studio-body {
   font-size: 11px;
 }
 
-.studio-editor-grid .dash-step-settings {
-  padding: 12px;
+.studio-step-editor-tabs {
+  position: sticky;
+  top: 57px;
+  z-index: 24;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  min-height: 48px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--studio-line);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.04);
+}
+
+.studio-step-editor-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  min-height: 48px;
+  padding: 8px 7px;
+  border: 0;
+  color: #667085;
+  background: transparent;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.studio-step-editor-tab::after {
+  position: absolute;
+  right: 7px;
+  bottom: -1px;
+  left: 7px;
+  height: 3px;
+  border-radius: 3px 3px 0 0;
+  background: transparent;
+  content: "";
+}
+
+.studio-step-editor-tab svg {
+  width: 15px;
+  height: 15px;
+}
+
+.studio-step-editor-tab:hover,
+.studio-step-editor-tab.is-active {
+  color: var(--studio-green-deep);
+}
+
+.studio-step-editor-tab.is-active::after {
+  background: var(--studio-green);
+}
+
+.studio-editor-grid .dash-step-settings.studio-tabbed-settings {
+  display: block;
+  padding: 0;
+  background: #f7f9fa;
+}
+
+.studio-editor-tab-panels {
+  min-height: 420px;
+}
+
+.studio-editor-tab-panel {
+  display: none;
+  padding: 14px;
+}
+
+.studio-editor-tab-panel.is-active {
+  display: block;
+}
+
+.studio-editor-tab-panel::before {
+  display: block;
+  margin: 1px 2px 10px;
+  color: #667085;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.studio-editor-tab-panel[data-studio-editor-panel="content"]::before {
+  content: "Step structure and messaging";
+}
+
+.studio-editor-tab-panel[data-studio-editor-panel="form"]::before {
+  content: "Visitor response and primary action";
+}
+
+.studio-editor-tab-panel[data-studio-editor-panel="design"]::before {
+  content: "Step appearance and shared popup styling";
+}
+
+.studio-editor-tab-panel[data-studio-editor-panel="behavior"]::before {
+  content: "Progress, navigation, and reminder behavior";
 }
 
 .studio-editor-grid .dash-setting-group {
@@ -823,6 +919,29 @@ body.ll-studio-body {
 
 .studio-editor-grid .dash-setting-group > .dash-setting-grid {
   padding: 14px;
+}
+
+.studio-editor-tab-panel .dash-design-panel {
+  margin: 0 0 9px;
+}
+
+.studio-editor-tab-panel .dash-design-panel > summary {
+  min-height: 56px;
+  padding: 17px 14px;
+  color: #344054;
+  background: #ffffff;
+  font-size: 13px;
+}
+
+.studio-editor-tab-panel .dash-design-panel > .dash-global-editor {
+  padding: 0 14px 14px;
+}
+
+.studio-editor-tab-panel .dash-reminder-settings {
+  margin: 0 0 9px;
+  border: 1px solid var(--studio-line);
+  border-radius: 6px;
+  background: #ffffff;
 }
 
 .studio-editor-grid .dash-setting-grid {
