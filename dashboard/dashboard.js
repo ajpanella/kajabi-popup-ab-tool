@@ -1128,7 +1128,7 @@
   function flowSettingsGroup(index, title, controls, className) {
     if (!controls) return "";
     return [
-      "<details class=\"dash-setting-group " + escapeHtmlAttr(className || "") + "\" open>",
+      "<details class=\"dash-setting-group " + escapeHtmlAttr(className || "") + "\"" + (title === "Popup Content" ? " open" : "") + ">",
       "<summary class=\"dash-setting-group-heading\"><span>" + escapeHtml(index) + "</span><h5>" + escapeHtml(title) + "</h5><i aria-hidden=\"true\"></i></summary>",
       "<div class=\"dash-setting-grid\">" + controls + "</div>",
       "</details>"

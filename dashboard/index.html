@@ -3,491 +3,183 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Kajabi Popup Split-Test Dashboard</title>
+    <title>Popup Test Studio</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../popup/popup.css?v=35">
     <link rel="stylesheet" href="./dashboard.css?v=62">
+    <link rel="stylesheet" href="./workspace.css?v=1">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260725-1"></script>
   </head>
-  <body>
-    <header class="dash-header">
-      <div>
-        <p class="dash-eyebrow">Longevity Lifestyle OS</p>
-        <h1>Popup Test Studio</h1>
-      </div>
-      <div class="dash-header-links">
-        <a class="dash-doc-link" id="tracking-sheet-link" href="#" target="_blank" rel="noreferrer">Tracking Sheet</a>
-        <a class="dash-doc-link" id="google-doc-link" href="#" target="_blank" rel="noreferrer">Google Doc</a>
-      </div>
-    </header>
-
-    <main class="dash-layout">
-      <section class="dash-panel dash-controls" aria-label="Dashboard controls">
-        <div class="dash-rail-heading">
-          <span>Data view</span>
-          <strong>Performance Filters</strong>
+  <body class="ll-studio-body">
+    <div class="studio-shell">
+      <aside class="studio-sidebar">
+        <div class="studio-brand" aria-label="Longevity Lifestyle">
+          <span class="studio-brand-loop">L</span>
+          <strong>Longevity<br>Lifestyle</strong>
         </div>
-        <div class="dash-control-group dash-control-source">
-          <label>
-            Published CSV URL
-            <input id="csv-url" type="url" placeholder="Google Sheets CSV URL">
-          </label>
-          <button id="load-data" type="button">Refresh Data</button>
-          <p id="csv-load-status" class="dash-load-status" aria-live="polite"></p>
-        </div>
+        <nav class="studio-nav" aria-label="Dashboard workspaces">
+          <button type="button" data-workspace-button="overview"><i data-lucide="layout-dashboard"></i><span>Overview</span></button>
+          <button type="button" class="is-active" data-workspace-button="build"><i data-lucide="panel-left"></i><span>Build</span></button>
+          <button type="button" data-workspace-button="analyze"><i data-lucide="chart-no-axes-combined"></i><span>Analyze</span></button>
+          <button type="button" data-workspace-button="history"><i data-lucide="history"></i><span>History</span></button>
+          <button type="button" data-workspace-button="ideas"><i data-lucide="lightbulb"></i><span>Ideas</span><em id="sidebar-idea-count">0</em></button>
+        </nav>
+        <button class="studio-settings-button" type="button" data-open-settings><i data-lucide="sliders-horizontal"></i><span>Settings</span></button>
+        <div class="studio-connection"><span></span> Tracking connected</div>
+      </aside>
 
-        <div class="dash-control-group">
-          <span class="dash-control-group-title">Active dataset</span>
-          <label>
-            Test ID
-            <select id="filter-test-id"></select>
-          </label>
-          <label>
-            Variant
-            <select id="filter-variant"></select>
-          </label>
-          <label>
-            Version
-            <select id="filter-version"></select>
-          </label>
-        </div>
-
-        <div class="dash-control-group">
-          <span class="dash-control-group-title">Audience slice</span>
-          <label>
-            Start date
-            <input id="filter-start" type="date">
-          </label>
-          <label>
-            End date
-            <input id="filter-end" type="date">
-          </label>
-          <label>
-            Page URL
-            <input id="filter-page-url" type="search" placeholder="Contains...">
-          </label>
-          <label>
-            Device
-            <select id="filter-device">
-              <option value="">All devices</option>
-              <option value="desktop">Desktop</option>
-              <option value="tablet">Tablet</option>
-              <option value="mobile">Mobile</option>
-            </select>
-          </label>
-        </div>
-      </section>
-
-      <section class="dash-content">
-        <details class="dash-panel dash-install-panel dash-collapsible-panel">
-          <summary class="dash-section-heading">
-            <div>
-              <p class="dash-eyebrow">Install</p>
-              <h2>Embed Code</h2>
-            </div>
-            <span class="dash-collapse-label">One-time setup</span>
-          </summary>
-          <div class="dash-panel-action-strip">
-            <button id="copy-embed" class="dash-secondary-button" type="button">Copy Embed</button>
+      <div class="studio-main">
+        <header class="studio-topbar">
+          <div class="studio-breadcrumb"><span>Popup Test Studio</span><i data-lucide="chevron-right"></i><strong id="studio-workspace-name">Build</strong></div>
+          <div class="studio-topbar-actions">
+            <label class="studio-test-picker"><span>Active test</span><select aria-label="Active test"><option>Protein Plan - Blog Opt-in</option></select></label>
+            <span class="studio-save-state"><i data-lucide="check"></i> Draft saved</span>
+            <button id="load-data" class="studio-icon-button" type="button" aria-label="Refresh tracking data"><i data-lucide="refresh-cw"></i></button>
+            <button class="studio-publish-command" type="button" data-open-publishing><i data-lucide="rocket"></i> Review &amp; Publish</button>
           </div>
-          <label class="dash-wide-label">
-            Public asset base URL
-            <input id="asset-base-url" type="url" placeholder="https://ajpanella.github.io/kajabi-popup-ab-tool">
-          </label>
-          <textarea id="embed-code" class="dash-code-box" readonly></textarea>
-        </details>
+        </header>
 
-        <section class="dash-panel dash-builder-panel">
-          <div class="dash-section-heading">
-            <div>
-              <p class="dash-eyebrow">Test Builder</p>
-              <h2>Popup Configuration</h2>
+        <main class="studio-workspaces">
+          <section class="studio-workspace" data-workspace-panel="overview" hidden>
+            <div class="studio-page-heading">
+              <div><span class="studio-kicker">Command center</span><h1>Test overview</h1><p>See what is live, what is changing, and what deserves attention next.</p></div>
+              <button class="studio-secondary-command" type="button" data-workspace-link="analyze"><i data-lucide="chart-no-axes-combined"></i> Open analysis</button>
             </div>
-            <div class="dash-action-row">
-              <button id="reset-config" class="dash-secondary-button" type="button">Reset Draft</button>
-              <button id="restore-winner" class="dash-secondary-button" type="button">Restore Winning Variant</button>
-              <button id="download-config" class="dash-secondary-button" type="button">Download variants.js</button>
-              <button id="copy-config" class="dash-secondary-button" type="button">Copy variants.js</button>
+            <div class="studio-overview-metrics">
+              <article><span>Popup views</span><strong id="overview-stat-views">0</strong><small>Current active versions</small></article>
+              <article><span>Quiz completions</span><strong id="overview-stat-quiz">0</strong><small>Across quiz-enabled variants</small></article>
+              <article><span>Leads</span><strong id="overview-stat-leads">0</strong><small>Unique lead sessions</small></article>
+              <article><span>CVR</span><strong id="overview-stat-cvr">0%</strong><small>Unique sessions to leads</small></article>
             </div>
-          </div>
-          <div class="dash-editor-note">
-            Keep the Kajabi embed URL stable. Publishing starts a new tracking version only for variants whose content changed; unchanged variants keep accumulating data.
-          </div>
-          <div class="dash-publish-box">
-            <div class="dash-flow-head">
-              <strong>GitHub Publish</strong>
-              <span>Publish dashboard edits to the hosted popup/variants.js file without changing the Kajabi embed. Local dashboard uses your signed-in GitHub app; hosted dashboard needs a token.</span>
+            <div class="studio-overview-grid">
+              <section class="studio-surface studio-recommendation-surface">
+                <div class="studio-section-heading"><div><span class="studio-kicker">Insights</span><h2>Recommendation helper</h2></div><i data-lucide="sparkles"></i></div>
+                <div id="recommendation-list" class="dash-recommendations"></div>
+              </section>
+              <section class="studio-surface studio-live-summary">
+                <div class="studio-section-heading"><div><span class="studio-kicker">Live test</span><h2>Active variants</h2></div><button type="button" data-workspace-link="build">Edit variants</button></div>
+                <div id="overview-live-variants" class="studio-live-variant-list"></div>
+              </section>
             </div>
-            <details class="dash-advanced-panel">
-              <summary>GitHub connection settings</summary>
-              <div class="dash-global-editor">
-                <label>
-                  Repository owner
-                  <input id="github-owner" type="text" autocomplete="off" value="ajpanella">
-                </label>
-                <label>
-                  Repository name
-                  <input id="github-repo" type="text" autocomplete="off" value="kajabi-popup-ab-tool">
-                </label>
-                <label>
-                  Branch
-                  <input id="github-branch" type="text" autocomplete="off" value="main">
-                </label>
-                <label>
-                  Publish path
-                  <input id="github-path" type="text" autocomplete="off" value="popup/variants.js">
-                </label>
-                <label class="dash-global-wide">
-                  GitHub fine-grained token (hosted dashboard only)
-                  <input id="github-token" type="password" autocomplete="off" placeholder="Contents: Read and write">
-                </label>
-                <label class="dash-global-wide">
-                  Commit message
-                  <input id="github-message" type="text" value="Publish popup variants from dashboard">
-                </label>
+            <section class="studio-surface studio-overview-previews">
+              <div class="studio-section-heading"><div><span class="studio-kicker">Experience</span><h2>Live variant previews</h2></div><div class="dash-toggle" role="group" aria-label="Preview size"><button id="desktop-preview" class="is-active" type="button">Desktop</button><button id="compare-preview" type="button">Side by side</button><button id="mobile-preview" type="button">Mobile</button></div><div id="flow-preview-tabs" class="dash-toggle dash-flow-preview-tabs" role="group" aria-label="Preview step"></div></div>
+              <div id="variant-previews" class="dash-preview-grid"></div>
+            </section>
+          </section>
+
+          <section class="studio-workspace studio-build-workspace is-active" data-workspace-panel="build">
+            <div class="studio-builder-topline">
+              <div id="workspace-variant-tabs" class="studio-variant-tabs" role="tablist" aria-label="Variant to edit"></div>
+              <div class="studio-builder-actions">
+                <button id="reset-config" class="studio-secondary-command" type="button"><i data-lucide="rotate-ccw"></i> Reset draft</button>
+                <button id="restore-winner" class="studio-secondary-command" type="button"><i data-lucide="trophy"></i> Restore winner</button>
+                <button class="studio-icon-button" type="button" data-open-settings aria-label="More build settings"><i data-lucide="ellipsis"></i></button>
               </div>
-            </details>
-            <button id="publish-github" class="dash-save-test" type="button">Save & Publish to GitHub</button>
-            <p id="github-publish-status" class="dash-publish-status"></p>
-          </div>
-          <details class="dash-settings-band dash-test-config" open>
-            <summary class="dash-subsection-heading">
-              <span>Setup</span>
-              <strong>Delivery & Tracking</strong>
-            </summary>
-            <div class="dash-global-editor">
-              <label>
-                Tracking webhook URL
-                <input id="webhook-url" type="url" placeholder="Google Apps Script Web App URL">
-              </label>
-              <label>
-                Lead magnet mode
-                <select id="lead-magnet-mode">
-                  <option value="">Standard opt-in</option>
-                  <option value="protein_plan">Protein plan quiz</option>
-                </select>
-              </label>
-              <label>
-                Lead webhook URL
-                <input id="lead-webhook-url" type="url" placeholder="Zapier Catch Hook URL">
-              </label>
-              <label>
-                Destination URL
-                <input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/personalized-protein-plan">
-              </label>
             </div>
-          </details>
-          <details class="dash-settings-band dash-trigger-config" open>
-            <summary class="dash-subsection-heading">
-              <span>Behavior</span>
-              <strong>Timing & Triggers</strong>
-            </summary>
-            <div class="dash-global-editor">
-              <label>
-                Test format
-                <select id="variant-mode">
-                  <option value="ab">A/B test</option>
-                  <option value="abc">A/B/C test</option>
-                </select>
-              </label>
-              <div class="dash-traffic-control">
-                <span>Traffic allocation</span>
-                <button id="balance-traffic" class="dash-secondary-button" type="button">Balance Evenly</button>
-                <strong id="traffic-summary">A 50% / B 50%</strong>
+            <div class="studio-build-stage">
+              <section class="studio-builder-editor" aria-label="Variant editor">
+                <div id="variant-editors" class="dash-editor-grid studio-editor-grid"></div>
+              </section>
+              <aside id="draft-preview-drawer" class="dash-draft-preview-drawer studio-preview-pane" aria-hidden="true" hidden>
+                <header class="dash-draft-preview-header">
+                  <div><span class="studio-kicker">Live preview</span><strong id="draft-preview-variant" class="dash-draft-preview-variant">Variant A</strong><small>Updates while you edit</small></div>
+                  <button id="draft-preview-close" class="dash-draft-preview-close" type="button" aria-label="Close draft preview">&times;</button>
+                </header>
+                <div class="dash-draft-preview-controls"><div id="draft-preview-device" class="dash-toggle" role="group" aria-label="Draft preview device"><button type="button" data-draft-device="desktop" class="is-active">Desktop</button><button type="button" data-draft-device="mobile">Mobile</button></div><div id="draft-preview-steps" class="dash-draft-preview-steps" aria-label="Draft preview step"></div></div>
+                <div id="draft-preview-stage" class="dash-preview-stage dash-draft-preview-stage"></div>
+              </aside>
+            </div>
+          </section>
+
+          <section class="studio-workspace" data-workspace-panel="analyze" hidden>
+            <div class="studio-page-heading"><div><span class="studio-kicker">Performance</span><h1>Analyze active test</h1><p>Conversion is calculated from unique visitor sessions to unique lead sessions.</p></div><button id="toggle-analysis-filters" class="studio-secondary-command" type="button"><i data-lucide="sliders-horizontal"></i> Filters</button></div>
+            <section id="analysis-filterbar" class="studio-filter-band">
+              <label class="studio-source-field">Published CSV URL<input id="csv-url" type="url" placeholder="Google Sheets CSV URL"></label>
+              <label>Test<select id="filter-test-id"></select></label>
+              <label>Variant<select id="filter-variant"></select></label>
+              <label>Version<select id="filter-version"></select></label>
+              <label>Start<input id="filter-start" type="date"></label>
+              <label>End<input id="filter-end" type="date"></label>
+              <label>Page<input id="filter-page-url" type="search" placeholder="Contains..."></label>
+              <label>Device<select id="filter-device"><option value="">All devices</option><option value="desktop">Desktop</option><option value="tablet">Tablet</option><option value="mobile">Mobile</option></select></label>
+              <p id="csv-load-status" class="dash-load-status" aria-live="polite"></p>
+            </section>
+            <section class="dash-metrics studio-metrics">
+              <article class="dash-stat"><span>Popup views</span><strong id="stat-views">0</strong></article>
+              <article class="dash-stat"><span id="stat-quiz-label">Quiz completions</span><strong id="stat-quiz-submits">0</strong></article>
+              <article class="dash-stat"><span>Leads</span><strong id="stat-leads">0</strong></article>
+              <article class="dash-stat"><span>CVR</span><strong id="stat-close-rate">0%</strong><small>Unique sessions → leads</small></article>
+            </section>
+            <section class="studio-surface">
+              <div class="studio-section-heading"><div><span class="studio-kicker">Results</span><h2>Performance table</h2></div><div class="dash-result-actions"><p id="hidden-metrics-status" class="dash-hidden-status" hidden></p><button id="show-hidden-metrics" class="dash-secondary-button" type="button" hidden>Show hidden rows</button><p id="sample-warning" class="dash-warning" hidden>Sample size is below 100 popup views for at least one active variant.</p></div></div>
+              <div class="dash-table-wrap"><table><thead><tr><th>Variant</th><th>Version</th><th>Sessions</th><th>Views</th><th>View rate</th><th id="metric-clicks-heading">Clicks</th><th id="metric-click-rate-heading">Click rate</th><th>Quiz</th><th>Quiz rate</th><th>Leads</th><th title="Unique lead sessions divided by unique visitor sessions">CVR</th><th>Closes</th><th>Lift vs A</th><th></th></tr></thead><tbody id="performance-body"></tbody></table></div>
+            </section>
+            <section class="dash-chart-grid studio-chart-grid"><div class="studio-surface"><div class="studio-section-heading"><h2>Conversion rates</h2></div><canvas id="conversion-chart" height="220"></canvas></div><div class="studio-surface"><div class="studio-section-heading"><h2>Event counts</h2></div><canvas id="event-chart" height="220"></canvas></div></section>
+          </section>
+
+          <section class="studio-workspace" data-workspace-panel="history" hidden>
+            <div class="studio-page-heading"><div><span class="studio-kicker">Archive</span><h1>Variant history</h1><p>Search every snapshot, compare attributes, and restore a strong starting point.</p></div><button id="compare-live-history" class="studio-secondary-command" type="button" aria-pressed="false"><i data-lucide="git-compare-arrows"></i> Compare to live</button></div>
+            <section class="studio-surface studio-recent-history"><div class="studio-section-heading"><div><span class="studio-kicker">Recent</span><h2>Historical variations</h2></div></div><div id="variation-history" class="dash-history-grid"></div></section>
+            <section class="studio-surface studio-full-history-surface">
+              <div class="studio-section-heading"><div><span class="studio-kicker">Deep history</span><h2>Full variant history</h2></div><small>Every tracked snapshot, attribute, and result</small></div>
+              <div class="dash-history-filters studio-history-filters">
+                <label>Search<input id="history-search" type="search" placeholder="Headline, CTA, note, version..."></label>
+                <label>Status<select id="history-status"><option value="">All statuses</option><option value="live">Live</option><option value="archived">Archived</option></select></label>
+                <label>Flow<select id="history-flow"><option value="">All flows</option><option value="single">Single-step</option><option value="quiz">Quiz + lead form</option><option value="multi">Multi-step quiz + lead form</option></select></label>
+                <label>Min views<input id="history-min-views" type="number" min="0" step="10" placeholder="0"></label>
+                <label>Min leads<input id="history-min-leads" type="number" min="0" step="1" placeholder="0"></label>
+                <label>Min CVR %<input id="history-min-cvr" type="number" min="0" max="100" step="0.1" placeholder="0"></label>
+                <label>Max CVR %<input id="history-max-cvr" type="number" min="0" max="100" step="0.1" placeholder="100"></label>
               </div>
-              <label>
-                Delay seconds
-                <input id="delay-seconds" type="number" min="0" step="1" placeholder="35">
-              </label>
-              <label>
-                Scroll trigger %
-                <input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="0">
-              </label>
-            </div>
-          </details>
-          <details class="dash-settings-band dash-version-config" open>
-            <summary class="dash-subsection-heading">
-              <span>History</span>
-              <strong>Version Notes</strong>
-            </summary>
-            <div class="dash-global-editor">
-              <label>
-                New publish version
-                <input id="config-version" type="text" placeholder="v1">
-              </label>
-              <label>
-                Change note
-                <input id="change-note" type="text" placeholder="What changed in this version?">
-              </label>
-            </div>
-          </details>
-          <details class="dash-palette" open>
-            <summary class="dash-palette-head">
-              <strong>Saved Colors</strong>
-              <span>The first four saved colors appear beside each color picker.</span>
-            </summary>
-            <div id="saved-colors" class="dash-palette-grid"></div>
-          </details>
-          <div id="variant-editors" class="dash-editor-grid"></div>
-        </section>
+              <div id="full-history-insights" class="dash-history-insights"></div>
+              <div id="conversion-coach" class="dash-conversion-coach"></div>
+              <div class="dash-table-wrap"><table class="dash-full-history-table"><thead><tr><th><button class="dash-sort-button" type="button" data-history-sort="status">Status</button></th><th><button class="dash-sort-button" type="button" data-history-sort="configVersion">Version</button></th><th><button class="dash-sort-button" type="button" data-history-sort="published">Published</button></th><th><button class="dash-sort-button" type="button" data-history-sort="days">Days</button></th><th><button class="dash-sort-button" type="button" data-history-sort="headline">Headline</button></th><th><button class="dash-sort-button" type="button" data-history-sort="cta">CTA</button></th><th><button class="dash-sort-button" type="button" data-history-sort="flow">Flow</button></th><th><button class="dash-sort-button" type="button" data-history-sort="buttonColor">Button</button></th><th><button class="dash-sort-button" type="button" data-history-sort="views">Views</button></th><th><button class="dash-sort-button" type="button" data-history-sort="fullSubmissions">Leads</button></th><th><button class="dash-sort-button" type="button" data-history-sort="cvr">CVR</button></th><th><button class="dash-sort-button" type="button" data-history-sort="liveMatchScore">Live match</button></th><th><button class="dash-sort-button" type="button" data-history-sort="patternTagsText">Pattern tags</button></th><th><button class="dash-sort-button" type="button" data-history-sort="uniqueAttributes">Unique attributes</button></th><th>Actions</th></tr></thead><tbody id="full-history-body"></tbody></table></div>
+            </section>
+          </section>
 
-        <details class="dash-panel dash-collapsible-panel">
-          <summary class="dash-section-heading">
-            <div>
-              <p class="dash-eyebrow">Insights</p>
-              <h2>Recommendation Helper</h2>
-            </div>
-            <span class="dash-collapse-label">Testing guidance</span>
-          </summary>
-          <div id="recommendation-list" class="dash-recommendations"></div>
-        </details>
-
-        <section class="dash-panel dash-idea-bank">
-          <div class="dash-section-heading">
-            <div>
-              <p class="dash-eyebrow">Planning</p>
-              <h2>Test Idea Bank <span id="idea-count" class="dash-count-badge">0</span></h2>
-            </div>
-            <div class="dash-action-row">
-              <button id="export-ideas" class="dash-secondary-button" type="button">Export Notes</button>
-              <button id="import-ideas" class="dash-secondary-button" type="button">Import Notes</button>
-              <input id="import-ideas-file" type="file" accept="application/json,.json" hidden>
-            </div>
-          </div>
-          <form id="idea-form" class="dash-idea-capture">
-            <label class="dash-idea-text-field">
-              Persuasion tactic or test idea
-              <textarea id="idea-text" rows="3" placeholder="Example: Test a loss-aversion headline focused on preserving strength after 40"></textarea>
-            </label>
-            <label>
-              Category
-              <select id="idea-category">
-                <option value="Headline">Headline</option>
-                <option value="Offer">Offer</option>
-                <option value="CTA">CTA</option>
-                <option value="Flow">Flow</option>
-                <option value="Visual">Visual</option>
-                <option value="Trust">Trust</option>
-                <option value="Timing">Timing</option>
-                <option value="Other">Other</option>
-              </select>
-            </label>
-            <label>
-              Priority
-              <select id="idea-priority">
-                <option value="high">High</option>
-                <option value="medium" selected>Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </label>
-            <button class="dash-idea-add" type="submit">Add Idea</button>
-          </form>
-          <div class="dash-idea-toolbar">
-            <input id="idea-search" type="search" placeholder="Search ideas..." aria-label="Search ideas">
-            <select id="idea-status-filter" aria-label="Filter ideas by status">
-              <option value="">All statuses</option>
-              <option value="backlog">Backlog</option>
-              <option value="next">Test Next</option>
-              <option value="testing">Testing</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-          <div id="idea-list" class="dash-idea-list"></div>
-        </section>
-
-        <details class="dash-panel dash-collapsible-panel">
-          <summary class="dash-section-heading">
-            <div>
-              <p class="dash-eyebrow">History</p>
-              <h2>Historical Variations</h2>
-            </div>
-            <span class="dash-collapse-label">Recent snapshots</span>
-          </summary>
-          <div id="variation-history" class="dash-history-grid"></div>
-        </details>
-
-        <section class="dash-panel dash-wide-panel">
-          <div class="dash-section-heading">
-            <div>
-              <p class="dash-eyebrow">Variants</p>
-              <h2>Live Previews</h2>
-            </div>
-            <div class="dash-toggle" role="group" aria-label="Preview size">
-              <button id="desktop-preview" class="is-active" type="button">Desktop</button>
-              <button id="compare-preview" type="button">Side by Side</button>
-              <button id="mobile-preview" type="button">Mobile</button>
-            </div>
-            <div id="flow-preview-tabs" class="dash-toggle dash-flow-preview-tabs" role="group" aria-label="Preview step"></div>
-          </div>
-          <div id="variant-previews" class="dash-preview-grid"></div>
-        </section>
-
-        <section class="dash-metrics">
-          <article class="dash-stat">
-            <span>Popup views</span>
-            <strong id="stat-views">0</strong>
-          </article>
-          <article class="dash-stat">
-            <span id="stat-quiz-label">Quiz completions</span>
-            <strong id="stat-quiz-submits">0</strong>
-          </article>
-          <article class="dash-stat">
-            <span>Leads</span>
-            <strong id="stat-leads">0</strong>
-          </article>
-          <article class="dash-stat">
-            <span>CVR (Unique Sessions → Leads)</span>
-            <strong id="stat-close-rate">0%</strong>
-          </article>
-        </section>
-
-        <section class="dash-panel">
-          <div class="dash-section-heading">
-            <div>
-              <p class="dash-eyebrow">Results</p>
-              <h2>Performance Table</h2>
-            </div>
-            <div class="dash-result-actions">
-              <p id="hidden-metrics-status" class="dash-hidden-status" hidden></p>
-              <button id="show-hidden-metrics" class="dash-secondary-button" type="button" hidden>Show Hidden Rows</button>
-              <p id="sample-warning" class="dash-warning" hidden>Sample size is below 100 popup views for at least one active variant.</p>
-            </div>
-          </div>
-          <div class="dash-table-wrap">
-            <table>
-              <thead>
-                <tr>
-                  <th>Variant</th>
-                  <th>Version</th>
-                  <th>Sessions</th>
-                  <th>Views</th>
-                  <th>View Rate</th>
-                  <th id="metric-clicks-heading">Clicks</th>
-                  <th id="metric-click-rate-heading">Click Rate</th>
-                  <th>Quiz</th>
-                  <th>Quiz Rate</th>
-                  <th>Leads</th>
-                  <th title="Unique lead sessions divided by unique visitor sessions">CVR</th>
-                  <th>Closes</th>
-                  <th>Lift vs A</th>
-                  <th></th>
-                </tr>
-              </thead>
-              <tbody id="performance-body"></tbody>
-            </table>
-          </div>
-        </section>
-
-        <section class="dash-chart-grid">
-          <div class="dash-panel">
-            <h2>Conversion Rates</h2>
-            <canvas id="conversion-chart" height="220"></canvas>
-          </div>
-          <div class="dash-panel">
-            <h2>Event Counts</h2>
-            <canvas id="event-chart" height="220"></canvas>
-          </div>
-        </section>
-
-        <section class="dash-panel dash-wide-panel">
-          <details class="dash-full-history" open>
-            <summary>
-              <span>
-                <span class="dash-eyebrow">Deep History</span>
-                <strong>Full Variant History</strong>
-              </span>
-              <small>Every tracked variant snapshot, attributes, and performance</small>
-            </summary>
-            <div class="dash-history-filters">
-              <label>
-                Search
-                <input id="history-search" type="search" placeholder="Headline, CTA, note, version...">
-              </label>
-              <label>
-                Status
-                <select id="history-status">
-                  <option value="">All statuses</option>
-                  <option value="live">Live</option>
-                  <option value="archived">Archived</option>
-                </select>
-              </label>
-              <label>
-                Flow
-                <select id="history-flow">
-                  <option value="">All flows</option>
-                  <option value="single">Single-step</option>
-                  <option value="quiz">Quiz + lead form</option>
-                  <option value="multi">Multi-step quiz + lead form</option>
-                </select>
-              </label>
-              <label>
-                Min views
-                <input id="history-min-views" type="number" min="0" step="10" placeholder="0">
-              </label>
-              <label>
-                Min leads
-                <input id="history-min-leads" type="number" min="0" step="1" placeholder="0">
-              </label>
-              <label>
-                Min CVR %
-                <input id="history-min-cvr" type="number" min="0" max="100" step="0.1" placeholder="0">
-              </label>
-              <label>
-                Max CVR %
-                <input id="history-max-cvr" type="number" min="0" max="100" step="0.1" placeholder="100">
-              </label>
-              <button id="compare-live-history" class="dash-history-compare-button" type="button" aria-pressed="false">Compare to Live</button>
-            </div>
-            <div id="full-history-insights" class="dash-history-insights"></div>
-            <div id="conversion-coach" class="dash-conversion-coach"></div>
-            <div class="dash-table-wrap">
-              <table class="dash-full-history-table">
-                <thead>
-                  <tr>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="status">Status</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="configVersion">Version</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="published">Published</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="days">Days</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="headline">Headline</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="cta">CTA</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="flow">Flow</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="buttonColor">Button</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="views">Views</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="fullSubmissions">Leads</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="cvr">CVR</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="liveMatchScore">Live Match</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="patternTagsText">Pattern Tags</button></th>
-                    <th><button class="dash-sort-button" type="button" data-history-sort="uniqueAttributes">Unique Attributes</button></th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody id="full-history-body"></tbody>
-              </table>
-            </div>
-          </details>
-        </section>
-      </section>
-    </main>
-
-    <aside id="draft-preview-drawer" class="dash-draft-preview-drawer" aria-hidden="true" hidden>
-      <header class="dash-draft-preview-header">
-        <div>
-          <span id="draft-preview-variant" class="dash-draft-preview-variant">Variant A</span>
-          <strong>Draft Preview</strong>
-          <small>Updates as you edit</small>
-        </div>
-        <button id="draft-preview-close" class="dash-draft-preview-close" type="button" aria-label="Close draft preview">&times;</button>
-      </header>
-      <div class="dash-draft-preview-controls">
-        <div id="draft-preview-device" class="dash-toggle" role="group" aria-label="Draft preview device">
-          <button type="button" data-draft-device="desktop" class="is-active">Desktop</button>
-          <button type="button" data-draft-device="mobile">Mobile</button>
-        </div>
-        <div id="draft-preview-steps" class="dash-draft-preview-steps" aria-label="Draft preview step"></div>
+          <section class="studio-workspace" data-workspace-panel="ideas" hidden>
+            <div class="studio-page-heading"><div><span class="studio-kicker">Planning</span><h1>Test idea bank</h1><p>Keep persuasion ideas beside the experiments they can improve.</p></div><div class="studio-heading-actions"><button id="export-ideas" class="studio-secondary-command" type="button"><i data-lucide="download"></i> Export</button><button id="import-ideas" class="studio-secondary-command" type="button"><i data-lucide="upload"></i> Import</button><input id="import-ideas-file" type="file" accept="application/json,.json" hidden></div></div>
+            <section class="studio-surface studio-idea-bank">
+              <form id="idea-form" class="dash-idea-capture studio-idea-compose"><label class="dash-idea-text-field">Persuasion tactic or test idea<textarea id="idea-text" rows="3" placeholder="Example: Test an identity-based headline for women over 40"></textarea></label><label>Category<select id="idea-category"><option value="Headline">Headline</option><option value="Offer">Offer</option><option value="CTA">CTA</option><option value="Flow">Flow</option><option value="Visual">Visual</option><option value="Trust">Trust</option><option value="Timing">Timing</option><option value="Other">Other</option></select></label><label>Priority<select id="idea-priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select></label><button class="dash-idea-add" type="submit">Add idea</button></form>
+              <div class="dash-idea-toolbar studio-idea-toolbar"><input id="idea-search" type="search" placeholder="Search ideas..." aria-label="Search ideas"><select id="idea-status-filter" aria-label="Filter ideas by status"><option value="">All statuses</option><option value="backlog">Backlog</option><option value="next">Test next</option><option value="testing">Testing</option><option value="completed">Completed</option></select><span><strong id="idea-count">0</strong> ideas</span></div>
+              <div id="idea-list" class="dash-idea-list"></div>
+            </section>
+          </section>
+        </main>
       </div>
-      <div id="draft-preview-stage" class="dash-preview-stage dash-draft-preview-stage"></div>
+    </div>
+
+    <aside id="studio-settings-drawer" class="studio-settings-drawer" aria-hidden="true">
+      <header><div><span class="studio-kicker">Test configuration</span><h2>Settings</h2></div><button class="studio-icon-button" type="button" data-close-settings aria-label="Close settings"><i data-lucide="x"></i></button></header>
+      <nav><button class="is-active" type="button" data-settings-tab="test">Test</button><button type="button" data-settings-tab="delivery">Delivery</button><button type="button" data-settings-tab="publishing">Publishing</button><button type="button" data-settings-tab="embed">Embed</button><button type="button" data-settings-tab="colors">Colors</button></nav>
+      <div class="studio-settings-scroll">
+        <div class="studio-settings-panel is-active" data-settings-panel="test">
+          <section><h3>Experiment</h3><label>Test format<select id="variant-mode"><option value="ab">A/B test</option><option value="abc">A/B/C test</option></select></label><div class="studio-traffic-setting"><span>Traffic allocation</span><strong id="traffic-summary">A 50% / B 50%</strong><button id="balance-traffic" class="studio-outline-command" type="button">Balance evenly</button></div></section>
+          <section><h3>Trigger</h3><div class="studio-two-fields"><label>Delay seconds<input id="delay-seconds" type="number" min="0" step="1" placeholder="35"></label><label>Scroll trigger %<input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="0"></label></div></section>
+          <section><h3>Version</h3><label>New publish version<input id="config-version" type="text" placeholder="v1"></label><label>Change note<input id="change-note" type="text" placeholder="What changed in this version?"></label></section>
+        </div>
+        <div class="studio-settings-panel" data-settings-panel="delivery">
+          <section><h3>Lead delivery</h3><label>Lead magnet mode<select id="lead-magnet-mode"><option value="">Standard opt-in</option><option value="protein_plan">Protein plan quiz</option></select></label><label>Destination URL<input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/personalized-protein-plan"></label></section>
+          <section><h3>Connections</h3><label>Lead webhook URL<input id="lead-webhook-url" type="url" placeholder="Zapier Catch Hook URL"></label><label>Tracking webhook URL<input id="webhook-url" type="url" placeholder="Google Apps Script Web App URL"></label><div class="studio-connection-state"><i data-lucide="circle-check"></i> Delivery and tracking settings are preserved in this draft.</div></section>
+        </div>
+        <div class="studio-settings-panel" data-settings-panel="publishing">
+          <section><h3>GitHub publishing</h3><p class="studio-settings-help">Publish changes to the hosted variants file without changing the Kajabi embed.</p><div class="studio-two-fields"><label>Repository owner<input id="github-owner" type="text" autocomplete="off" value="ajpanella"></label><label>Repository name<input id="github-repo" type="text" autocomplete="off" value="kajabi-popup-ab-tool"></label><label>Branch<input id="github-branch" type="text" autocomplete="off" value="main"></label><label>Publish path<input id="github-path" type="text" autocomplete="off" value="popup/variants.js"></label></div><label>GitHub fine-grained token<input id="github-token" type="password" autocomplete="off" placeholder="Hosted dashboard only"></label><label>Commit message<input id="github-message" type="text" value="Publish popup variants from dashboard"></label><button id="publish-github" class="studio-publish-command studio-full-command" type="button"><i data-lucide="rocket"></i> Save &amp; Publish to GitHub</button><p id="github-publish-status" class="dash-publish-status"></p></section>
+          <section><h3>Version tools</h3><button id="download-config" class="studio-outline-command studio-full-command" type="button"><i data-lucide="download"></i> Download variants.js</button><button id="copy-config" class="studio-outline-command studio-full-command" type="button"><i data-lucide="copy"></i> Copy variants.js</button></section>
+        </div>
+        <div class="studio-settings-panel" data-settings-panel="embed">
+          <section><h3>One-time Kajabi embed</h3><label>Public asset base URL<input id="asset-base-url" type="url" placeholder="https://ajpanella.github.io/kajabi-popup-ab-tool"></label><textarea id="embed-code" class="dash-code-box" readonly></textarea><button id="copy-embed" class="studio-outline-command studio-full-command" type="button"><i data-lucide="copy"></i> Copy embed</button></section>
+          <section><h3>References</h3><a id="tracking-sheet-link" class="studio-reference-link" href="#" target="_blank" rel="noreferrer"><i data-lucide="sheet"></i> Open tracking sheet</a><a id="google-doc-link" class="studio-reference-link" href="#" target="_blank" rel="noreferrer"><i data-lucide="file-text"></i> Open Google Doc</a></section>
+        </div>
+        <div class="studio-settings-panel" data-settings-panel="colors"><section><h3>Saved colors</h3><p class="studio-settings-help">The first four saved colors appear beside each color picker.</p><div id="saved-colors" class="dash-palette-grid"></div></section></div>
+      </div>
     </aside>
+    <div id="studio-settings-scrim" class="studio-settings-scrim"></div>
 
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script src="./dashboard.js?v=111"></script>
+    <script src="./workspace.js?v=1"></script>
   </body>
 </html>
