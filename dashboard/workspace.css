@@ -509,30 +509,34 @@ body.ll-studio-body {
 
 .studio-builder-topline {
   display: flex;
-  align-items: stretch;
+  align-items: center;
   justify-content: space-between;
   gap: 12px;
-  min-height: 80px;
-  padding: 12px 18px;
+  min-height: 66px;
+  padding: 8px 14px;
   border-bottom: 1px solid var(--studio-line);
   background: #ffffff;
 }
 
 .studio-variant-tabs {
   display: flex;
-  flex: 1;
+  flex: 0 1 780px;
   gap: 8px;
+  max-width: 780px;
   overflow-x: auto;
 }
 
 .studio-variant-tab {
   display: grid;
-  grid-template-columns: 34px minmax(118px, 1fr) auto;
+  grid-template-columns: 30px minmax(100px, 1fr) auto;
   grid-template-rows: auto auto;
   align-items: center;
   gap: 2px 9px;
-  min-width: 220px;
-  padding: 9px 11px;
+  flex: 1 1 0;
+  min-width: 205px;
+  max-width: 260px;
+  min-height: 48px;
+  padding: 7px 9px;
   border: 1px solid var(--studio-line);
   border-radius: 7px;
   color: var(--studio-ink);
@@ -548,11 +552,12 @@ body.ll-studio-body {
 }
 
 .studio-variant-tab > b {
+  grid-column: 1;
   grid-row: 1 / span 2;
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
   color: var(--studio-green-deep);
   background: var(--studio-green-soft);
@@ -560,6 +565,8 @@ body.ll-studio-body {
 }
 
 .studio-variant-tab strong {
+  grid-column: 2;
+  grid-row: 1;
   overflow: hidden;
   font-size: 11px;
   text-overflow: ellipsis;
@@ -567,12 +574,16 @@ body.ll-studio-body {
 }
 
 .studio-variant-tab small {
+  grid-column: 2;
+  grid-row: 2;
   color: var(--studio-muted);
   font-size: 9px;
 }
 
 .studio-variant-tab em {
+  grid-column: 3;
   grid-row: 1 / span 2;
+  width: max-content;
   padding: 4px 6px;
   border-radius: 8px;
   color: var(--studio-green-deep);
@@ -584,13 +595,136 @@ body.ll-studio-body {
 }
 
 .studio-builder-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
   flex: 0 0 auto;
+}
+
+.studio-compare-open {
+  overflow: hidden;
+}
+
+.studio-compare-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+}
+
+.studio-compare-modal[hidden] {
+  display: none;
+}
+
+.studio-compare-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(12, 23, 17, 0.55);
+  backdrop-filter: blur(2px);
+}
+
+.studio-compare-dialog {
+  position: absolute;
+  inset: 20px;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  width: min(1720px, calc(100vw - 40px));
+  height: calc(100vh - 40px);
+  margin: auto;
+  border: 1px solid var(--studio-line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(8, 28, 15, 0.24);
+}
+
+.studio-compare-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 76px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--studio-line);
+}
+
+.studio-compare-header h2,
+.studio-compare-header p {
+  margin: 0;
+}
+
+.studio-compare-header h2 {
+  margin-top: 2px;
+  font-size: 18px;
+}
+
+.studio-compare-header p {
+  margin-top: 3px;
+  color: var(--studio-muted);
+  font-size: 10px;
+}
+
+.studio-compare-header-actions,
+.studio-compare-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.studio-compare-toolbar {
+  justify-content: space-between;
+  min-height: 50px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--studio-line);
+  background: #f8faf9;
+}
+
+.studio-compare-toolbar small {
+  color: var(--studio-muted);
+  font-size: 9px;
+}
+
+.studio-compare-toolbar .dash-flow-preview-tabs {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+}
+
+.studio-compare-preview-host {
+  min-height: 0;
+  padding: 13px;
+  overflow: auto;
+  background: #eef2f3;
+}
+
+.studio-compare-preview-host .dash-preview-grid {
+  align-items: start;
+  min-width: 0;
+}
+
+.studio-compare-preview-host .dash-preview-card {
+  min-width: 0;
+}
+
+.studio-compare-preview-host .dash-preview-title {
+  margin: 0 0 7px;
+  color: #475467;
+  font-size: 11px;
+}
+
+.studio-compare-preview-host .dash-preview-stage {
+  height: calc(100vh - 190px);
+  min-height: 420px;
+  padding: 12px;
+  border: 1px dashed #cfd8d3;
+  border-radius: 6px;
+  overflow: hidden;
+  background: #f5f7f8;
 }
 
 .studio-build-stage {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(350px, 410px);
-  height: calc(100vh - 146px);
+  height: calc(100vh - 132px);
   min-height: 0;
 }
 

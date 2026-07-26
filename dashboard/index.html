@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../popup/popup.css?v=35">
     <link rel="stylesheet" href="./dashboard.css?v=62">
-    <link rel="stylesheet" href="./workspace.css?v=2">
+    <link rel="stylesheet" href="./workspace.css?v=3">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260725-1"></script>
   </head>
@@ -74,6 +74,7 @@
             <div class="studio-builder-topline">
               <div id="workspace-variant-tabs" class="studio-variant-tabs" role="tablist" aria-label="Variant to edit"></div>
               <div class="studio-builder-actions">
+                <button id="open-variant-compare" class="studio-secondary-command" type="button"><i data-lucide="columns-3"></i> Compare variants</button>
                 <button id="reset-config" class="studio-secondary-command" type="button"><i data-lucide="rotate-ccw"></i> Reset draft</button>
                 <button id="restore-winner" class="studio-secondary-command" type="button"><i data-lucide="trophy"></i> Restore winner</button>
                 <button class="studio-icon-button" type="button" data-open-settings aria-label="More build settings"><i data-lucide="ellipsis"></i></button>
@@ -93,6 +94,25 @@
               </aside>
             </div>
           </section>
+
+          <div id="studio-compare-modal" class="studio-compare-modal" aria-hidden="true" hidden>
+            <div class="studio-compare-scrim" data-close-compare></div>
+            <section class="studio-compare-dialog" role="dialog" aria-modal="true" aria-labelledby="studio-compare-title">
+              <header class="studio-compare-header">
+                <div><span class="studio-kicker">Visual review</span><h2 id="studio-compare-title">Compare active variants</h2><p>Review the same popup step across every live draft.</p></div>
+                <div class="studio-compare-header-actions">
+                  <div class="dash-toggle" role="group" aria-label="Comparison layout">
+                    <button type="button" data-build-compare-mode="desktop">Desktop</button>
+                    <button type="button" class="is-active" data-build-compare-mode="compare">Side by side</button>
+                    <button type="button" data-build-compare-mode="mobile">Mobile</button>
+                  </div>
+                  <button class="studio-icon-button" type="button" data-close-compare aria-label="Close variant comparison"><i data-lucide="x"></i></button>
+                </div>
+              </header>
+              <div class="studio-compare-toolbar"><div id="studio-compare-flow-tabs"></div><small>Previews update from the current dashboard draft.</small></div>
+              <div id="studio-compare-preview-host" class="studio-compare-preview-host"></div>
+            </section>
+          </div>
 
           <section class="studio-workspace" data-workspace-panel="analyze" hidden>
             <div class="studio-page-heading"><div><span class="studio-kicker">Performance</span><h1>Analyze active test</h1><p>Conversion is calculated from unique visitor sessions to unique lead sessions.</p></div><button id="toggle-analysis-filters" class="studio-secondary-command" type="button"><i data-lucide="sliders-horizontal"></i> Filters</button></div>
@@ -180,6 +200,6 @@
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script src="./dashboard.js?v=111"></script>
-    <script src="./workspace.js?v=2"></script>
+    <script src="./workspace.js?v=3"></script>
   </body>
 </html>

@@ -8,6 +8,9 @@
   var settingsScrim = document.getElementById("studio-settings-scrim");
   var editors = document.getElementById("variant-editors");
   var variantTabs = document.getElementById("workspace-variant-tabs");
+  var compareModal = document.getElementById("studio-compare-modal");
+  var compareGridMarker = null;
+  var compareFlowMarker = null;
 
   bindWorkspaceNavigation();
   bindSettingsDrawer();
@@ -111,6 +114,16 @@
     document.getElementById("publish-github").addEventListener("click", function () {
       setSaveState("Publishing…", false);
     });
+    document.getElementById("open-variant-compare").addEventListener("click", openVariantComparison);
+    compareModal.addEventListener("click", function (event) {
+      var closeButton = event.target.closest("[data-close-compare]");
+      var modeButton = event.target.closest("[data-build-compare-mode]");
+      if (closeButton) closeVariantComparison();
+      if (modeButton) setComparisonMode(modeButton.dataset.buildCompareMode);
+    });
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape" && compareModal.classList.contains("is-open")) closeVariantComparison();
+    });
 
     new MutationObserver(function () {
       window.clearTimeout(editorObserverTimer);
@@ -128,7 +141,7 @@
       var status = item.card.querySelector(".dash-toolbar-status");
       var traffic = item.card.querySelector('[data-field="trafficSplit"]');
       return [
-        '<button type="button" class="studio-variant-tab' + (active ? ' is-active' : '') + '" data-workspace-variant="' + escapeHtml(item.id) + '" role="tab" aria-selected="' + (active ? 'true' : 'false') + '">',
+        '<button type="button" class="studio-variant-tab' + (active ? ' is-active' : '') + '" data-workspace-variant="' + escapeHtml(item.id) + '" role="tab" aria-selected="' + (active ? 'true' : 'false') + '" title="' + escapeHtml(cardHeadline(item.card) || shortVariantLabel(summary ? summary.textContent : "Popup experience")) + '">',
         '<b>' + escapeHtml(item.id) + '</b>',
         '<strong>' + escapeHtml(cardHeadline(item.card) || shortVariantLabel(summary ? summary.textContent : "Popup experience")) + '</strong>',
         '<small>' + escapeHtml(traffic ? traffic.value + "% traffic" : "Active variant") + '</small>',
@@ -149,6 +162,61 @@
   function selectVariant(id) {
     selectedVariantId = id;
     refreshBuilderWorkspace();
+  }
+
+  function openVariantComparison() {
+    var previewGrid = document.getElementById("variant-previews");
+    var flowTabs = document.getElementById("flow-preview-tabs");
+    var previewHost = document.getElementById("studio-compare-preview-host");
+    var flowHost = document.getElementById("studio-compare-flow-tabs");
+    if (!previewGrid || !previewHost || compareModal.classList.contains("is-open")) return;
+
+    compareGridMarker = document.createComment("variant previews return point");
+    previewGrid.parentNode.insertBefore(compareGridMarker, previewGrid);
+    previewHost.appendChild(previewGrid);
+    if (flowTabs) {
+      compareFlowMarker = document.createComment("flow preview tabs return point");
+      flowTabs.parentNode.insertBefore(compareFlowMarker, flowTabs);
+      flowHost.appendChild(flowTabs);
+    }
+
+    compareModal.hidden = false;
+    compareModal.classList.add("is-open");
+    compareModal.setAttribute("aria-hidden", "false");
+    document.body.classList.add("studio-compare-open");
+    setComparisonMode("compare");
+    refreshIcons();
+  }
+
+  function closeVariantComparison() {
+    var previewGrid = document.getElementById("variant-previews");
+    var flowTabs = document.getElementById("flow-preview-tabs");
+    if (compareGridMarker && compareGridMarker.parentNode && previewGrid) {
+      compareGridMarker.parentNode.insertBefore(previewGrid, compareGridMarker);
+      compareGridMarker.remove();
+    }
+    if (compareFlowMarker && compareFlowMarker.parentNode && flowTabs) {
+      compareFlowMarker.parentNode.insertBefore(flowTabs, compareFlowMarker);
+      compareFlowMarker.remove();
+    }
+    compareGridMarker = null;
+    compareFlowMarker = null;
+    compareModal.classList.remove("is-open");
+    compareModal.setAttribute("aria-hidden", "true");
+    compareModal.hidden = true;
+    document.body.classList.remove("studio-compare-open");
+  }
+
+  function setComparisonMode(mode) {
+    var sourceButtons = {
+      desktop: document.getElementById("desktop-preview"),
+      compare: document.getElementById("compare-preview"),
+      mobile: document.getElementById("mobile-preview")
+    };
+    if (sourceButtons[mode]) sourceButtons[mode].click();
+    Array.from(compareModal.querySelectorAll("[data-build-compare-mode]")).forEach(function (button) {
+      button.classList.toggle("is-active", button.dataset.buildCompareMode === mode);
+    });
   }
 
   function ensureSelectedPreview() {
