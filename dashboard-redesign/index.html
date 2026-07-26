@@ -1,0 +1,316 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Popup Test Studio - Redesign Concept</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css">
+  </head>
+  <body>
+    <aside class="sidebar">
+      <div class="brand-mark" aria-label="Longevity Lifestyle">
+        <span class="brand-loop">L</span>
+        <span class="brand-name">Longevity<br>Lifestyle</span>
+      </div>
+
+      <nav class="primary-nav" aria-label="Dashboard workspaces">
+        <button class="nav-item" data-view="overview" type="button"><i data-lucide="layout-dashboard"></i><span>Overview</span></button>
+        <button class="nav-item is-active" data-view="build" type="button"><i data-lucide="panels-top-left"></i><span>Build</span></button>
+        <button class="nav-item" data-view="analyze" type="button"><i data-lucide="chart-no-axes-combined"></i><span>Analyze</span></button>
+        <button class="nav-item" data-view="history" type="button"><i data-lucide="history"></i><span>History</span></button>
+        <button class="nav-item" data-view="ideas" type="button"><i data-lucide="lightbulb"></i><span>Ideas</span><b>7</b></button>
+      </nav>
+
+      <div class="sidebar-foot">
+        <button class="nav-item" id="open-settings" type="button"><i data-lucide="settings-2"></i><span>Settings</span></button>
+        <div class="connection-state"><span></span> Tracking connected</div>
+      </div>
+    </aside>
+
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="topbar-title">
+          <p>Popup Test Studio <span>/</span> <strong id="workspace-name">Build</strong></p>
+          <span class="prototype-chip">Redesign concept</span>
+        </div>
+        <div class="topbar-actions">
+          <label class="test-picker">
+            <span>Active test</span>
+            <select>
+              <option>Protein Plan - Blog Opt-in</option>
+            </select>
+          </label>
+          <span class="saved-state"><i data-lucide="check"></i> Draft saved</span>
+          <button class="icon-button" type="button" title="Refresh tracking data"><i data-lucide="refresh-cw"></i></button>
+          <button class="publish-button" id="open-publish" type="button"><i data-lucide="rocket"></i> Review &amp; Publish</button>
+        </div>
+      </header>
+
+      <main class="workspace">
+        <section class="view" data-view-panel="overview" hidden>
+          <div class="page-heading">
+            <div><span class="section-kicker">Current test</span><h1>Protein Plan - Blog Opt-in</h1></div>
+            <div class="date-filter"><i data-lucide="calendar-days"></i><span>Current live variants</span><i data-lucide="chevron-down"></i></div>
+          </div>
+
+          <div class="metric-strip">
+            <article><span>Unique sessions</span><strong>1,761</strong><small>Across live variants</small></article>
+            <article><span>Leads</span><strong>11</strong><small>Unique submissions</small></article>
+            <article><span>Overall CVR</span><strong>0.6%</strong><small class="positive">+0.2% vs prior test</small></article>
+            <article><span>Leading variant</span><strong>A</strong><small>Winning control</small></article>
+          </div>
+
+          <div class="overview-grid">
+            <section class="section-block live-summary">
+              <div class="block-heading"><div><span class="section-kicker">Live read</span><h2>Variant performance</h2></div><button class="text-button" data-view-link="analyze" type="button">Open analysis <i data-lucide="arrow-right"></i></button></div>
+              <table class="compact-table">
+                <thead><tr><th>Variant</th><th>Sessions</th><th>Leads</th><th>CVR</th><th>Lift</th></tr></thead>
+                <tbody>
+                  <tr><td><span class="variant-dot a">A</span><div><strong>Winning control</strong><small>Live since Jul 7</small></div></td><td>1,761</td><td>11</td><td><strong>0.6%</strong></td><td>Control</td></tr>
+                  <tr><td><span class="variant-dot b">B</span><div><strong>Less Guessing</strong><small>New challenger</small></div></td><td>0</td><td>0</td><td>0.0%</td><td>-</td></tr>
+                  <tr><td><span class="variant-dot c">C</span><div><strong>Planned in Seconds</strong><small>New challenger</small></div></td><td>0</td><td>0</td><td>0.0%</td><td>-</td></tr>
+                </tbody>
+              </table>
+            </section>
+
+            <aside class="coach-panel">
+              <div class="coach-icon"><i data-lucide="sparkles"></i></div>
+              <span class="section-kicker">Conversion coach</span>
+              <h2>Let the new challengers collect traffic</h2>
+              <p>A has reliable history. Wait until B and C each reach at least 100 views before reading early directional signals.</p>
+              <button class="secondary-command" type="button">See recommendation details</button>
+            </aside>
+          </div>
+
+          <section class="section-block overview-previews">
+            <div class="block-heading"><div><span class="section-kicker">At a glance</span><h2>Live variants</h2></div><button class="text-button" data-view-link="build" type="button">Edit variants <i data-lucide="arrow-right"></i></button></div>
+            <div class="mini-preview-grid" id="overview-preview-grid"></div>
+          </section>
+        </section>
+
+        <section class="view build-view is-active" data-view-panel="build">
+          <div class="builder-topline">
+            <div class="variant-switcher" role="tablist" aria-label="Variant to edit">
+              <button class="variant-tab is-active" data-variant="A" type="button"><span>A</span><strong>Winning control</strong><small>34% traffic</small><em>Live</em></button>
+              <button class="variant-tab" data-variant="B" type="button"><span>B</span><strong>Less Guessing</strong><small>33% traffic</small><em>Live</em></button>
+              <button class="variant-tab" data-variant="C" type="button"><span>C</span><strong>Planned in Seconds</strong><small>33% traffic</small><em>Live</em></button>
+            </div>
+            <div class="builder-utilities">
+              <button class="secondary-command" type="button"><i data-lucide="copy-plus"></i> Duplicate</button>
+              <button class="secondary-command" type="button"><i data-lucide="rotate-ccw"></i> Restore</button>
+              <button class="more-button" type="button" title="More variant actions"><i data-lucide="ellipsis"></i></button>
+            </div>
+          </div>
+
+          <div class="builder-layout">
+            <aside class="flow-rail">
+              <div class="rail-title"><span class="section-kicker">Experience</span><h2>Popup flow</h2></div>
+              <button class="flow-step is-active" data-step="lead" type="button"><b>1</b><span><strong>Lead form</strong><small>Email collection</small></span><i data-lucide="grip-vertical"></i></button>
+              <button class="add-step-button" type="button"><i data-lucide="plus"></i> Add step</button>
+
+              <div class="flow-summary">
+                <span>Flow summary</span>
+                <dl><div><dt>Steps</dt><dd>1</dd></div><div><dt>Fields</dt><dd>Email</dd></div><div><dt>Redirect</dt><dd>Protein plan</dd></div></dl>
+              </div>
+
+              <button class="outline-command" id="open-global-settings" type="button"><i data-lucide="sliders-horizontal"></i> Test settings</button>
+            </aside>
+
+            <section class="editor-pane">
+              <div class="editor-heading">
+                <div><span class="section-kicker">Variant <b id="editor-variant-letter">A</b> / Step 1</span><h2>Lead form</h2></div>
+                <span class="live-match"><i data-lucide="circle-check"></i> Matches live</span>
+              </div>
+
+              <div class="editor-tabs" role="tablist" aria-label="Editor category">
+                <button class="is-active" data-editor-tab="content" type="button">Content</button>
+                <button data-editor-tab="form" type="button">Form</button>
+                <button data-editor-tab="design" type="button">Design</button>
+                <button data-editor-tab="behavior" type="button">Behavior</button>
+              </div>
+
+              <div class="editor-scroll">
+                <div class="editor-panel is-active" data-editor-panel="content">
+                  <div class="field-section">
+                    <div class="field-section-title"><b>01</b><div><strong>Message</strong><small>The primary copy visitors see</small></div></div>
+                    <label class="field-label">Eyebrow <span>Optional</span></label>
+                    <div class="rich-field"><div class="format-row"><button>B</button><button><i>I</i></button><button><u>U</u></button><span></span><button class="color-dot gray" title="Text color"></button><select><option>15 px</option></select></div><input id="eyebrow-input" value="YOUR FREE PERSONALIZED PROTEIN PLAN"></div>
+
+                    <label class="field-label">Headline</label>
+                    <div class="rich-field"><div class="format-row"><button>B</button><button><i>I</i></button><button><u>U</u></button><span></span><button class="color-dot dark" title="Text color"></button><select><option>44 px</option></select></div><textarea id="headline-input" rows="2">Eat More Protein Without Complicated Meals</textarea></div>
+
+                    <label class="field-label">Subheadline</label>
+                    <div class="rich-field"><div class="format-row"><button>B</button><button><i>I</i></button><button><u>U</u></button><span></span><button class="color-dot dark" title="Text color"></button><select><option>26 px</option></select></div><textarea id="subheadline-input" rows="3">Get a free 7-day high-protein meal plan with simple meals, a personalized grocery list, and protein already calculated.</textarea></div>
+                  </div>
+
+                  <div class="field-section two-column-fields">
+                    <div class="field-section-title"><b>02</b><div><strong>Call to action</strong><small>Submission button</small></div></div>
+                    <label>Button text<input value="Build My Free Plan"></label>
+                    <label>Text size<select><option>20 px</option></select></label>
+                  </div>
+                </div>
+
+                <div class="editor-panel" data-editor-panel="form">
+                  <div class="field-section">
+                    <div class="field-section-title"><b>01</b><div><strong>Fields</strong><small>Choose what this step collects</small></div></div>
+                    <label class="toggle-row"><span><strong>Email address</strong><small>Required for this flow</small></span><input type="checkbox" checked><i></i></label>
+                    <label class="toggle-row"><span><strong>First name</strong><small>Currently disabled</small></span><input type="checkbox"><i></i></label>
+                    <label>Email placeholder<input value="Email"></label>
+                  </div>
+                  <div class="field-section">
+                    <div class="field-section-title"><b>02</b><div><strong>Destination</strong><small>What happens after submission</small></div></div>
+                    <label>Redirect<input value="Personalized Protein Plan"></label>
+                    <label>Lead delivery<input value="Zapier workflow connected"></label>
+                  </div>
+                </div>
+
+                <div class="editor-panel" data-editor-panel="design">
+                  <div class="field-section">
+                    <div class="field-section-title"><b>01</b><div><strong>Layout</strong><small>Popup dimensions and alignment</small></div></div>
+                    <div class="segmented"><button class="is-active">Image + copy</button><button>Copy only</button></div>
+                    <label>Hero image<div class="asset-field"><img src="https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png" alt="Protein plan preview"><span>protein-plan-preview.png<small>Cloudinary asset</small></span><button title="Replace image"><i data-lucide="replace"></i></button></div></label>
+                    <div class="two-column-fields"><label>Popup width<input value="810 px"></label><label>Popup height<input value="560 px"></label></div>
+                  </div>
+                  <div class="field-section">
+                    <div class="field-section-title"><b>02</b><div><strong>Brand</strong><small>Typography and colors</small></div></div>
+                    <label>Font family<select><option>Arial</option><option>Poppins</option><option>Montserrat</option></select></label>
+                    <div class="swatch-row"><button class="swatch green" title="Brand green"></button><button class="swatch orange" title="CTA orange"></button><button class="swatch white" title="Background"></button><button class="swatch black" title="Text"></button><button class="add-swatch" title="Add saved color"><i data-lucide="plus"></i></button></div>
+                  </div>
+                </div>
+
+                <div class="editor-panel" data-editor-panel="behavior">
+                  <div class="field-section">
+                    <div class="field-section-title"><b>01</b><div><strong>Progress</strong><small>Guide visitors through the flow</small></div></div>
+                    <label class="toggle-row"><span><strong>Show progress bar</strong><small>Displays Step 1</small></span><input type="checkbox" checked><i></i></label>
+                    <label>Progress label<input value="Step 1"></label>
+                    <label class="toggle-row"><span><strong>Back arrow</strong><small>Unavailable on the first step</small></span><input type="checkbox" disabled><i></i></label>
+                  </div>
+                  <div class="field-section">
+                    <div class="field-section-title"><b>02</b><div><strong>Reminder</strong><small>Reopen options after closing</small></div></div>
+                    <label class="toggle-row"><span><strong>Reminder tab</strong><small>Fixed to bottom-left while scrolling</small></span><input type="checkbox" checked><i></i></label>
+                    <label>Reminder text<input value="Free Protein Plan"></label>
+                    <label>Show popup again after<input value="35 seconds"></label>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <aside class="preview-pane">
+              <div class="preview-heading">
+                <div><span class="section-kicker">Live preview</span><h2>Variant <b id="preview-variant-letter">A</b></h2></div>
+                <div class="device-toggle"><button class="is-active" data-device="desktop" title="Desktop preview"><i data-lucide="monitor"></i></button><button data-device="mobile" title="Mobile preview"><i data-lucide="smartphone"></i></button></div>
+              </div>
+              <div class="preview-stage" id="preview-stage">
+                <article class="popup-preview" id="popup-preview">
+                  <button class="preview-close" title="Close preview">&times;</button>
+                  <img src="https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png" alt="Protein plan preview">
+                  <div class="popup-preview-copy">
+                    <p>YOUR FREE PERSONALIZED PROTEIN PLAN</p>
+                    <h3 id="preview-headline">Eat More Protein <i>Without</i> Complicated Meals</h3>
+                    <div id="preview-subheadline">Get a <b>free 7-day high-protein meal plan</b> with simple meals, a personalized grocery list, and protein already calculated.</div>
+                    <label>Step 1</label><span class="preview-progress"><i></i></span>
+                    <input value="Email" readonly>
+                    <button>Build My Free Plan</button>
+                  </div>
+                </article>
+              </div>
+              <button class="compare-command" id="compare-variants" type="button"><i data-lucide="columns-3"></i> Compare all variants</button>
+            </aside>
+          </div>
+
+          <footer class="builder-footer">
+            <div><span class="status-dot"></span><strong>Variant <b id="footer-variant-letter">A</b></strong><small>No unpublished changes</small></div>
+            <div><button class="secondary-command" type="button">Reset draft</button><button class="save-draft-button" type="button"><i data-lucide="save"></i> Save draft</button></div>
+          </footer>
+        </section>
+
+        <section class="view" data-view-panel="analyze" hidden>
+          <div class="page-heading">
+            <div><span class="section-kicker">Results</span><h1>Live performance</h1></div>
+            <button class="filter-button" id="toggle-filters" type="button"><i data-lucide="list-filter"></i> Filters <b>1</b></button>
+          </div>
+          <div class="analysis-filterbar" id="analysis-filterbar">
+            <label>Version<select><option>Current live variants</option></select></label><label>Device<select><option>All devices</option></select></label><label>Date range<select><option>All time</option></select></label><label>Page<input placeholder="Any page"></label><button type="button">Refresh data</button>
+          </div>
+          <div class="metric-strip compact">
+            <article><span>Unique sessions</span><strong>1,761</strong></article><article><span>Popup views</span><strong>2,703</strong></article><article><span>Leads</span><strong>11</strong></article><article><span>CVR</span><strong>0.6%</strong></article>
+          </div>
+          <section class="section-block">
+            <div class="block-heading"><div><span class="section-kicker">Comparison</span><h2>Performance table</h2></div><span class="sample-note"><i data-lucide="info"></i> New challengers need more traffic</span></div>
+            <table class="performance-table"><thead><tr><th>Variant</th><th>Version</th><th>Sessions</th><th>Views</th><th>Submit clicks</th><th>Leads</th><th>CVR</th><th>Lift vs A</th></tr></thead><tbody><tr><td><span class="variant-dot a">A</span><strong>Winning control</strong><em>Live</em></td><td>7/7/2026</td><td>1,761</td><td>2,703</td><td>12</td><td>11</td><td><b>0.6%</b></td><td>Control</td></tr><tr><td><span class="variant-dot b">B</span><strong>Less Guessing</strong><em>Live</em></td><td>7/25/2026</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0.0%</td><td>-</td></tr><tr><td><span class="variant-dot c">C</span><strong>Planned in Seconds</strong><em>Live</em></td><td>7/25/2026</td><td>0</td><td>0</td><td>0</td><td>0</td><td>0.0%</td><td>-</td></tr></tbody></table>
+          </section>
+          <div class="chart-row">
+            <section class="section-block"><div class="block-heading"><h2>Conversion rate</h2><span>Unique sessions to leads</span></div><div class="bar-chart"><div><label>A</label><span><i style="width:62%"></i></span><b>0.6%</b></div><div><label>B</label><span><i style="width:2%"></i></span><b>0.0%</b></div><div><label>C</label><span><i style="width:2%"></i></span><b>0.0%</b></div></div></section>
+            <section class="section-block"><div class="block-heading"><h2>Event counts</h2><span>Current live versions</span></div><div class="event-bars"><i style="height:80%"></i><i style="height:12%"></i><i style="height:8%"></i><i style="height:4%"></i><i style="height:3%"></i></div><div class="chart-legend"><span>Views</span><span>Clicks</span><span>Leads</span></div></section>
+          </div>
+        </section>
+
+        <section class="view" data-view-panel="history" hidden>
+          <div class="page-heading"><div><span class="section-kicker">Archive</span><h1>Variant history</h1></div><button class="secondary-command"><i data-lucide="git-compare-arrows"></i> Compare selected</button></div>
+          <div class="history-toolbar"><div class="search-field"><i data-lucide="search"></i><input placeholder="Search headline, CTA, note, or version"></div><select><option>All statuses</option><option>Live</option><option>Archived</option></select><select><option>All flows</option><option>Single-step</option><option>Quiz + form</option></select><select><option>Sort: CVR high to low</option></select><button class="icon-button"><i data-lucide="sliders-horizontal"></i></button></div>
+          <section class="section-block history-table-block">
+            <table class="history-table"><thead><tr><th><input type="checkbox"></th><th>Status</th><th>Published</th><th>Headline / distinguishing change</th><th>Flow</th><th>Views</th><th>Leads</th><th>CVR</th><th>Live match</th><th></th></tr></thead><tbody>
+              <tr><td><input type="checkbox"></td><td><em class="live-pill">Live A</em></td><td>Jul 7</td><td><strong>Eat More Protein Without Complicated Meals</strong><small>Winning control · image + single email field</small></td><td>Single-step</td><td>2,703</td><td>11</td><td><b>0.6%</b></td><td><span class="match-score green">100%</span></td><td><button class="row-menu"><i data-lucide="ellipsis"></i></button></td></tr>
+              <tr><td><input type="checkbox"></td><td><em class="live-pill">Live B</em></td><td>Jul 25</td><td><strong>More Protein, Less Guessing</strong><small>Headline and subheadline challenger</small></td><td>Single-step</td><td>0</td><td>0</td><td>0.0%</td><td><span class="match-score green">100%</span></td><td><button class="row-menu"><i data-lucide="ellipsis"></i></button></td></tr>
+              <tr><td><input type="checkbox"></td><td><em class="archived-pill">Archived</em></td><td>Jun 30</td><td><strong>Eat Enough Protein Without Tracking Every Bite</strong><small>Orange CTA · single-step flow</small></td><td>Single-step</td><td>438</td><td>3</td><td><b>0.7%</b></td><td><span class="match-score yellow">82%</span></td><td><button class="restore-row">Restore</button></td></tr>
+              <tr><td><input type="checkbox"></td><td><em class="archived-pill">Archived</em></td><td>Jun 18</td><td><strong>Build Your Free Personalized Protein Plan</strong><small>Two-step quiz · green CTA</small></td><td>Quiz + form</td><td>273</td><td>2</td><td><b>0.7%</b></td><td><span class="match-score red">41%</span></td><td><button class="restore-row">Restore</button></td></tr>
+            </tbody></table>
+          </section>
+        </section>
+
+        <section class="view" data-view-panel="ideas" hidden>
+          <div class="page-heading"><div><span class="section-kicker">Planning</span><h1>Test idea bank</h1></div><div><button class="secondary-command"><i data-lucide="upload"></i> Import</button><button class="secondary-command"><i data-lucide="download"></i> Export</button></div></div>
+          <div class="idea-compose"><textarea placeholder="Record a persuasion tactic or test idea..."></textarea><select><option>Headline</option><option>Offer</option><option>CTA</option><option>Flow</option><option>Visual</option></select><select><option>Medium priority</option><option>High priority</option><option>Low priority</option></select><button>Add idea</button></div>
+          <div class="idea-board">
+            <section><header><span>Backlog</span><b>3</b></header><article><em>Headline</em><p>Test an identity-based headline for women over 40.</p><footer><span class="priority high">High</span><button><i data-lucide="ellipsis"></i></button></footer></article><article><em>Trust</em><p>Add a concise coaching-authority line below the offer.</p><footer><span class="priority medium">Medium</span><button><i data-lucide="ellipsis"></i></button></footer></article></section>
+            <section><header><span>Test next</span><b>2</b></header><article><em>Offer</em><p>Compare “free grocery list” against “family meal plan.”</p><footer><span class="priority high">High</span><button><i data-lucide="ellipsis"></i></button></footer></article></section>
+            <section><header><span>Testing</span><b>2</b></header><article><em>Headline</em><p>Less Guessing versus Planned in Seconds.</p><footer><span class="priority high">High</span><button><i data-lucide="ellipsis"></i></button></footer></article></section>
+            <section><header><span>Completed</span><b>5</b></header><article class="is-complete"><em>Flow</em><p>Single-step email form versus quiz-first flow.</p><footer><span class="priority result">+61% CVR</span><button><i data-lucide="ellipsis"></i></button></footer></article></section>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <aside class="settings-drawer" id="settings-drawer" aria-hidden="true">
+      <header><div><span class="section-kicker">Test configuration</span><h2>Settings</h2></div><button class="icon-button" id="close-settings" type="button" aria-label="Close settings"><i data-lucide="x"></i></button></header>
+      <nav><button class="is-active" data-settings-tab="test">Test</button><button data-settings-tab="delivery">Delivery</button><button data-settings-tab="publishing">Publishing</button><button data-settings-tab="embed">Embed</button><button data-settings-tab="colors">Colors</button></nav>
+      <div class="drawer-scroll">
+        <div class="drawer-panel is-active" data-settings-panel="test">
+          <section><h3>Experiment</h3><label>Test format<select><option>A/B/C test</option><option>A/B test</option></select></label><label>Traffic allocation<div class="traffic-editor"><span>A <b>34%</b></span><span>B <b>33%</b></span><span>C <b>33%</b></span></div></label><button class="outline-command">Balance evenly</button></section>
+          <section><h3>Trigger</h3><div class="two-column-fields"><label>Delay<input value="20 seconds"></label><label>Scroll depth<input value="Off"></label></div><label class="switch-row"><span>Exit-intent backup<small>Show when a visitor moves to leave.</small></span><input type="checkbox" checked></label></section>
+          <section><h3>Version</h3><label>Publish version<input value="7/25/2026"></label><label>Change note<textarea rows="3">Headline test: Less Guessing vs Planned in Seconds</textarea></label></section>
+        </div>
+        <div class="drawer-panel" data-settings-panel="delivery">
+          <section><h3>Lead delivery</h3><label>Lead magnet mode<select><option>Protein plan</option><option>Standard form</option></select></label><label>Destination URL<input value="https://www.longevitylifestyle.me/personalized-protein-plan"></label></section>
+          <section><h3>Connections</h3><label>Lead webhook URL<input value="Connected to Zapier"></label><label>Tracking webhook URL<input value="Connected to Google Sheets"></label><div class="connection-state"><i data-lucide="circle-check"></i><span>Both connections are ready</span></div></section>
+        </div>
+        <div class="drawer-panel" data-settings-panel="publishing">
+          <section><h3>GitHub publishing</h3><div class="connection-state"><i data-lucide="circle-check"></i><span>ajpanella / kajabi-popup-ab-tool</span></div><div class="two-column-fields"><label>Branch<input value="main"></label><label>Publish path<input value="popup/variants.js"></label></div><label>Commit message<input value="Publish popup variants from dashboard"></label></section>
+          <section><h3>Version tools</h3><button class="outline-command full-command"><i data-lucide="trophy"></i> Restore winning variant</button><button class="outline-command full-command"><i data-lucide="download"></i> Download variant backup</button></section>
+        </div>
+        <div class="drawer-panel" data-settings-panel="embed">
+          <section><h3>One-time Kajabi embed</h3><p class="drawer-help">This hosted snippet stays the same when new variants are published.</p><div class="embed-code"><code>&lt;script src="https://ajpanella.github.io/kajabi-popup-ab-tool/popup/embed.js"&gt;&lt;/script&gt;</code><button class="icon-button" aria-label="Copy embed code"><i data-lucide="copy"></i></button></div><button class="outline-command full-command"><i data-lucide="external-link"></i> Open test page</button></section>
+          <section><h3>Status</h3><div class="connection-state"><i data-lucide="circle-check"></i><span>Hosted popup is reachable</span></div><p class="drawer-help">Last published today at 10:42 AM.</p></section>
+        </div>
+        <div class="drawer-panel" data-settings-panel="colors">
+          <section><h3>Saved colors</h3><p class="drawer-help">Use the same palette throughout variant controls.</p><div class="saved-colors"><button style="--swatch:#06B00B" aria-label="Brand green"></button><button style="--swatch:#06260A" aria-label="Deep green"></button><button style="--swatch:#F5820B" aria-label="Action orange"></button><button style="--swatch:#64748B" aria-label="Slate gray"></button></div><button class="outline-command"><i data-lucide="plus"></i> Add saved color</button></section>
+          <section><h3>Brand defaults</h3><label>Primary action<input value="#06B00B"></label><label>Command color<input value="#06260A"></label><label>Page background<input value="#F8FAFC"></label></section>
+        </div>
+      </div>
+    </aside>
+    <div class="drawer-scrim" id="drawer-scrim"></div>
+
+    <dialog id="publish-dialog">
+      <div class="dialog-head"><div class="dialog-icon"><i data-lucide="rocket"></i></div><div><span class="section-kicker">Review changes</span><h2>Publish this test?</h2></div><button class="icon-button" id="close-publish" aria-label="Close publish review"><i data-lucide="x"></i></button></div>
+      <div class="publish-summary"><div><span>Test</span><strong>Protein Plan - Blog Opt-in</strong></div><div><span>Variants</span><strong>A / B / C</strong></div><div><span>Traffic</span><strong>34% / 33% / 33%</strong></div><div><span>Tracking</span><strong>Connected</strong></div></div>
+      <div class="prototype-notice"><i data-lucide="info"></i><p>This is a review-only prototype. Publishing is intentionally disabled.</p></div>
+      <footer><button class="secondary-command" id="cancel-publish">Cancel</button><button class="publish-button" disabled>Publish to GitHub</button></footer>
+    </dialog>
+
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
