@@ -16,8 +16,8 @@
       "name": "Control - Winning Variant",
       "active": true,
       "trafficSplit": 34,
-      "headline": "Eat More Protein Without Complicated Meals",
-      "subheadline": "Get a free 7-day high-protein meal plan with simple meals, a personalized grocery list, and protein already calculated.",
+      "headline": "Get Your High-Protein Week Planned in 30 Seconds",
+      "subheadline": "Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.",
       "imageUrl": "https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png",
       "width": 810,
       "backgroundColor": "#fbfaf7",
@@ -29,7 +29,7 @@
       "textAlign": "center",
       "height": 560,
       "sizeToImage": true,
-      "subheadlineHtml": "<span style=\"color: rgb(5, 5, 5);\">Get a </span><b>free 7-day high-protein meal plan</b><span style=\"color: rgb(5, 5, 5);\"> with simple meals, a personalized grocery list, and protein already calculated.</span>",
+      "subheadlineHtml": "<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>",
       "proteinQuiz": {
         "targetWeightLabel": "Target weight in lbs",
         "targetWeightPlaceholder": "155",
@@ -54,8 +54,8 @@
         "showFirstName": false,
         "showEmail": true,
         "quizButtonText": "Calculate",
-        "leadHeadline": "Your Personalized Protein Plan Is Almost Ready",
-        "leadSubheadline": "Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.",
+        "leadHeadline": "Get Your High-Protein Week Planned in 30 Seconds",
+        "leadSubheadline": "Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.",
         "firstNameLabel": "First name",
         "firstNamePlaceholder": "First Name",
         "emailLabel": "Email",
@@ -63,10 +63,10 @@
         "leadButtonText": "Build My Free Plan",
         "backButtonText": "Back"
       },
-      "trackingVersion": "7/7/2026 - Single Step",
-      "trackingFingerprint": "{\"headline\":\"Eat More Protein Without Complicated Meals\",\"headlineHtml\":\"Eat More Protein <i>Without</i> Complicated Meals\",\"headlineFontSize\":44,\"subheadline\":\"Get a free 7-day high-protein meal plan with simple meals, a personalized grocery list, and protein already calculated.\",\"subheadlineHtml\":\"<span style=\\\"color: rgb(5, 5, 5);\\\">Get a </span><b>free 7-day high-protein meal plan</b><span style=\\\"color: rgb(5, 5, 5);\\\"> with simple meals, a personalized grocery list, and protein already calculated.</span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"trafficSplit\":34,\"reminderEnabled\":true,\"reminderText\":\"Free Protein Plan\",\"reminderColor\":\"#ea8011\",\"reminderTextColor\":\"#ffffff\",\"reopenAfterCloseSeconds\":35,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Your Personalized Protein Plan Is Almost Ready\",\"leadSubheadline\":\"Just enter your name and email below. We'll send you access to your 7-day meal plan + grocery list instantly, then you’ll have 100% control to customize it with your dietary preferences on the next page.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"Eat More Protein <i>Without</i> Complicated Meals\",\"subheadlineHtml\":\"<span style=\\\"color: rgb(5, 5, 5);\\\">Get a </span><b>free 7-day high-protein meal plan</b><span style=\\\"color: rgb(5, 5, 5);\\\"> with simple meals, a personalized grocery list, and protein already calculated.</span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
+      "trackingVersion": "7/29/2026",
+      "trackingFingerprint": "{\"headline\":\"Get Your High-Protein Week Planned in 30 Seconds\",\"headlineHtml\":\"Get Your High-Protein Week Planned in 30 Seconds\",\"headlineFontSize\":44,\"subheadline\":\"Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.\",\"subheadlineHtml\":\"<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"trafficSplit\":34,\"reminderEnabled\":true,\"reminderText\":\"Free Protein Plan\",\"reminderColor\":\"#ea8011\",\"reminderTextColor\":\"#ffffff\",\"reopenAfterCloseSeconds\":35,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Get Your High-Protein Week Planned in 30 Seconds\",\"leadSubheadline\":\"Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"Get Your High-Protein Week Planned in 30 Seconds\",\"subheadlineHtml\":\"<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
       "valueLine": "Simple meals, daily protein target, and grocery list included.",
-      "headlineHtml": "Eat More Protein <i>Without</i> Complicated Meals",
+      "headlineHtml": "Get Your High-Protein Week Planned in 30 Seconds",
       "headlineFontSize": 44,
       "subheadlineFontSize": 26,
       "valueLineHtml": "<br>",
@@ -75,8 +75,8 @@
       "brandAccentColor": "#06b00b",
       "flowSteps": [
         {
-          "headlineHtml": "Eat More Protein <i>Without</i> Complicated Meals",
-          "subheadlineHtml": "<span style=\"color: rgb(5, 5, 5);\">Get a </span><b>free 7-day high-protein meal plan</b><span style=\"color: rgb(5, 5, 5);\"> with simple meals, a personalized grocery list, and protein already calculated.</span>",
+          "headlineHtml": "Get Your High-Protein Week Planned in 30 Seconds",
+          "subheadlineHtml": "<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>",
           "valueLineHtml": "<br>",
           "imageUrl": "https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png",
           "id": "step_2b3tu6",
@@ -121,8 +121,8 @@
       "name": "Headline Challenger - Less Guessing",
       "active": true,
       "trafficSplit": 33,
-      "headline": "More Protein, Less Guessing",
-      "subheadline": "Get 7 days of simple high-protein meals planned for you, with a personalized grocery list and protein already calculated.",
+      "headline": "Stay Fuller With High-Protein Meals You’ll Actually Make",
+      "subheadline": "Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.",
       "imageUrl": "https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png",
       "width": 810,
       "backgroundColor": "#fbfaf7",
@@ -134,7 +134,7 @@
       "textAlign": "center",
       "height": 560,
       "sizeToImage": true,
-      "subheadlineHtml": "Get <b>7 days of simple high-protein meals</b> planned for you, with a <b>personalized grocery list and protein already calculated</b>.",
+      "subheadlineHtml": "<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>",
       "proteinQuiz": {
         "targetWeightLabel": "Target weight in lbs",
         "targetWeightPlaceholder": "155",
@@ -159,8 +159,8 @@
         "showFirstName": false,
         "showEmail": true,
         "quizButtonText": "Calculate",
-        "leadHeadline": "More Protein, Less Guessing",
-        "leadSubheadline": "Get 7 days of simple high-protein meals planned for you, with a personalized grocery list and protein already calculated.",
+        "leadHeadline": "Stay Fuller With High-Protein Meals You’ll Actually Make",
+        "leadSubheadline": "Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.",
         "firstNameLabel": "First name",
         "firstNamePlaceholder": "First Name",
         "emailLabel": "Email",
@@ -168,10 +168,10 @@
         "leadButtonText": "Build My Free Plan",
         "backButtonText": "Back"
       },
-      "trackingVersion": "7/25/2026 #2",
-      "trackingFingerprint": "{\"headline\":\"More Protein, Less Guessing\",\"headlineHtml\":\"More Protein, Less Guessing\",\"headlineFontSize\":44,\"subheadline\":\"Get 7 days of simple high-protein meals planned for you, with a personalized grocery list and protein already calculated.\",\"subheadlineHtml\":\"Get <b>7 days of simple high-protein meals</b> planned for you, with a <b>personalized grocery list and protein already calculated</b>.\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"trafficSplit\":33,\"reminderEnabled\":true,\"reminderText\":\"Free Protein Plan\",\"reminderColor\":\"#ea8011\",\"reminderTextColor\":\"#ffffff\",\"reopenAfterCloseSeconds\":35,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"More Protein, Less Guessing\",\"leadSubheadline\":\"Get 7 days of simple high-protein meals planned for you, with a personalized grocery list and protein already calculated.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"More Protein, Less Guessing\",\"subheadlineHtml\":\"Get <b>7 days of simple high-protein meals</b> planned for you, with a <b>personalized grocery list and protein already calculated</b>.\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
+      "trackingVersion": "7/29/2026",
+      "trackingFingerprint": "{\"headline\":\"Stay Fuller With High-Protein Meals You’ll Actually Make\",\"headlineHtml\":\"Stay Fuller With High-Protein Meals You’ll Actually Make\",\"headlineFontSize\":44,\"subheadline\":\"Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.\",\"subheadlineHtml\":\"<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"trafficSplit\":33,\"reminderEnabled\":true,\"reminderText\":\"Free Protein Plan\",\"reminderColor\":\"#ea8011\",\"reminderTextColor\":\"#ffffff\",\"reopenAfterCloseSeconds\":35,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Stay Fuller With High-Protein Meals You’ll Actually Make\",\"leadSubheadline\":\"Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"Stay Fuller With High-Protein Meals You’ll Actually Make\",\"subheadlineHtml\":\"<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
       "valueLine": "Simple meals, daily protein target, and grocery list included.",
-      "headlineHtml": "More Protein, Less Guessing",
+      "headlineHtml": "Stay Fuller With High-Protein Meals You’ll Actually Make",
       "headlineFontSize": 44,
       "subheadlineFontSize": 26,
       "valueLineHtml": "<br>",
@@ -180,8 +180,8 @@
       "brandAccentColor": "#06b00b",
       "flowSteps": [
         {
-          "headlineHtml": "More Protein, Less Guessing",
-          "subheadlineHtml": "Get <b>7 days of simple high-protein meals</b> planned for you, with a <b>personalized grocery list and protein already calculated</b>.",
+          "headlineHtml": "Stay Fuller With High-Protein Meals You’ll Actually Make",
+          "subheadlineHtml": "<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>",
           "valueLineHtml": "<br>",
           "imageUrl": "https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png",
           "id": "step_2b3tu6",
@@ -317,7 +317,7 @@
       "trackingSources": []
     }
   ],
-  "configVersion": "7/25/2026",
+  "configVersion": "7/29/2026",
   "dashboardDraftResetToken": "2026-07-25-promote-winner-to-a-abc-headlines",
   "changeNote": "Promoted winning Variant B to control A; launched matching B/C headline challengers",
   "savedColors": [
@@ -370,7 +370,7 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-07-26T00:38:43.706Z",
+  "draftSavedAt": "2026-07-29T20:56:35.228Z",
   "reopenAfterCloseSeconds": 35,
   "trackingCsvUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTL2htdRxc9IM_ok_bTcrYPMccocLdF0I8_yNIZRkkRp3a23yCQDA4gBuWzByWQNGLVxtniZJvAAlAY/pub?output=csv"
 };
