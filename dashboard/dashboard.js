@@ -4600,7 +4600,32 @@
   }
 
   function buildTrackingLabel(variant) {
-    return abbreviatedTrackingHeadline(variant) + " · " + shortFingerprintHash(variantFingerprint(variant)).toUpperCase();
+    var base = distinctiveTrackingPhrase(variant);
+    var collision = activeVariants().some(function (candidate) {
+      return candidate !== variant
+        && variantFingerprint(candidate) !== variantFingerprint(variant)
+        && distinctiveTrackingPhrase(candidate) === base;
+    });
+    return collision ? base + " · " + shortFingerprintHash(variantFingerprint(variant)).toUpperCase() : base;
+  }
+
+  function distinctiveTrackingPhrase(variant) {
+    var headline = trackingHeadline(variant);
+    var timed = headline.match(/\b(in|within)\s+\d+\s+[a-z]+\b/i);
+    if (timed) return titleCaseTrackingPhrase(timed[0]);
+
+    var words = headline.replace(/[^a-z0-9'’-]+/gi, " ").trim().split(/\s+/).filter(Boolean);
+    if (!words.length) return "Variant";
+    if (/^(get|build|create|calculate|discover|plan)$/i.test(words[0]) && words.length >= 3) {
+      return titleCaseTrackingPhrase(words.slice(-3).join(" "));
+    }
+    return titleCaseTrackingPhrase(words.slice(0, Math.min(2, words.length)).join(" "));
+  }
+
+  function titleCaseTrackingPhrase(value) {
+    return String(value || "").split(/\s+/).map(function (word) {
+      return word ? word.charAt(0).toUpperCase() + word.slice(1) : "";
+    }).join(" ");
   }
 
   function shortFingerprintHash(value) {

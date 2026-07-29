@@ -374,4 +374,42 @@
   "reopenAfterCloseSeconds": 35,
   "trackingCsvUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTL2htdRxc9IM_ok_bTcrYPMccocLdF0I8_yNIZRkkRp3a23yCQDA4gBuWzByWQNGLVxtniZJvAAlAY/pub?output=csv"
 };
+
+// Promote the unchanged live winner to control A while preserving each creative's tracking history.
+(function promoteCurrentControl() {
+  var config = window.LL_POPUP_CONFIG;
+  if (!config || config.dashboardDraftResetToken === "2026-07-29-control-c-promoted-to-a") return;
+
+  var variants = config.variants || [];
+  var oldA = variants.find(function (variant) { return variant.id === "A"; });
+  var oldB = variants.find(function (variant) { return variant.id === "B"; });
+  var oldC = variants.find(function (variant) { return variant.id === "C"; });
+  if (!oldA || !oldB || !oldC) return;
+
+  var control = JSON.parse(JSON.stringify(oldC));
+  var stayFuller = JSON.parse(JSON.stringify(oldB));
+  var thirtySeconds = JSON.parse(JSON.stringify(oldA));
+
+  control.id = "A";
+  control.name = "Control - Winning Variant";
+  control.trafficSplit = 34;
+  control.trackingLabel = "Planned In Seconds";
+  control.trackingSources = [{ variant: "C", configVersion: control.trackingVersion }];
+
+  stayFuller.id = "B";
+  stayFuller.name = "Headline Challenger - Stay Fuller";
+  stayFuller.trafficSplit = 33;
+  stayFuller.trackingLabel = "Stay Fuller";
+  stayFuller.trackingSources = [];
+
+  thirtySeconds.id = "C";
+  thirtySeconds.name = "Headline Challenger - In 30 Seconds";
+  thirtySeconds.trafficSplit = 33;
+  thirtySeconds.trackingLabel = "In 30 Seconds";
+  thirtySeconds.trackingSources = [{ variant: "A", configVersion: thirtySeconds.trackingVersion }];
+
+  config.variants = [control, stayFuller, thirtySeconds];
+  config.dashboardDraftResetToken = "2026-07-29-control-c-promoted-to-a";
+  config.changeNote = "Promoted unchanged winning control from C to A; retained Stay Fuller in B and moved In 30 Seconds to C";
+})();
 })();
