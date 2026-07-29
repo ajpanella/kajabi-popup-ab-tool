@@ -34,6 +34,7 @@
   var fullHistorySort = { key: "published", direction: "desc" };
   var compareFullHistoryToLive = false;
   var ideaBank = loadIdeaBank();
+  var pendingPublishSourceIds = {};
 
   var els = {
     csvUrl: document.getElementById("csv-url"),
@@ -1672,39 +1673,11 @@
   function buildUnchangedSinceLastUpdateMetrics(filteredRows, visibleMetrics) {
     if (els.version.value !== LATEST_LIVE_VERSIONS) return [];
 
-    var publishVersion = originalConfig.configVersion || config.configVersion || "";
-    if (!publishVersion) return [];
-
     var liveVariants = publishedActiveVariants();
-    var changedVariants = liveVariants.filter(function (variant) {
-      return getVariantTrackingVersion(variant) === publishVersion;
-    });
-    var unchangedVariants = liveVariants.filter(function (variant) {
-      return getVariantTrackingVersion(variant) !== publishVersion;
-    });
-
-    if (!changedVariants.length || !unchangedVariants.length) return [];
-
-    var changedIds = changedVariants.map(function (variant) {
-      return variant.id;
-    });
-    var unchangedIds = unchangedVariants.map(function (variant) {
-      return variant.id;
-    });
-    var liveVersions = getLiveVariantVersions();
-    var boundary = filteredRows.reduce(function (earliest, row) {
-      if (changedIds.indexOf(row.variant) < 0) return earliest;
-      if ((row.configVersion || "unversioned") !== publishVersion) return earliest;
-      var timestamp = parseRowTimestamp(row);
-      if (!timestamp) return earliest;
-      return earliest && earliest < timestamp ? earliest : timestamp;
-    }, null);
-
-    if (!boundary) return [];
+    var boundary = parsePublishedAt(originalConfig.publishedAt);
+    if (!boundary) return buildLegacySinceLastUpdateMetrics(filteredRows, visibleMetrics);
 
     var subsetRows = filteredRows.filter(function (row) {
-      if (unchangedIds.indexOf(row.variant) < 0) return false;
-      if ((row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
       var timestamp = parseRowTimestamp(row);
       return timestamp && timestamp >= boundary;
     });
@@ -1714,13 +1687,70 @@
       return keys;
     }, {});
 
+    var totalsByVariant = (visibleMetrics || []).reduce(function (map, item) {
+      map[item.variant] = item;
+      return map;
+    }, {});
+
+    return buildMetrics(subsetRows, liveVariants).filter(function (item) {
+      var total = totalsByVariant[item.variant];
+      if (!visibleKeys[metricRowKey(item)] || !total) return false;
+      var liveVariant = liveVariants.find(function (variant) { return variant.id === item.variant; });
+      var trackingStart = parsePublishedAt(liveVariant && liveVariant.trackingStartedAt);
+      return total.sessions > item.sessions || (trackingStart && trackingStart < boundary);
+    }).map(function (item) {
+      item.isSinceLastUpdate = true;
+      item.baselineAt = boundary.toISOString();
+      item.sinceLabel = "Since " + shortDateTime(boundary) + " publish";
+      return item;
+    });
+  }
+
+  function buildLegacySinceLastUpdateMetrics(filteredRows, visibleMetrics) {
+    var publishVersion = originalConfig.configVersion || config.configVersion || "";
+    if (!publishVersion) return [];
+    var liveVariants = publishedActiveVariants();
+    var changedVariants = liveVariants.filter(function (variant) {
+      return getVariantTrackingVersion(variant) === publishVersion;
+    });
+    var unchangedVariants = liveVariants.filter(function (variant) {
+      return getVariantTrackingVersion(variant) !== publishVersion;
+    });
+    if (!changedVariants.length || !unchangedVariants.length) return [];
+
+    var changedIds = changedVariants.map(function (variant) { return variant.id; });
+    var unchangedIds = unchangedVariants.map(function (variant) { return variant.id; });
+    var liveVersions = getLiveVariantVersions();
+    var boundary = filteredRows.reduce(function (earliest, row) {
+      if (changedIds.indexOf(row.variant) < 0 || (row.configVersion || "unversioned") !== publishVersion) return earliest;
+      var timestamp = parseRowTimestamp(row);
+      if (!timestamp) return earliest;
+      return earliest && earliest < timestamp ? earliest : timestamp;
+    }, null);
+    if (!boundary) return [];
+
+    var subsetRows = filteredRows.filter(function (row) {
+      if (unchangedIds.indexOf(row.variant) < 0 || (row.configVersion || "unversioned") !== liveVersions[row.variant]) return false;
+      var timestamp = parseRowTimestamp(row);
+      return timestamp && timestamp >= boundary;
+    });
+    var visibleKeys = (visibleMetrics || []).reduce(function (keys, item) {
+      keys[metricRowKey(item)] = true;
+      return keys;
+    }, {});
     return buildMetrics(subsetRows, unchangedVariants).filter(function (item) {
       return visibleKeys[metricRowKey(item)];
     }).map(function (item) {
       item.isSinceLastUpdate = true;
-      item.sinceLabel = "Since " + publishVersion + " update";
+      item.baselineAt = boundary.toISOString();
+      item.sinceLabel = "Since " + shortDateTime(boundary) + " publish";
       return item;
     });
+  }
+
+  function parsePublishedAt(value) {
+    var date = value ? new Date(value) : null;
+    return date && !Number.isNaN(date.getTime()) ? date : null;
   }
 
   function parseRowTimestamp(row) {
@@ -1805,7 +1835,8 @@
       var singleStep = isSingleStepMetric(item);
       [
         { html: escapeHtml(item.variant) + (live ? " <span class=\"dash-live-badge\">Live</span>" : "") },
-        item.configVersion,
+        { html: escapeHtml(metricPublishedLabel(item)), className: "dash-metric-updated" },
+        { html: "<span class=\"dash-metric-version\" title=\"Tracking ID: " + escapeHtmlAttr(item.configVersion) + "\">" + escapeHtml(metricVersionLabel(item)) + "</span>", className: "dash-metric-version-cell" },
         formatNumber(item.sessions),
         formatNumber(item.views),
         formatPercent(item.viewRate),
@@ -1825,6 +1856,7 @@
         } else {
           cell.textContent = value;
         }
+        if (value && typeof value === "object" && value.className) cell.className = value.className;
         row.appendChild(cell);
       });
       els.body.appendChild(row);
@@ -1840,7 +1872,8 @@
     var singleStep = isSingleStepMetric(item);
     [
       { html: "<span class=\"dash-submetric-variant\">" + escapeHtml(item.variant) + "</span> <span class=\"dash-submetric-label\">" + escapeHtml(item.sinceLabel || "Since last update") + "</span>" },
-      item.configVersion,
+      { html: escapeHtml(metricPublishedLabel(item)), className: "dash-metric-updated" },
+      { html: "<span class=\"dash-metric-version\" title=\"Tracking ID: " + escapeHtmlAttr(item.configVersion) + "\">" + escapeHtml(metricVersionLabel(item)) + "</span>", className: "dash-metric-version-cell" },
       formatNumber(item.sessions),
       formatNumber(item.views),
       formatPercent(item.viewRate),
@@ -1860,9 +1893,43 @@
       } else {
         cell.textContent = value;
       }
+      if (value && typeof value === "object" && value.className) cell.className = value.className;
       row.appendChild(cell);
     });
     return row;
+  }
+
+  function metricLiveVariant(item) {
+    return publishedActiveVariants().find(function (variant) {
+      return variant.id === item.variant && normalizeTrackedVersion(getVariantTrackingVersion(variant)) === normalizeTrackedVersion(item.configVersion);
+    }) || null;
+  }
+
+  function metricVersionLabel(item) {
+    var liveVariant = metricLiveVariant(item);
+    if (liveVariant) return liveVariant.trackingLabel || buildTrackingLabel(liveVariant);
+    var sourceRow = rows.find(function (row) {
+      return row.variant === item.variant
+        && normalizeTrackedVersion(row.configVersion || "") === normalizeTrackedVersion(item.configVersion)
+        && Boolean(row.variantSnapshot);
+    });
+    var snapshot = sourceRow ? parseVariantSnapshot(sourceRow.variantSnapshot) : null;
+    return snapshot ? buildTrackingLabel(snapshot) : item.configVersion;
+  }
+
+  function metricPublishedLabel(item) {
+    if (item.baselineAt) return shortDateTime(parsePublishedAt(item.baselineAt));
+    var liveVariant = metricLiveVariant(item);
+    var startedAt = parsePublishedAt(liveVariant && (liveVariant.trackingStartedAt || inferVariantTrackingStartedAt(liveVariant)));
+    if (startedAt) return shortDateTime(startedAt);
+
+    var matching = rows.filter(function (row) {
+      return row.variant === item.variant
+        && normalizeTrackedVersion(row.configVersion || "") === normalizeTrackedVersion(item.configVersion);
+    }).map(parseRowTimestamp).filter(Boolean).sort(function (a, b) {
+      return a - b;
+    });
+    return matching.length ? shortDateTime(matching[0]) : "—";
   }
 
   function getVisibleMetrics(metrics) {
@@ -2935,8 +3002,9 @@
       return;
     }
 
+    var versionMessage = prepareWinningControlForPublish();
     normalizeVariantSlotIdentities(config);
-    var versionMessage = ensureFreshPublishVersion();
+    versionMessage += ensureFreshPublishVersion();
     versionMessage += prepareVariantVersionsForPublish();
     saveDraftConfig();
 
@@ -2996,7 +3064,10 @@
   }
 
   function ensureFreshPublishVersion() {
-    config.configVersion = formatDateVersion(new Date());
+    var publishedAt = new Date();
+    config.configVersion = formatDateVersion(publishedAt);
+    config.publishedAt = publishedAt.toISOString();
+    config.publishId = "publish-" + publishedAt.toISOString().replace(/[-:.TZ]/g, "").slice(0, 14);
     els.configVersion.value = config.configVersion;
     return "";
   }
@@ -3007,45 +3078,143 @@
     updateDashboard();
   }
 
+  function prepareWinningControlForPublish() {
+    pendingPublishSourceIds = {};
+    activeVariants().forEach(function (variant) {
+      pendingPublishSourceIds[variant.id] = variant.id;
+    });
+
+    var directPerformance = getDirectLiveVariantPerformance().filter(function (item) {
+      return item.sessions > 0 && item.fullSubmissions > 0;
+    });
+    if (!directPerformance.length) return "";
+
+    var winner = directPerformance[0];
+    if (!winner || winner.variant === "A") return "";
+
+    var draftWinner = activeVariants().find(function (variant) {
+      return variant.id === winner.variant;
+    });
+    var publishedWinner = publishedActiveVariants().find(function (variant) {
+      return variant.id === winner.variant;
+    });
+    if (!draftWinner || !publishedWinner || variantFingerprint(draftWinner) !== variantFingerprint(publishedWinner)) return "";
+
+    var activeIndexes = config.variants.reduce(function (indexes, variant, index) {
+      if (variant.active !== false) indexes.push(index);
+      return indexes;
+    }, []);
+    var sourceOrder = [winner.variant].concat(activeVariants().map(function (variant) {
+      return variant.id;
+    }).filter(function (variantId) {
+      return variantId !== winner.variant;
+    }));
+    var draftsById = activeVariants().reduce(function (map, variant) {
+      map[variant.id] = cloneConfig(variant);
+      return map;
+    }, {});
+    var moves = [];
+
+    activeIndexes.forEach(function (targetIndex, orderIndex) {
+      var destinationSlot = config.variants[targetIndex];
+      var destinationId = destinationSlot.id;
+      var sourceId = sourceOrder[orderIndex];
+      var sourceDraft = draftsById[sourceId];
+      if (!sourceDraft) return;
+
+      var moved = cloneConfig(sourceDraft);
+      moved.id = destinationId;
+      moved.trafficSplit = destinationSlot.trafficSplit;
+      if (destinationId === "A") {
+        moved.name = "Control - Winning Variant";
+      } else if (/^Control\b/i.test(String(moved.name || ""))) {
+        moved.name = "Challenger - " + abbreviatedTrackingHeadline(moved);
+      }
+      config.variants[targetIndex] = moved;
+      pendingPublishSourceIds[destinationId] = sourceId;
+      if (destinationId !== sourceId) moves.push(sourceId + "→" + destinationId);
+    });
+
+    return moves.length
+      ? "Promoted unchanged winning Variant " + winner.variant + " to control A and moved the other drafts into challenger slots (" + moves.join(", ") + "). "
+      : "";
+  }
+
+  function getDirectLiveVariantPerformance() {
+    var currentTestId = originalConfig.testId || config.testId || "";
+    var liveVariants = publishedActiveVariants();
+    var liveVersions = getLiveVariantVersions();
+    var directRows = rows.filter(function (row) {
+      if (currentTestId && row.testId !== currentTestId) return false;
+      return liveVersions[row.variant] && normalizeTrackedVersion(row.configVersion || "") === normalizeTrackedVersion(liveVersions[row.variant]);
+    });
+
+    return buildMetrics(directRows, liveVariants).filter(function (item) {
+      return liveVersions[item.variant] === item.configVersion;
+    }).sort(function (a, b) {
+      if (b.cvr !== a.cvr) return b.cvr - a.cvr;
+      if (b.fullSubmissions !== a.fullSubmissions) return b.fullSubmissions - a.fullSubmissions;
+      if (b.sessions !== a.sessions) return b.sessions - a.sessions;
+      return a.variant === "A" ? -1 : 1;
+    });
+  }
+
   function prepareVariantVersionsForPublish() {
     var changed = [];
     activeVariants().forEach(function (variant) {
       var fingerprint = variantFingerprint(variant);
+      var sourceId = pendingPublishSourceIds[variant.id] || variant.id;
       var publishedVariant = publishedActiveVariants().find(function (candidate) {
-        return candidate.id === variant.id;
+        return candidate.id === sourceId;
       });
       var publishedFingerprint = publishedVariant ? variantFingerprint(publishedVariant) : "";
 
       if (publishedVariant && fingerprint === publishedFingerprint) {
         variant.trackingVersion = getVariantTrackingVersion(publishedVariant);
-        variant.trackingFingerprint = publishedFingerprint;
+        variant.trackingFingerprint = fingerprint;
+        variant.trackingLabel = publishedVariant.trackingLabel || buildTrackingLabel(variant);
+        variant.trackingStartedAt = publishedVariant.trackingStartedAt || inferVariantTrackingStartedAt(publishedVariant);
+        variant.trackingSources = validTrackingSourcesForVariant(publishedVariant);
+        if (sourceId !== variant.id) {
+          variant.trackingSources = mergeTrackingSources(variant.trackingSources, [{
+            variant: sourceId,
+            configVersion: getVariantTrackingVersion(publishedVariant)
+          }]);
+        }
         return;
       }
 
       if (variant.trackingFingerprint !== fingerprint) {
-        variant.trackingVersion = nextAvailableTrackingVersion(config.configVersion || "v1", variant.id, publishedVariant);
+        variant.trackingVersion = nextAvailableTrackingVersion(config.configVersion || "v1", variant, publishedVariant);
         variant.trackingFingerprint = fingerprint;
+        variant.trackingLabel = buildTrackingLabel(variant);
+        variant.trackingStartedAt = config.publishedAt || new Date().toISOString();
+        variant.trackingSources = [];
         changed.push(variant.id);
       }
     });
+
+    pendingPublishSourceIds = {};
 
     if (!changed.length) return "No variant content changed; existing tracking versions were retained. ";
     return "Started a new tracking version for Variant " + changed.join(" and ") + "; unchanged variants keep their existing data. ";
   }
 
-  function nextAvailableTrackingVersion(baseVersion, variantId, publishedVariant) {
+  function nextAvailableTrackingVersion(baseVersion, variant, publishedVariant) {
     var base = String(baseVersion || "v1");
+    var labelSlug = trackingHeadline(variant).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 28) || "variant";
+    var candidateBase = base + " · " + labelSlug + "-" + shortFingerprintHash(variantFingerprint(variant));
     var used = rows.filter(function (row) {
-      return row.variant === variantId;
+      return row.variant === variant.id;
     }).map(function (row) {
       return row.configVersion || "unversioned";
     });
     if (publishedVariant) used.push(getVariantTrackingVersion(publishedVariant));
-    if (used.indexOf(base) < 0) return base;
+    if (used.indexOf(candidateBase) < 0) return candidateBase;
 
     var revision = 2;
-    while (used.indexOf(base + " #" + revision) >= 0) revision += 1;
-    return base + " #" + revision;
+    while (used.indexOf(candidateBase + " #" + revision) >= 0) revision += 1;
+    return candidateBase + " #" + revision;
   }
 
   function canUseLocalPublisher() {
@@ -4418,6 +4587,55 @@
     });
   }
 
+  function trackingHeadline(variant) {
+    var steps = Array.isArray(variant && variant.flowSteps) ? variant.flowSteps.filter(function (step) {
+      return step.enabled !== false;
+    }) : [];
+    return cleanHistoryText((steps[0] && steps[0].headlineHtml) || variant.headlineHtml || variant.headline || "Variant");
+  }
+
+  function abbreviatedTrackingHeadline(variant) {
+    var headline = trackingHeadline(variant);
+    return headline.length > 38 ? headline.slice(0, 35).trim() + "…" : headline;
+  }
+
+  function buildTrackingLabel(variant) {
+    return abbreviatedTrackingHeadline(variant) + " · " + shortFingerprintHash(variantFingerprint(variant)).toUpperCase();
+  }
+
+  function shortFingerprintHash(value) {
+    var hash = 2166136261;
+    String(value || "").split("").forEach(function (character) {
+      hash ^= character.charCodeAt(0);
+      hash = Math.imul(hash, 16777619);
+    });
+    return (hash >>> 0).toString(36).slice(-4).padStart(4, "0");
+  }
+
+  function validTrackingSourcesForVariant(variant) {
+    var version = normalizeTrackedVersion(getVariantTrackingVersion(variant));
+    return mergeTrackingSources([], variant && variant.trackingSources).filter(function (source) {
+      return normalizeTrackedVersion(source.configVersion || "") === version;
+    });
+  }
+
+  function inferVariantTrackingStartedAt(variant) {
+    if (variant && variant.trackingStartedAt) return variant.trackingStartedAt;
+    if (!variant) return "";
+    var version = normalizeTrackedVersion(getVariantTrackingVersion(variant));
+    var sources = [{ variant: variant.id, configVersion: version }].concat(validTrackingSourcesForVariant(variant));
+    var matching = rows.filter(function (row) {
+      if (eventType(row) !== "popup_view") return false;
+      return sources.some(function (source) {
+        return String(row.variant || "") === String(source.variant || "")
+          && normalizeTrackedVersion(row.configVersion || "") === normalizeTrackedVersion(source.configVersion || "");
+      });
+    }).map(parseRowTimestamp).filter(Boolean).sort(function (a, b) {
+      return a - b;
+    });
+    return matching.length ? matching[0].toISOString() : (originalConfig.publishedAt || "");
+  }
+
   function initializeVariantTracking() {
     (config.variants || []).forEach(function (variant) {
       var originalVariant = (originalConfig.variants || []).find(function (item) {
@@ -4431,7 +4649,11 @@
       variant.trackingVersion = normalizeTrackedVersion(variant.trackingVersion);
       if (!variant.trackingFingerprint) {
         variant.trackingFingerprint = variantFingerprint(originalVariant);
+      } else {
+        variant.trackingFingerprint = normalizeTrackingFingerprint(variant.trackingFingerprint);
       }
+      variant.trackingLabel = variant.trackingLabel || originalVariant.trackingLabel || buildTrackingLabel(originalVariant);
+      variant.trackingStartedAt = variant.trackingStartedAt || originalVariant.trackingStartedAt || "";
 
       var publishedFingerprint = variantFingerprint(originalVariant);
       if (variantFingerprint(variant) === publishedFingerprint) {
@@ -4470,7 +4692,20 @@
   }
 
   function variantFingerprint(variant) {
-    return JSON.stringify(getVariantSnapshot(variant));
+    var snapshot = getVariantSnapshot(variant);
+    delete snapshot.trafficSplit;
+    return JSON.stringify(snapshot);
+  }
+
+  function normalizeTrackingFingerprint(value) {
+    try {
+      var snapshot = JSON.parse(String(value || ""));
+      if (!snapshot || typeof snapshot !== "object") return String(value || "");
+      delete snapshot.trafficSplit;
+      return JSON.stringify(snapshot);
+    } catch (error) {
+      return String(value || "");
+    }
   }
 
   function legacyVariantFingerprint(variant) {
@@ -4532,7 +4767,7 @@
     var rowVersion = normalizeTrackedVersion(row.configVersion || "unversioned");
     var matchedVariant = publishedActiveVariants().find(function (variant) {
       if (variant.id === rowVariant && getVariantTrackingVersion(variant) === rowVersion) return true;
-      return (variant.trackingSources || []).some(function (source) {
+      return validTrackingSourcesForVariant(variant).some(function (source) {
         return String(source.variant || "") === rowVariant
           && normalizeTrackedVersion(source.configVersion || "") === rowVersion;
       });
@@ -4799,6 +5034,8 @@
   function ensureConfigDefaults(value) {
     var defaultColors = ["#111827", "#ffffff", "#f8fafc", "#172026", "#1f6feb", "#0f766e", "#c2410c", "#fbfaf7", "#1c2520", "#d9dee7"];
     value.configVersion = value.configVersion || "v1";
+    value.publishedAt = value.publishedAt || originalConfig.publishedAt || "";
+    value.publishId = value.publishId || originalConfig.publishId || "";
     value.changeNote = value.changeNote || "";
     value.trackingCsvUrl = value.trackingCsvUrl || originalConfig.trackingCsvUrl || "";
     value.kajabiFormEmbed = value.kajabiFormEmbed || originalConfig.kajabiFormEmbed || "";
@@ -4847,6 +5084,8 @@
       variant.reminderText = variant.reminderText || originalVariant.reminderText || "Free Protein Plan";
       variant.reminderColor = variant.reminderColor || originalVariant.reminderColor || variant.accentColor || "#06b00b";
       variant.reminderTextColor = variant.reminderTextColor || originalVariant.reminderTextColor || "#ffffff";
+      variant.trackingLabel = variant.trackingLabel || originalVariant.trackingLabel || "";
+      variant.trackingStartedAt = variant.trackingStartedAt || originalVariant.trackingStartedAt || "";
       variant.trackingSources = mergeTrackingSources(variant.trackingSources, originalVariant.trackingSources);
       variant.reopenAfterCloseSeconds = Number(variant.reopenAfterCloseSeconds);
       if (!Number.isFinite(variant.reopenAfterCloseSeconds)) {

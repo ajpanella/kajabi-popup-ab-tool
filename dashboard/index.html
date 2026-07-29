@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../popup/popup.css?v=35">
     <link rel="stylesheet" href="./dashboard.css?v=62">
-    <link rel="stylesheet" href="./workspace.css?v=3">
+    <link rel="stylesheet" href="./workspace.css?v=4">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260725-1"></script>
   </head>
@@ -135,7 +135,7 @@
             </section>
             <section class="studio-surface">
               <div class="studio-section-heading"><div><span class="studio-kicker">Results</span><h2>Performance table</h2></div><div class="dash-result-actions"><p id="hidden-metrics-status" class="dash-hidden-status" hidden></p><button id="show-hidden-metrics" class="dash-secondary-button" type="button" hidden>Show hidden rows</button><p id="sample-warning" class="dash-warning" hidden>Sample size is below 100 popup views for at least one active variant.</p></div></div>
-              <div class="dash-table-wrap"><table><thead><tr><th>Variant</th><th>Version</th><th>Sessions</th><th>Views</th><th>View rate</th><th id="metric-clicks-heading">Clicks</th><th id="metric-click-rate-heading">Click rate</th><th>Quiz</th><th>Quiz rate</th><th>Leads</th><th title="Unique lead sessions divided by unique visitor sessions">CVR</th><th>Closes</th><th>Lift vs A</th><th></th></tr></thead><tbody id="performance-body"></tbody></table></div>
+              <div class="dash-table-wrap"><table><thead><tr><th>Variant</th><th>Updated</th><th>Version</th><th>Sessions</th><th>Views</th><th>View rate</th><th id="metric-clicks-heading">Clicks</th><th id="metric-click-rate-heading">Click rate</th><th>Quiz</th><th>Quiz rate</th><th>Leads</th><th title="Unique lead sessions divided by unique visitor sessions">CVR</th><th>Closes</th><th>Lift vs A</th><th></th></tr></thead><tbody id="performance-body"></tbody></table></div>
             </section>
             <section class="dash-chart-grid studio-chart-grid"><div class="studio-surface"><div class="studio-section-heading"><h2>Conversion rates</h2></div><canvas id="conversion-chart" height="220"></canvas></div><div class="studio-surface"><div class="studio-section-heading"><h2>Event counts</h2></div><canvas id="event-chart" height="220"></canvas></div></section>
           </section>
@@ -199,7 +199,7 @@
     <div id="studio-settings-scrim" class="studio-settings-scrim"></div>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./dashboard.js?v=111"></script>
+    <script src="./dashboard.js?v=112"></script>
     <script src="./workspace.js?v=3"></script>
   </body>
 </html>
