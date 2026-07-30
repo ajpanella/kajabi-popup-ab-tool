@@ -35,6 +35,7 @@
   var compareFullHistoryToLive = false;
   var ideaBank = loadIdeaBank();
   var pendingPublishSourceIds = {};
+  var uploadedImagePreviews = {};
 
   var els = {
     csvUrl: document.getElementById("csv-url"),
@@ -168,6 +169,7 @@
     updateDashboard();
   });
   els.editors.addEventListener("input", onEditorInput);
+  els.editors.addEventListener("change", onEditorChange);
   els.editors.addEventListener("click", onEditorClick);
   els.editors.addEventListener("focusin", onEditorFocus);
   els.history.addEventListener("click", onHistoryClick);
@@ -656,6 +658,7 @@
 
   function onEditorInput(event) {
     var target = event.target;
+    if (target && target.matches && target.matches("[data-image-upload]")) return;
     if (target && target.matches && target.matches('input[data-rich-command="foreColor"]')) {
       applyRichCommand(target);
       return;
@@ -695,6 +698,138 @@
     renderEmbedCode();
     populateFilters();
     updateDashboard();
+  }
+
+  function onEditorChange(event) {
+    var input = event.target && event.target.closest && event.target.closest("[data-image-upload]");
+    if (input) uploadEditorImage(input);
+  }
+
+  async function uploadEditorImage(input) {
+    var file = input.files && input.files[0];
+    var status = input.closest(".dash-image-upload").querySelector("[data-image-upload-status]");
+    if (!file) return;
+    if (["image/jpeg", "image/png", "image/webp"].indexOf(file.type) < 0) {
+      status.textContent = "Choose a JPG, PNG, or WebP image.";
+      status.classList.add("is-error");
+      input.value = "";
+      return;
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      status.textContent = "That image is larger than 8 MB.";
+      status.classList.add("is-error");
+      input.value = "";
+      return;
+    }
+
+    input.disabled = true;
+    status.classList.remove("is-error");
+    status.textContent = "Uploading image...";
+    try {
+      var dataUrl = await readFileAsDataUrl(file);
+      var result = canUseLocalPublisher()
+        ? await uploadImageWithLocalServer(file, dataUrl)
+        : await uploadImageWithGitHubApi(file, dataUrl);
+      uploadedImagePreviews[result.publicUrl] = dataUrl;
+      setVariantImageField(Number(input.dataset.variantIndex), input.dataset.field, result.publicUrl);
+    } catch (error) {
+      input.disabled = false;
+      input.value = "";
+      status.textContent = error.message || "Image upload failed.";
+      status.classList.add("is-error");
+    }
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { resolve(String(reader.result || "")); };
+      reader.onerror = function () { reject(new Error("Could not read that image file.")); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadImageWithLocalServer(file, dataUrl) {
+    var response = await fetch("/api/upload-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ filename: file.name, dataUrl: dataUrl })
+    });
+    var body = await response.json().catch(function () { return {}; });
+    if (!response.ok || body.ok === false || !body.publicUrl) {
+      throw new Error(body.error || "The local image uploader could not publish this file.");
+    }
+    return body;
+  }
+
+  async function uploadImageWithGitHubApi(file, dataUrl) {
+    var owner = els.githubOwner.value.trim();
+    var repo = els.githubRepo.value.trim();
+    var branch = els.githubBranch.value.trim() || "main";
+    var token = els.githubToken.value.trim();
+    if (!owner || !repo || !token) {
+      throw new Error("Use the local dashboard, or add the GitHub repository and token before uploading.");
+    }
+
+    var uploadPath = await browserImageUploadPath(file);
+    var apiUrl = "https://api.github.com/repos/" + encodeURIComponent(owner) + "/" + encodeURIComponent(repo) + "/contents/" + uploadPath.split("/").map(encodeURIComponent).join("/");
+    var headers = {
+      "Accept": "application/vnd.github+json",
+      "Authorization": "Bearer " + token,
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+    var existing = await fetch(apiUrl + "?ref=" + encodeURIComponent(branch), { headers: headers });
+    if (existing.status !== 404 && !existing.ok) throw new Error("Could not check the GitHub image asset.");
+    if (existing.status === 404) {
+      var upload = await fetch(apiUrl, {
+        method: "PUT",
+        headers: Object.assign({}, headers, { "Content-Type": "application/json" }),
+        body: JSON.stringify({
+          message: "Upload popup image " + file.name,
+          content: dataUrl.split(",")[1] || "",
+          branch: branch
+        })
+      });
+      if (!upload.ok) {
+        var uploadError = await upload.json().catch(function () { return {}; });
+        throw new Error(uploadError.message || "GitHub image upload failed.");
+      }
+    }
+    return { publicUrl: normalizedAssetBaseUrl() + "/" + uploadPath };
+  }
+
+  async function browserImageUploadPath(file) {
+    var bytes = await file.arrayBuffer();
+    var digest = await window.crypto.subtle.digest("SHA-256", bytes);
+    var hash = Array.from(new Uint8Array(digest)).slice(0, 6).map(function (value) {
+      return value.toString(16).padStart(2, "0");
+    }).join("");
+    var extension = file.type === "image/png" ? "png" : file.type === "image/webp" ? "webp" : "jpg";
+    var base = String(file.name || "popup-image").replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "popup-image";
+    return "popup/assets/uploads/" + base + "-" + hash + "." + extension;
+  }
+
+  function setVariantImageField(variantIndex, field, value) {
+    var variant = activeVariants()[variantIndex];
+    if (!variant) return;
+    setNestedValue(variant, field, value);
+    syncLegacyVariantFromFlow(variant);
+    saveDraftConfig();
+    renderEditors();
+    renderPreviews(previewMode);
+    scheduleDraftPreview(variant.id);
+    populateFilters();
+    updateDashboard();
+  }
+
+  function imageAssetLabel(value) {
+    var clean = String(value || "").split("?")[0];
+    var filename = clean.split("/").pop() || "Uploaded image";
+    try { return decodeURIComponent(filename); } catch (error) { return filename; }
+  }
+
+  function previewImageSource(value) {
+    return uploadedImagePreviews[value] || value;
   }
 
   function shouldRerenderEditorsForField(key) {
@@ -762,6 +897,12 @@
   }
 
   function onEditorClick(event) {
+    var imageRemoveButton = event.target.closest("[data-image-remove]");
+    if (imageRemoveButton) {
+      setVariantImageField(Number(imageRemoveButton.dataset.variantIndex), imageRemoveButton.dataset.field, "");
+      return;
+    }
+
     var draftPreviewButton = event.target.closest("[data-draft-preview-toggle]");
     if (draftPreviewButton) {
       var draftVariant = activeVariants()[Number(draftPreviewButton.dataset.variantIndex)];
@@ -971,6 +1112,20 @@
     return "<label" + disabledFieldClass(disabled) + ">" + escapeHtml(label) + "<input data-variant-index=\"" + index + "\" data-field=\"" + field + "\" type=\"" + type + "\" value=\"" + escapeHtmlAttr(value) + "\"" + disabledAttr(disabled) + "></label>";
   }
 
+  function editorImageUpload(field, index, label, value) {
+    var imageValue = String(value || "");
+    return [
+      "<div class=\"dash-image-upload\">",
+      "<span class=\"dash-image-upload-label\">" + escapeHtml(label) + "</span>",
+      imageValue ? "<div class=\"dash-image-upload-current\"><img src=\"" + escapeHtmlAttr(previewImageSource(imageValue)) + "\" alt=\"Current popup image\"><div><strong>Current image</strong><span>" + escapeHtml(imageAssetLabel(imageValue)) + "</span></div></div>" : "<div class=\"dash-image-upload-empty\"><div><strong>No image selected</strong><span>Add a JPG, PNG, or WebP file.</span></div></div>",
+      "<div class=\"dash-image-upload-actions\"><label class=\"dash-image-upload-button\"><input type=\"file\" accept=\"image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp\" data-image-upload data-variant-index=\"" + index + "\" data-field=\"" + escapeHtmlAttr(field) + "\" hidden><span>" + (imageValue ? "Replace image" : "Choose image") + "</span></label>",
+      imageValue ? "<button type=\"button\" class=\"dash-image-remove-button\" data-image-remove data-variant-index=\"" + index + "\" data-field=\"" + escapeHtmlAttr(field) + "\">Remove</button>" : "",
+      "</div>",
+      "<small data-image-upload-status>Uploads to this popup's GitHub assets. Maximum 8 MB.</small>",
+      "</div>"
+    ].join("");
+  }
+
   function ensureFlowSteps(variant) {
     if (Array.isArray(variant.flowSteps) && variant.flowSteps.length) return variant.flowSteps;
     var quiz = getProteinQuizConfig(variant);
@@ -1061,7 +1216,7 @@
       editorRichText(path + "valueLineHtml", variantIndex, "Value line", step.valueLineHtml || "", false, path + "valueLineFontSize", step.valueLineFontSize || variant.valueLineFontSize, 15, variant.brandAccentColor)
     ].join("");
     var appearanceControls = [
-      editorInput(path + "imageUrl", variantIndex, "Hero image URL", step.imageUrl || "", "url"),
+      editorImageUpload(path + "imageUrl", variantIndex, "Hero image", step.imageUrl || ""),
       editorInput(path + "backgroundColor", variantIndex, "Step background", step.backgroundColor || variant.backgroundColor || "#ffffff", "color"),
       editorInput(path + "buttonColor", variantIndex, "Step button color", step.buttonColor || variant.accentColor || "#1f6feb", "color"),
       editorInput(path + "progressColor", variantIndex, "Progress color", step.progressColor || variant.brandAccentColor || "#06b00b", "color")
@@ -2171,7 +2326,7 @@
         scheduleDashboardPreviewFit(root);
         schedulePopupFit(root, variant);
       });
-      image.src = variant.imageUrl;
+      image.src = previewImageSource(variant.imageUrl);
       content.appendChild(image);
       if (image.complete) {
         sizePreviewToImage(root, image, variant);
@@ -2577,7 +2732,7 @@
       root.style.setProperty("--ll-popup-question-weight", String(step.questionFontWeight || variant.bodyFontWeight || 400));
       root.style.setProperty("--ll-popup-choice-weight", String(step.choiceButtonFontWeight || variant.buttonFontWeight || 700));
       var image = root.querySelector(".ll-popup-image");
-      if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
+      if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = previewImageSource(step.imageUrl); }
       var progress = flowPreviewPosition(steps, index, step.progressScope || "all");
       container.innerHTML = (index > 0 && step.showBack !== false ? "<button type=\"button\" class=\"ll-popup-step-back\" aria-label=\"Previous step\">&#8592;</button>" : "") + renderFlowPreviewProgress(step, progress.current, progress.total) + renderFlowPreviewForm(step);
       var back = container.querySelector(".ll-popup-step-back"); if (back) back.addEventListener("click", function () { renderStep(index - 1); });

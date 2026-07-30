@@ -1055,6 +1055,111 @@ body.ll-studio-body {
   padding: 14px;
 }
 
+.dash-image-upload {
+  display: grid;
+  grid-column: 1 / -1;
+  gap: 10px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid var(--studio-line);
+  border-radius: 7px;
+  background: #f8fafb;
+}
+
+.dash-image-upload-label {
+  color: #344054;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.dash-image-upload-current,
+.dash-image-upload-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  min-height: 66px;
+  padding: 9px;
+  border: 1px solid #dfe6e2;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.dash-image-upload-current img {
+  width: 86px;
+  height: 54px;
+  flex: 0 0 86px;
+  border-radius: 4px;
+  object-fit: cover;
+}
+
+.dash-image-upload-current div,
+.dash-image-upload-empty div {
+  min-width: 0;
+}
+
+.dash-image-upload-current strong,
+.dash-image-upload-current span,
+.dash-image-upload-empty strong,
+.dash-image-upload-empty span {
+  display: block;
+}
+
+.dash-image-upload-current strong,
+.dash-image-upload-empty strong {
+  color: #1f2937;
+  font-size: 12px;
+}
+
+.dash-image-upload-current span,
+.dash-image-upload-empty span,
+.dash-image-upload small {
+  overflow: hidden;
+  color: #667085;
+  font-size: 10px;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-image-upload small.is-error {
+  color: #b42318;
+  font-weight: 700;
+}
+
+.dash-image-upload-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dash-image-upload-button,
+.dash-image-remove-button {
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 7px 12px;
+  border: 1px solid #a9c8b0;
+  border-radius: 5px;
+  color: #0b5f21 !important;
+  background: #ffffff;
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  cursor: pointer;
+}
+
+.dash-image-upload-button:hover,
+.dash-image-remove-button:hover {
+  border-color: #06b00b;
+  background: #edfbed;
+}
+
+.dash-image-remove-button {
+  color: #667085 !important;
+  border-color: #d0d5dd;
+}
+
 .studio-editor-tab-panel .dash-design-panel {
   margin: 0 0 9px;
 }

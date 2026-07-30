@@ -1,6 +1,7 @@
 const http = require("http");
 const fs = require("fs");
 const path = require("path");
+const crypto = require("crypto");
 const { execFile } = require("child_process");
 
 const port = Number(process.env.PORT || 3102);
@@ -13,8 +14,11 @@ const types = {
   ".js": "application/javascript; charset=utf-8",
   ".json": "application/json; charset=utf-8",
   ".md": "text/markdown; charset=utf-8",
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
   ".png": "image/png",
-  ".svg": "image/svg+xml"
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp"
 };
 
 function send(response, status, body, headers = {}) {
@@ -28,15 +32,22 @@ function safePath(urlPath) {
   return path.join(root, normalized);
 }
 
-function readJsonBody(request, callback) {
+function readJsonBody(request, callback, maxBytes = 1000000) {
   let body = "";
+  let tooLarge = false;
   request.on("data", (chunk) => {
+    if (tooLarge) return;
     body += chunk;
-    if (body.length > 1000000) {
-      request.destroy();
+    if (body.length > maxBytes) {
+      tooLarge = true;
+      body = "";
     }
   });
   request.on("end", () => {
+    if (tooLarge) {
+      callback(new Error("Request body is too large."));
+      return;
+    }
     try {
       callback(null, body ? JSON.parse(body) : {});
     } catch (error) {
@@ -45,14 +56,15 @@ function readJsonBody(request, callback) {
   });
 }
 
-function runGh(args, callback) {
-  execFile(ghBin, args, { cwd: root, maxBuffer: 1024 * 1024 * 5 }, (error, stdout, stderr) => {
+function runGh(args, callback, input) {
+  const child = execFile(ghBin, args, { cwd: root, maxBuffer: 1024 * 1024 * 5 }, (error, stdout, stderr) => {
     if (error) {
       callback(new Error((stderr || stdout || error.message).trim()));
       return;
     }
     callback(null, stdout.trim());
   });
+  if (input != null) child.stdin.end(input);
 }
 
 function publishLocalGitHub(request, response) {
@@ -73,6 +85,77 @@ function publishLocalGitHub(request, response) {
     }
 
     publishWithGitHubCli(publishPath, message, content, response);
+  });
+}
+
+function uploadLocalImage(request, response) {
+  readJsonBody(request, (bodyError, payload) => {
+    if (bodyError) {
+      send(response, 413, JSON.stringify({ ok: false, error: bodyError.message }), { "Content-Type": "application/json; charset=utf-8" });
+      return;
+    }
+
+    const match = String(payload.dataUrl || "").match(/^data:image\/(png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$/);
+    if (!match) {
+      send(response, 400, JSON.stringify({ ok: false, error: "Choose a valid JPG, PNG, or WebP image." }), { "Content-Type": "application/json; charset=utf-8" });
+      return;
+    }
+
+    const content = Buffer.from(match[2], "base64");
+    if (!content.length || content.length > 8 * 1024 * 1024) {
+      send(response, 400, JSON.stringify({ ok: false, error: "Image files must be 8 MB or smaller." }), { "Content-Type": "application/json; charset=utf-8" });
+      return;
+    }
+
+    const extension = match[1] === "png" ? "png" : match[1] === "webp" ? "webp" : "jpg";
+    const sourceName = path.basename(String(payload.filename || "popup-image"), path.extname(String(payload.filename || "")));
+    const safeName = sourceName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 48) || "popup-image";
+    const hash = crypto.createHash("sha256").update(content).digest("hex").slice(0, 12);
+    const publishPath = `popup/assets/uploads/${safeName}-${hash}.${extension}`;
+
+    uploadImageWithGitHubCli(publishPath, content, String(payload.filename || "popup image"), (uploadError, status) => {
+      if (uploadError) {
+        send(response, 500, JSON.stringify({ ok: false, error: uploadError.message }), { "Content-Type": "application/json; charset=utf-8" });
+        return;
+      }
+      copyBinaryToLocalApp(content, publishPath);
+      send(response, 200, JSON.stringify({
+        ok: true,
+        status: status,
+        publicUrl: `https://ajpanella.github.io/kajabi-popup-ab-tool/${publishPath}`,
+        localUrl: `/${publishPath}`
+      }), { "Content-Type": "application/json; charset=utf-8" });
+    });
+  }, 12 * 1024 * 1024);
+}
+
+function uploadImageWithGitHubCli(publishPath, content, filename, callback) {
+  const owner = "ajpanella";
+  const repo = "kajabi-popup-ab-tool";
+  const branch = "main";
+  const apiPath = `repos/${owner}/${repo}/contents/${publishPath}`;
+
+  runGh(["api", `${apiPath}?ref=${encodeURIComponent(branch)}`], (getError) => {
+    if (!getError) {
+      callback(null, "existing");
+      return;
+    }
+    if (!/404|not found/i.test(getError.message)) {
+      callback(getError);
+      return;
+    }
+
+    runGh(["api", apiPath, "-X", "PUT", "--input", "-"], (putError) => {
+      if (putError) {
+        callback(putError);
+        return;
+      }
+      callback(null, "published");
+    }, JSON.stringify({
+      message: `Upload popup image ${filename}`,
+      content: content.toString("base64"),
+      branch: branch
+    }));
   });
 }
 
@@ -141,11 +224,24 @@ function copyContentToLocalApp(content, publishPath) {
   });
 }
 
+function copyBinaryToLocalApp(content, publishPath) {
+  const localPath = path.join(root, publishPath);
+  fs.mkdir(path.dirname(localPath), { recursive: true }, (mkdirError) => {
+    if (mkdirError) return;
+    fs.writeFile(localPath, content, () => {});
+  });
+}
+
 const server = http.createServer((request, response) => {
   const requestUrl = new URL(request.url, `http://${request.headers.host || "localhost"}`);
 
   if (request.method === "POST" && requestUrl.pathname === "/api/publish-github") {
     publishLocalGitHub(request, response);
+    return;
+  }
+
+  if (request.method === "POST" && requestUrl.pathname === "/api/upload-image") {
+    uploadLocalImage(request, response);
     return;
   }
 
