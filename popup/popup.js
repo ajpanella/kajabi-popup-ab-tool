@@ -4,6 +4,9 @@
   var config = window.LL_POPUP_CONFIG;
   if (!config || !Array.isArray(config.variants)) return;
 
+  var LEGACY_PROTEIN_MOCKUP_URL = "https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png";
+  var PROJECT_PROTEIN_MOCKUP_URL = "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/your-personalized-protein-plan-mockup.png";
+
   var STORAGE_PREFIX = "ll_popup_" + sanitizeKey(config.testId || "default") + "_";
   var SESSION_KEY = STORAGE_PREFIX + "session_id";
   var ASSIGNMENT_KEY = STORAGE_PREFIX + "assignment_" + sanitizeKey(config.configVersion || "v1");
@@ -90,7 +93,7 @@
         sizeToImage(root, image);
         schedulePopupFit(root);
       });
-      image.src = variant.imageUrl;
+      image.src = resolvedPopupImageUrl(variant.imageUrl);
       content.appendChild(image);
       if (image.complete) {
         sizeToImage(root, image);
@@ -620,7 +623,12 @@
       root.style.setProperty("--ll-popup-choice-weight", String(step.choiceButtonFontWeight || variant.buttonFontWeight || 700));
     }
     var image = root && root.querySelector(".ll-popup-image");
-    if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = step.imageUrl; }
+    if (image) { image.hidden = !step.imageUrl; if (step.imageUrl) image.src = resolvedPopupImageUrl(step.imageUrl); }
+  }
+
+  function resolvedPopupImageUrl(value) {
+    var source = String(value || "");
+    return source.split("?")[0] === LEGACY_PROTEIN_MOCKUP_URL ? PROJECT_PROTEIN_MOCKUP_URL : source;
   }
 
   function renderFlowProgressHtml(step, current, total) {

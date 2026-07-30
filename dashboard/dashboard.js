@@ -5,6 +5,8 @@
   var DRAFT_KEY = "ll_popup_dashboard_config_" + sanitizeKey(originalConfig.testId || "default");
   var ASSET_BASE_KEY = "ll_popup_dashboard_asset_base";
   var PUBLIC_ASSET_BASE_URL = "https://ajpanella.github.io/kajabi-popup-ab-tool";
+  var LEGACY_PROTEIN_MOCKUP_URL = "https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png";
+  var PROJECT_PROTEIN_MOCKUP_URL = PUBLIC_ASSET_BASE_URL + "/popup/assets/your-personalized-protein-plan-mockup.png";
   var CSV_URL_KEY = "ll_popup_dashboard_csv_url";
   var GITHUB_OWNER_KEY = "ll_popup_dashboard_github_owner";
   var GITHUB_REPO_KEY = "ll_popup_dashboard_github_repo";
@@ -823,13 +825,19 @@
   }
 
   function imageAssetLabel(value) {
+    if (resolvedDashboardImageUrl(value) === PROJECT_PROTEIN_MOCKUP_URL) return "Your Personalized Protein Plan Mockup.png";
     var clean = String(value || "").split("?")[0];
     var filename = clean.split("/").pop() || "Uploaded image";
     try { return decodeURIComponent(filename); } catch (error) { return filename; }
   }
 
   function previewImageSource(value) {
-    return uploadedImagePreviews[value] || value;
+    return uploadedImagePreviews[value] || resolvedDashboardImageUrl(value);
+  }
+
+  function resolvedDashboardImageUrl(value) {
+    var source = String(value || "");
+    return source.split("?")[0] === LEGACY_PROTEIN_MOCKUP_URL ? PROJECT_PROTEIN_MOCKUP_URL : source;
   }
 
   function shouldRerenderEditorsForField(key) {
