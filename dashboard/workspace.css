@@ -564,13 +564,33 @@ body.ll-studio-body {
   font-size: 12px;
 }
 
-.studio-variant-tab strong {
+.studio-variant-version-input {
   grid-column: 2;
   grid-row: 1;
+  min-width: 0;
+  width: 100%;
+  padding: 1px 3px;
+  border: 1px solid transparent;
+  border-radius: 4px;
   overflow: hidden;
+  color: var(--studio-ink);
+  background: transparent;
+  font-family: inherit;
   font-size: 11px;
+  font-weight: 800;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.studio-variant-version-input:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.studio-variant-version-input:focus {
+  border-color: var(--studio-green);
+  outline: 2px solid rgba(6, 176, 11, 0.13);
+  background: #ffffff;
 }
 
 .studio-variant-tab small {
@@ -1284,6 +1304,32 @@ body.ll-studio-body {
   font-weight: 750;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.dash-metric-version-input {
+  display: block;
+  width: min(190px, 100%);
+  min-width: 100px;
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  overflow: hidden;
+  color: #1f2937;
+  background: transparent;
+  font: 750 11px/1.25 Inter, Arial, sans-serif;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-metric-version-input:hover {
+  border-color: #cbd5e1;
+  background: #ffffff;
+}
+
+.dash-metric-version-input:focus {
+  border-color: var(--studio-green);
+  outline: 2px solid rgba(6, 176, 11, 0.13);
+  background: #ffffff;
 }
 
 .studio-filter-band.is-collapsed {

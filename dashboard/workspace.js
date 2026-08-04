@@ -91,7 +91,28 @@
   function bindBuilderWorkspace() {
     variantTabs.addEventListener("click", function (event) {
       var button = event.target.closest("[data-workspace-variant]");
-      if (button) selectVariant(button.dataset.workspaceVariant);
+      if (!button) return;
+      if (event.target.matches("input[data-version-label-variant]")) {
+        if (selectedVariantId !== button.dataset.workspaceVariant) {
+          selectedVariantId = button.dataset.workspaceVariant;
+          refreshBuilderWorkspace();
+          window.setTimeout(function () {
+            var input = variantTabs.querySelector('[data-version-label-variant="' + button.dataset.workspaceVariant + '"]');
+            if (input) {
+              input.focus();
+              input.select();
+            }
+          }, 0);
+        }
+        return;
+      }
+      selectVariant(button.dataset.workspaceVariant);
+    });
+    variantTabs.addEventListener("keydown", function (event) {
+      var tab = event.target.closest("[data-workspace-variant]");
+      if (!tab || event.target.matches("input") || (event.key !== "Enter" && event.key !== " ")) return;
+      event.preventDefault();
+      selectVariant(tab.dataset.workspaceVariant);
     });
 
     editors.addEventListener("click", function (event) {
@@ -105,6 +126,7 @@
     editors.addEventListener("change", markDraftChanged);
     settingsDrawer.addEventListener("input", markDraftChanged);
     settingsDrawer.addEventListener("change", markDraftChanged);
+    document.addEventListener("ll:version-label-edited", markDraftChanged);
     document.getElementById("reset-config").addEventListener("click", function () {
       window.setTimeout(function () {
         setSaveState("Draft reset", true);
@@ -140,13 +162,14 @@
       var summary = item.card.querySelector(".dash-editor-summary");
       var status = item.card.querySelector(".dash-toolbar-status");
       var traffic = item.card.querySelector('[data-field="trafficSplit"]');
+      var versionLabel = item.card.dataset.versionLabel || cardHeadline(item.card) || shortVariantLabel(summary ? summary.textContent : "Popup experience");
       return [
-        '<button type="button" class="studio-variant-tab' + (active ? ' is-active' : '') + '" data-workspace-variant="' + escapeHtml(item.id) + '" role="tab" aria-selected="' + (active ? 'true' : 'false') + '" title="' + escapeHtml(cardHeadline(item.card) || shortVariantLabel(summary ? summary.textContent : "Popup experience")) + '">',
+        '<div class="studio-variant-tab' + (active ? ' is-active' : '') + '" data-workspace-variant="' + escapeHtml(item.id) + '" role="tab" tabindex="0" aria-selected="' + (active ? 'true' : 'false') + '">',
         '<b>' + escapeHtml(item.id) + '</b>',
-        '<strong>' + escapeHtml(cardHeadline(item.card) || shortVariantLabel(summary ? summary.textContent : "Popup experience")) + '</strong>',
+        '<input class="studio-variant-version-input" type="text" maxlength="80" data-version-label-variant="' + escapeHtml(item.id) + '" value="' + escapeHtml(versionLabel) + '" aria-label="Version name for Variant ' + escapeHtml(item.id) + '" title="Edit version name">',
         '<small>' + escapeHtml(traffic ? traffic.value + "% traffic" : "Active variant") + '</small>',
         '<em>' + escapeHtml(compactStatus(status ? status.textContent : "Draft")) + '</em>',
-        '</button>'
+        '</div>'
       ].join("");
     }).join("");
     cards.forEach(function (item) {

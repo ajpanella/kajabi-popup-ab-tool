@@ -174,6 +174,9 @@
   els.editors.addEventListener("change", onEditorChange);
   els.editors.addEventListener("click", onEditorClick);
   els.editors.addEventListener("focusin", onEditorFocus);
+  document.addEventListener("input", onTrackingLabelInput);
+  document.addEventListener("focusout", onTrackingLabelBlur);
+  document.addEventListener("keydown", onTrackingLabelKeydown);
   els.history.addEventListener("click", onHistoryClick);
   els.fullHistoryTable.addEventListener("click", onFullHistoryTableClick);
   els.ideaForm.addEventListener("submit", addIdea);
@@ -511,6 +514,7 @@
       var label = buildVariantLabel(variant);
       var card = document.createElement("details");
       card.className = "dash-editor-card";
+      card.dataset.versionLabel = variant.trackingLabel || buildTrackingLabel(variant);
       card.open = true;
       card.innerHTML = [
         "<summary class=\"dash-editor-title\"><div class=\"dash-variant-heading-main\"><span class=\"dash-variant-kicker\">Variant " + escapeHtml(variant.id) + "</span><h3>Popup Experience</h3></div><span class=\"dash-editor-summary\">" + escapeHtml(label) + "</span><span class=\"dash-collapse-icon\" aria-hidden=\"true\"></span></summary>",
@@ -705,6 +709,59 @@
   function onEditorChange(event) {
     var input = event.target && event.target.closest && event.target.closest("[data-image-upload]");
     if (input) uploadEditorImage(input);
+  }
+
+  function onTrackingLabelInput(event) {
+    var input = event.target && event.target.closest && event.target.closest("[data-version-label-variant]");
+    if (!input) return;
+    var variant = activeVariants().find(function (item) {
+      return item.id === input.dataset.versionLabelVariant;
+    });
+    if (!variant) return;
+
+    var value = String(input.value || "").slice(0, 80);
+    variant.trackingLabel = value;
+    variant.trackingLabelManual = true;
+    saveDraftConfig();
+    syncTrackingLabelInputs(variant.id, value, input);
+    document.dispatchEvent(new CustomEvent("ll:version-label-edited", {
+      detail: { variantId: variant.id, value: value }
+    }));
+  }
+
+  function onTrackingLabelBlur(event) {
+    var input = event.target && event.target.closest && event.target.closest("[data-version-label-variant]");
+    if (!input) return;
+    var variant = activeVariants().find(function (item) {
+      return item.id === input.dataset.versionLabelVariant;
+    });
+    if (!variant) return;
+
+    var value = String(input.value || "").trim();
+    if (!value) {
+      value = buildTrackingLabel(variant);
+      variant.trackingLabelManual = false;
+    }
+    variant.trackingLabel = value;
+    saveDraftConfig();
+    syncTrackingLabelInputs(variant.id, value);
+  }
+
+  function onTrackingLabelKeydown(event) {
+    var input = event.target && event.target.closest && event.target.closest("[data-version-label-variant]");
+    if (!input || event.key !== "Enter") return;
+    event.preventDefault();
+    input.blur();
+  }
+
+  function syncTrackingLabelInputs(variantId, value, source) {
+    Array.from(document.querySelectorAll("[data-version-label-variant]")).forEach(function (input) {
+      if (input.dataset.versionLabelVariant === variantId && input !== source) input.value = value;
+    });
+    Array.from(els.editors.querySelectorAll(".dash-editor-card")).forEach(function (card) {
+      var kicker = card.querySelector(".dash-variant-kicker");
+      if (kicker && kicker.textContent.trim() === "Variant " + variantId) card.dataset.versionLabel = value;
+    });
   }
 
   async function uploadEditorImage(input) {
@@ -1999,7 +2056,7 @@
       [
         { html: escapeHtml(item.variant) + (live ? " <span class=\"dash-live-badge\">Live</span>" : "") },
         { html: escapeHtml(metricPublishedLabel(item)), className: "dash-metric-updated" },
-        { html: "<span class=\"dash-metric-version\" title=\"Tracking ID: " + escapeHtmlAttr(item.configVersion) + "\">" + escapeHtml(metricVersionLabel(item)) + "</span>", className: "dash-metric-version-cell" },
+        { html: metricVersionCellHtml(item), className: "dash-metric-version-cell" },
         formatNumber(item.sessions),
         formatNumber(item.views),
         formatPercent(item.viewRate),
@@ -2036,7 +2093,7 @@
     [
       { html: "<span class=\"dash-submetric-variant\">" + escapeHtml(item.variant) + "</span> <span class=\"dash-submetric-label\">" + escapeHtml(item.sinceLabel || "Since last update") + "</span>" },
       { html: escapeHtml(metricPublishedLabel(item)), className: "dash-metric-updated" },
-      { html: "<span class=\"dash-metric-version\" title=\"Tracking ID: " + escapeHtmlAttr(item.configVersion) + "\">" + escapeHtml(metricVersionLabel(item)) + "</span>", className: "dash-metric-version-cell" },
+      { html: metricVersionCellHtml(item), className: "dash-metric-version-cell" },
       formatNumber(item.sessions),
       formatNumber(item.views),
       formatPercent(item.viewRate),
@@ -2070,14 +2127,28 @@
 
   function metricVersionLabel(item) {
     var liveVariant = metricLiveVariant(item);
-    if (liveVariant) return liveVariant.trackingLabel || buildTrackingLabel(liveVariant);
+    if (liveVariant) {
+      var draftVariant = activeVariants().find(function (variant) {
+        return variant.id === liveVariant.id;
+      });
+      return (draftVariant && draftVariant.trackingLabel) || liveVariant.trackingLabel || buildTrackingLabel(liveVariant);
+    }
     var sourceRow = rows.find(function (row) {
       return row.variant === item.variant
         && normalizeTrackedVersion(row.configVersion || "") === normalizeTrackedVersion(item.configVersion)
         && Boolean(row.variantSnapshot);
     });
     var snapshot = sourceRow ? parseVariantSnapshot(sourceRow.variantSnapshot) : null;
-    return snapshot ? buildTrackingLabel(snapshot) : item.configVersion;
+    return snapshot ? (snapshot.trackingLabel || buildTrackingLabel(snapshot)) : item.configVersion;
+  }
+
+  function metricVersionCellHtml(item) {
+    var liveVariant = metricLiveVariant(item);
+    var label = metricVersionLabel(item);
+    if (!liveVariant) {
+      return "<span class=\"dash-metric-version\" title=\"Tracking ID: " + escapeHtmlAttr(item.configVersion) + "\">" + escapeHtml(label) + "</span>";
+    }
+    return "<input class=\"dash-metric-version-input\" type=\"text\" maxlength=\"80\" aria-label=\"Version name for Variant " + escapeHtmlAttr(liveVariant.id) + "\" data-version-label-variant=\"" + escapeHtmlAttr(liveVariant.id) + "\" value=\"" + escapeHtmlAttr(label) + "\" title=\"Edit display name. Tracking ID: " + escapeHtmlAttr(item.configVersion) + "\">";
   }
 
   function metricPublishedLabel(item) {
@@ -3333,9 +3404,11 @@
       var publishedFingerprint = publishedVariant ? variantFingerprint(publishedVariant) : "";
 
       if (publishedVariant && fingerprint === publishedFingerprint) {
+        var retainedManualLabel = variant.trackingLabelManual && String(variant.trackingLabel || "").trim();
         variant.trackingVersion = getVariantTrackingVersion(publishedVariant);
         variant.trackingFingerprint = fingerprint;
-        variant.trackingLabel = publishedVariant.trackingLabel || buildTrackingLabel(variant);
+        variant.trackingLabel = retainedManualLabel || publishedVariant.trackingLabel || buildTrackingLabel(variant);
+        variant.trackingLabelManual = Boolean(retainedManualLabel || publishedVariant.trackingLabelManual);
         variant.trackingStartedAt = publishedVariant.trackingStartedAt || inferVariantTrackingStartedAt(publishedVariant);
         variant.trackingSources = validTrackingSourcesForVariant(publishedVariant);
         if (sourceId !== variant.id) {
@@ -3348,9 +3421,11 @@
       }
 
       if (variant.trackingFingerprint !== fingerprint) {
+        var manualLabel = variant.trackingLabelManual && String(variant.trackingLabel || "").trim();
         variant.trackingVersion = nextAvailableTrackingVersion(config.configVersion || "v1", variant, publishedVariant);
         variant.trackingFingerprint = fingerprint;
-        variant.trackingLabel = buildTrackingLabel(variant);
+        variant.trackingLabel = manualLabel || buildTrackingLabel(variant);
+        variant.trackingLabelManual = Boolean(manualLabel);
         variant.trackingStartedAt = config.publishedAt || new Date().toISOString();
         variant.trackingSources = [];
         changed.push(variant.id);
@@ -4737,6 +4812,8 @@
       reminderText: variant.reminderText || "Free Protein Plan",
       reminderColor: variant.reminderColor || variant.accentColor || "#06b00b",
       reminderTextColor: variant.reminderTextColor || "#ffffff",
+      trackingLabel: variant.trackingLabel || "",
+      trackingLabelManual: variant.trackingLabelManual === true,
       reopenAfterCloseSeconds: Number.isFinite(Number(variant.reopenAfterCloseSeconds)) ? Math.max(0, Number(variant.reopenAfterCloseSeconds)) : Math.max(0, Number(config.reopenAfterCloseSeconds || 0)),
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
       flowSteps: canonicalFlowStepsForFingerprint(variant)
@@ -4841,6 +4918,7 @@
         variant.trackingFingerprint = normalizeTrackingFingerprint(variant.trackingFingerprint);
       }
       variant.trackingLabel = variant.trackingLabel || originalVariant.trackingLabel || buildTrackingLabel(originalVariant);
+      variant.trackingLabelManual = variant.trackingLabelManual === true || originalVariant.trackingLabelManual === true;
       variant.trackingStartedAt = variant.trackingStartedAt || originalVariant.trackingStartedAt || "";
 
       var publishedFingerprint = variantFingerprint(originalVariant);
@@ -4882,6 +4960,8 @@
   function variantFingerprint(variant) {
     var snapshot = getVariantSnapshot(variant);
     delete snapshot.trafficSplit;
+    delete snapshot.trackingLabel;
+    delete snapshot.trackingLabelManual;
     return JSON.stringify(snapshot);
   }
 
@@ -4890,6 +4970,8 @@
       var snapshot = JSON.parse(String(value || ""));
       if (!snapshot || typeof snapshot !== "object") return String(value || "");
       delete snapshot.trafficSplit;
+      delete snapshot.trackingLabel;
+      delete snapshot.trackingLabelManual;
       return JSON.stringify(snapshot);
     } catch (error) {
       return String(value || "");
@@ -5273,6 +5355,7 @@
       variant.reminderColor = variant.reminderColor || originalVariant.reminderColor || variant.accentColor || "#06b00b";
       variant.reminderTextColor = variant.reminderTextColor || originalVariant.reminderTextColor || "#ffffff";
       variant.trackingLabel = variant.trackingLabel || originalVariant.trackingLabel || "";
+      variant.trackingLabelManual = variant.trackingLabelManual === true || originalVariant.trackingLabelManual === true;
       variant.trackingStartedAt = variant.trackingStartedAt || originalVariant.trackingStartedAt || "";
       variant.trackingSources = mergeTrackingSources(variant.trackingSources, originalVariant.trackingSources);
       variant.reopenAfterCloseSeconds = Number(variant.reopenAfterCloseSeconds);

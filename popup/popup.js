@@ -1245,6 +1245,8 @@
       reminderText: variant.reminderText || "Free Protein Plan",
       reminderColor: variant.reminderColor || variant.accentColor || "#06b00b",
       reminderTextColor: variant.reminderTextColor || "#ffffff",
+      trackingLabel: variant.trackingLabel || "",
+      trackingLabelManual: variant.trackingLabelManual === true,
       reopenAfterCloseSeconds: variantReopenSeconds(),
       proteinQuiz: cloneConfig(variant.proteinQuiz || {}),
       flowSteps: cloneConfig(variant.flowSteps || [])
