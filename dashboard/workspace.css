@@ -499,12 +499,13 @@ body.ll-studio-body {
 }
 
 .studio-overview-previews {
-  overflow: hidden;
+  overflow: visible;
 }
 
 .studio-overview-previews .dash-preview-grid {
-  max-height: 430px;
-  overflow: auto;
+  max-height: none;
+  padding-bottom: 4px;
+  overflow: visible;
 }
 
 .studio-builder-topline {
