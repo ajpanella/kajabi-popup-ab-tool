@@ -304,6 +304,10 @@ body.ll-studio-body {
   background: var(--studio-green-deep);
 }
 
+.studio-share-report-link {
+  text-decoration: none;
+}
+
 .studio-workspaces {
   height: calc(100vh - 66px);
 }

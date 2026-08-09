@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Protein Plan Test Pulse</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./styles.css?v=1">
+  </head>
+  <body>
+    <header class="report-header">
+      <a class="report-brand" href="https://www.longevitylifestyle.me" target="_blank" rel="noopener">
+        <span aria-hidden="true">L</span>
+        <strong>Longevity<br>Lifestyle</strong>
+      </a>
+      <div class="report-actions">
+        <button id="copy-report-link" type="button">Copy Link</button>
+        <button id="print-report" class="report-primary-action" type="button">Print / Save PDF</button>
+      </div>
+    </header>
+
+    <main class="report-shell">
+      <section class="report-intro">
+        <div>
+          <span class="report-kicker">Live Testing Update</span>
+          <h1>Protein Plan Test Pulse</h1>
+          <p>A quick view of the active popup test and the strongest historical approaches.</p>
+        </div>
+        <div class="report-freshness">
+          <span class="report-live-dot" aria-hidden="true"></span>
+          <div><strong>Refreshes every visit</strong><small id="report-updated">Loading latest data...</small></div>
+        </div>
+      </section>
+
+      <div id="report-status" class="report-status" role="status" aria-live="polite">
+        <span class="report-spinner" aria-hidden="true"></span>
+        Pulling the latest aggregate test results...
+      </div>
+
+      <section class="report-section" aria-labelledby="current-test-heading">
+        <div class="report-section-heading">
+          <div><span class="report-kicker">Current Test</span><h2 id="current-test-heading">Live variants</h2></div>
+          <p>Unique visitor sessions to completed lead submissions</p>
+        </div>
+        <div id="current-variant-grid" class="current-variant-grid"></div>
+      </section>
+
+      <section class="report-section report-leaderboard-section" aria-labelledby="leaderboard-heading">
+        <div class="report-section-heading">
+          <div><span class="report-kicker">Brief Leaderboard</span><h2 id="leaderboard-heading">Historical top 3</h2></div>
+          <p>Distinct archived approaches, ranked with sample size considered</p>
+        </div>
+        <div id="historical-leaderboard" class="historical-leaderboard"></div>
+      </section>
+
+      <footer class="report-footer">
+        <p>Only aggregate performance statistics are shown. No lead names, email addresses, quiz responses, or dashboard credentials are included.</p>
+        <p id="report-version"></p>
+      </footer>
+    </main>
+
+    <script src="./report.js?v=1"></script>
+  </body>
+</html>

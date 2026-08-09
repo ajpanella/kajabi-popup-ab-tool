@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../popup/popup.css?v=35">
     <link rel="stylesheet" href="./dashboard.css?v=64">
-    <link rel="stylesheet" href="./workspace.css?v=7">
+    <link rel="stylesheet" href="./workspace.css?v=8">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260729-2"></script>
   </head>
@@ -115,7 +115,7 @@
           </div>
 
           <section class="studio-workspace" data-workspace-panel="analyze" hidden>
-            <div class="studio-page-heading"><div><span class="studio-kicker">Performance</span><h1>Analyze active test</h1><p>Conversion is calculated from unique visitor sessions to unique lead sessions.</p></div><button id="toggle-analysis-filters" class="studio-secondary-command" type="button"><i data-lucide="sliders-horizontal"></i> Filters</button></div>
+            <div class="studio-page-heading"><div><span class="studio-kicker">Performance</span><h1>Analyze active test</h1><p>Conversion is calculated from unique visitor sessions to unique lead sessions.</p></div><div class="studio-heading-actions"><a class="studio-publish-command studio-share-report-link" href="https://ajpanella.github.io/kajabi-popup-ab-tool/share-report/" target="_blank" rel="noopener"><i data-lucide="share-2"></i> Share Live Report</a><button id="toggle-analysis-filters" class="studio-secondary-command" type="button"><i data-lucide="sliders-horizontal"></i> Filters</button></div></div>
             <section id="analysis-filterbar" class="studio-filter-band">
               <label class="studio-source-field">Published CSV URL<input id="csv-url" type="url" placeholder="Google Sheets CSV URL"></label>
               <label>Test<select id="filter-test-id"></select></label>
