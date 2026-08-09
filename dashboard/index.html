@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../popup/popup.css?v=35">
-    <link rel="stylesheet" href="./dashboard.css?v=62">
+    <link rel="stylesheet" href="./dashboard.css?v=63">
     <link rel="stylesheet" href="./workspace.css?v=7">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260729-2"></script>
@@ -142,6 +142,7 @@
 
           <section class="studio-workspace" data-workspace-panel="history" hidden>
             <div class="studio-page-heading"><div><span class="studio-kicker">Archive</span><h1>Variant history</h1><p>Search every snapshot, compare attributes, and restore a strong starting point.</p></div><button id="compare-live-history" class="studio-secondary-command" type="button" aria-pressed="false"><i data-lucide="git-compare-arrows"></i> Compare to live</button></div>
+            <section class="studio-surface studio-history-leaders"><div class="studio-section-heading"><div><span class="studio-kicker">Leaderboard</span><h2>Historical top 3</h2></div><small>Ranked by conversion strength with sample size considered</small></div><div id="historical-top-three" class="dash-history-top-three"></div></section>
             <section class="studio-surface studio-recent-history"><div class="studio-section-heading"><div><span class="studio-kicker">Recent</span><h2>Historical variations</h2></div></div><div id="variation-history" class="dash-history-grid"></div></section>
             <section class="studio-surface studio-full-history-surface">
               <div class="studio-section-heading"><div><span class="studio-kicker">Deep history</span><h2>Full variant history</h2></div><small>Every tracked snapshot, attribute, and result</small></div>
@@ -199,7 +200,7 @@
     <div id="studio-settings-scrim" class="studio-settings-scrim"></div>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./dashboard.js?v=116"></script>
+    <script src="./dashboard.js?v=117"></script>
     <script src="./workspace.js?v=4"></script>
   </body>
 </html>

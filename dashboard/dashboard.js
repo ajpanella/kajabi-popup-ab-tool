@@ -82,6 +82,7 @@
     savedColors: document.getElementById("saved-colors"),
     recommendations: document.getElementById("recommendation-list"),
     history: document.getElementById("variation-history"),
+    historicalTopThree: document.getElementById("historical-top-three"),
     previews: document.getElementById("variant-previews"),
     desktopPreview: document.getElementById("desktop-preview"),
     comparePreview: document.getElementById("compare-preview"),
@@ -3836,7 +3837,9 @@
 
   function renderFullVariantHistory(data) {
     if (!els.fullHistoryBody) return;
-    var history = sortFullVariantHistory(applyFullHistoryFilters(buildFullVariantHistory(data)));
+    var fullHistory = buildFullVariantHistory(data);
+    renderHistoricalTopThree(fullHistory);
+    var history = sortFullVariantHistory(applyFullHistoryFilters(fullHistory));
     updateFullHistorySortHeaders();
     renderFullHistoryInsights(history);
     renderConversionCoach(history);
@@ -3872,6 +3875,59 @@
         "</tr>"
       ].join("");
     }).join("");
+  }
+
+  function renderHistoricalTopThree(history) {
+    if (!els.historicalTopThree) return;
+    var minimumVisitors = 25;
+    var candidates = history.filter(function (item) {
+      return item.uniqueVisitors >= minimumVisitors;
+    }).sort(function (a, b) {
+      var scoreDifference = historicalLeaderboardScore(b) - historicalLeaderboardScore(a);
+      if (Math.abs(scoreDifference) > 0.000001) return scoreDifference;
+      if (b.cvr !== a.cvr) return b.cvr - a.cvr;
+      return b.uniqueVisitors - a.uniqueVisitors;
+    }).slice(0, 3);
+
+    if (!candidates.length) {
+      els.historicalTopThree.innerHTML = "<p class=\"dash-empty-state\">No variant has reached " + minimumVisitors + " unique visitors yet. The leaderboard will appear as tests collect enough data.</p>";
+      return;
+    }
+
+    var cards = candidates.map(function (item, index) {
+      var confidence = item.uniqueVisitors >= 100 ? "Established" : item.uniqueVisitors >= 50 ? "Building" : "Early read";
+      var name = historicalVariantName(item);
+      return [
+        "<article class=\"dash-history-leader-card\">",
+        "<div class=\"dash-history-leader-rank\">#" + (index + 1) + "</div>",
+        "<div class=\"dash-history-leader-heading\"><div><span>" + escapeHtml(item.isLive ? "Live " + item.variant : "Archived") + "</span><strong>" + escapeHtml(name) + "</strong></div><em>" + escapeHtml(confidence) + "</em></div>",
+        "<p>" + escapeHtml(item.headline || "Headline unavailable") + "</p>",
+        "<dl><div><dt>CVR</dt><dd>" + formatPercent(item.cvr) + "</dd></div><div><dt>Leads</dt><dd>" + formatNumber(item.fullSubmissions) + "</dd></div><div><dt>Visitors</dt><dd>" + formatNumber(item.uniqueVisitors) + "</dd></div></dl>",
+        "</article>"
+      ].join("");
+    });
+
+    while (cards.length < 3) {
+      cards.push("<article class=\"dash-history-leader-card dash-history-leader-empty\"><div class=\"dash-history-leader-rank\">#" + (cards.length + 1) + "</div><strong>Waiting for a qualified variant</strong><p>At least " + minimumVisitors + " unique visitors are required.</p></article>");
+    }
+    els.historicalTopThree.innerHTML = cards.join("");
+  }
+
+  function historicalLeaderboardScore(item) {
+    var visitors = Math.max(0, Number(item.uniqueVisitors || 0));
+    var leads = Math.max(0, Math.min(visitors, Number(item.fullSubmissions || 0)));
+    if (!visitors) return 0;
+    var z = 1.645;
+    var proportion = leads / visitors;
+    var denominator = 1 + (z * z / visitors);
+    var center = proportion + (z * z / (2 * visitors));
+    var margin = z * Math.sqrt((proportion * (1 - proportion) / visitors) + (z * z / (4 * visitors * visitors)));
+    return Math.max(0, (center - margin) / denominator);
+  }
+
+  function historicalVariantName(item) {
+    var snapshot = item.snapshot || {};
+    return snapshot.trackingLabel || item.configVersion || "Historical variant";
   }
 
   function renderFullHistoryInsights(history) {
@@ -3992,7 +4048,7 @@
       escapeHtml(item.liveMatchLabel),
       "</span>",
       "<small class=\"dash-live-match-detail\">",
-      escapeHtml(Math.round(Number(item.liveMatchScore || 0) * 100) + "% vs Live " + item.liveMatchVariant),
+      escapeHtml(Math.round(Number(item.liveMatchScore || 0) * 100) + "% match vs Live " + item.liveMatchVariant + (Number(item.liveMatchCoverage || 0) < 0.995 ? " · " + Math.round(Number(item.liveMatchCoverage || 0) * 100) + "% attributes known" : "")),
       "</small>",
       details
     ].join("");
@@ -4334,6 +4390,7 @@
       item.isLive = item.configVersion === liveVersions[item.variant];
       item.liveMatch = compareHistoryItemToLive(item, liveComparisonItems);
       item.liveMatchScore = item.liveMatch.score;
+      item.liveMatchCoverage = item.liveMatch.coverage;
       item.liveMatchVariant = item.liveMatch.variant;
       item.liveMatchLevel = item.liveMatch.level;
       item.liveMatchLabel = item.liveMatch.label;
@@ -4498,10 +4555,12 @@
   function buildLiveComparisonItems() {
     return publishedActiveVariants().map(function (variant) {
       var snapshot = getVariantSnapshot(variant);
+      var flowSteps = enabledHistoryFlowSteps(snapshot);
+      var firstFlowStep = flowSteps[0] || {};
       return {
         variant: variant.id,
         snapshot: snapshot,
-        headline: cleanHistoryText(snapshot.headlineHtml || snapshot.headline || ""),
+        headline: cleanHistoryText(firstFlowStep.headlineHtml || snapshot.headlineHtml || snapshot.headline || ""),
         cta: liveSnapshotCta(snapshot),
         flow: liveSnapshotFlow(snapshot),
         buttonColor: normalizeComparableText(snapshot.accentColor),
@@ -4514,123 +4573,135 @@
   }
 
   function compareHistoryItemToLive(item, liveItems) {
-    if (!liveItems.length) return { score: 0, variant: "", level: "low", label: "Different", details: [] };
+    if (!liveItems.length) return { score: 0, coverage: 0, variant: "", level: "unknown", label: "Limited data", details: [] };
 
     var best = liveItems.reduce(function (best, live) {
-      var score = liveSimilarityScore(item, live);
-      return !best || score > best.score ? { score: score, variant: live.variant, live: live } : best;
+      var similarity = liveSimilarityScore(item, live);
+      if (!best || similarity.score > best.score || (similarity.score === best.score && similarity.coverage > best.coverage)) {
+        return { score: similarity.score, coverage: similarity.coverage, variant: live.variant, live: live, details: similarity.details };
+      }
+      return best;
     }, null);
 
-    var level = best.score >= 0.85 ? "high" : best.score >= 0.55 ? "medium" : "low";
-    var label = level === "high" ? "Strong" : level === "medium" ? "Similar" : "Different";
+    var exact = best.score >= 0.995 && best.coverage >= 0.98;
+    var currentLive = item.isLive && item.variant === best.variant && exact;
+    var level = best.coverage < 0.55 ? "unknown" : best.score >= 0.90 ? "high" : best.score >= 0.65 ? "medium" : "low";
+    var label = currentLive ? "Current live" : exact ? "Exact" : level === "high" ? "Strong" : level === "medium" ? "Similar" : level === "unknown" ? "Limited data" : "Different";
     return {
       score: best.score,
+      coverage: best.coverage,
       variant: best.variant,
       level: level,
       label: label,
-      details: liveDifferenceDetails(item, best.live).slice(0, 6)
+      details: best.details.slice(0, 8)
     };
   }
 
-  function liveDifferenceDetails(item, live) {
-    var snapshot = item.snapshot || {};
-    var comparisons = [
-      {
-        name: "Flow",
-        score: item.flow === live.flow ? 1 : 0,
-        same: "Same flow",
-        close: "Similar flow",
-        different: "Different flow"
-      },
-      {
-        name: "Headline",
-        score: textSimilarity(item.headline || cleanHistoryText(snapshot.headlineHtml || snapshot.headline || ""), live.headline),
-        same: "Same headline",
-        close: "Similar headline",
-        different: "Different headline"
-      },
-      {
-        name: "CTA",
-        score: textSimilarity(item.cta || liveSnapshotCta(snapshot), live.cta),
-        same: "Same CTA",
-        close: "Similar CTA",
-        different: "Different CTA"
-      },
-      {
-        name: "Image",
-        score: exactSimilarity(snapshot.imageUrl, live.imageUrl),
-        same: "Same image",
-        close: "Similar image",
-        different: "Different image"
-      },
-      {
-        name: "Button",
-        score: exactSimilarity(item.buttonColor || snapshot.accentColor, live.buttonColor),
-        same: "Same button color",
-        close: "Similar button color",
-        different: "Different button color"
-      },
-      {
-        name: "Background",
-        score: exactSimilarity(snapshot.backgroundColor, live.backgroundColor),
-        same: "Same background",
-        close: "Similar background",
-        different: "Different background"
-      },
-      {
-        name: "Fields",
-        score: exactSimilarity(Boolean(snapshot.proteinQuiz && snapshot.proteinQuiz.showFirstName === false), Boolean(live.snapshot.proteinQuiz && live.snapshot.proteinQuiz.showFirstName === false)),
-        same: "Same fields",
-        close: "Similar fields",
-        different: "Different fields"
-      },
-      {
-        name: "Progress",
-        score: exactSimilarity(Boolean(snapshot.proteinQuiz && snapshot.proteinQuiz.progressEnabled), Boolean(live.snapshot.proteinQuiz && live.snapshot.proteinQuiz.progressEnabled)),
-        same: "Same progress",
-        close: "Similar progress",
-        different: "Different progress"
-      }
-    ];
+  function liveSimilarityScore(item, live) {
+    var attributes = buildLiveComparisonAttributes(item, live);
+    var possibleWeight = attributes.reduce(function (sum, attribute) {
+      return sum + (attribute.liveKnown ? attribute.weight : 0);
+    }, 0);
+    var comparedWeight = attributes.reduce(function (sum, attribute) {
+      return sum + (attribute.known ? attribute.weight : 0);
+    }, 0);
+    var matchedWeight = attributes.reduce(function (sum, attribute) {
+      return sum + (attribute.known ? attribute.weight * attribute.score : 0);
+    }, 0);
+    return {
+      score: possibleWeight ? matchedWeight / possibleWeight : 0,
+      coverage: possibleWeight ? comparedWeight / possibleWeight : 0,
+      details: liveDifferenceDetailsFromAttributes(attributes)
+    };
+  }
 
-    return comparisons.map(function (item) {
-      var status = item.score >= 0.85 ? "same" : item.score >= 0.45 ? "close" : "different";
+  function buildLiveComparisonAttributes(item, live) {
+    var snapshot = item.snapshot || {};
+    var liveSnapshot = live.snapshot || {};
+    var historySteps = enabledHistoryFlowSteps(snapshot);
+    var liveSteps = enabledHistoryFlowSteps(liveSnapshot);
+    var historyFirst = historySteps[0] || {};
+    var liveFirst = liveSteps[0] || {};
+    var historyLead = historySteps.filter(function (step) { return step.type === "lead"; })[0] || {};
+    var liveLead = liveSteps.filter(function (step) { return step.type === "lead"; })[0] || {};
+    var historyQuiz = snapshot.proteinQuiz || {};
+    var liveQuiz = liveSnapshot.proteinQuiz || {};
+
+    return [
+      comparableAttribute("Flow", "flow", 12, historyFlowKnown(item, snapshot), item.flow, true, live.flow, "exact"),
+      comparableAttribute("Step count", "step count", 5, Array.isArray(snapshot.flowSteps), historySteps.length, Array.isArray(liveSnapshot.flowSteps), liveSteps.length, "exact"),
+      comparableAttribute("Headline", "headline", 18, historyCopyKnown(snapshot, historyFirst, "headlineHtml", "headline"), item.headline || cleanHistoryText(historyFirst.headlineHtml || snapshot.headlineHtml || snapshot.headline || ""), historyCopyKnown(liveSnapshot, liveFirst, "headlineHtml", "headline"), live.headline, "text"),
+      comparableAttribute("Subheadline", "subheadline", 12, historyCopyKnown(snapshot, historyFirst, "subheadlineHtml", "subheadline"), item.subheadline || cleanHistoryText(historyFirst.subheadlineHtml || snapshot.subheadlineHtml || snapshot.subheadline || ""), historyCopyKnown(liveSnapshot, liveFirst, "subheadlineHtml", "subheadline"), cleanHistoryText(liveFirst.subheadlineHtml || liveSnapshot.subheadlineHtml || liveSnapshot.subheadline || ""), "text"),
+      comparableAttribute("Value line", "value line", 4, historyCopyKnown(snapshot, historyFirst, "valueLineHtml", "valueLine"), cleanHistoryText(historyFirst.valueLineHtml || snapshot.valueLineHtml || snapshot.valueLine || ""), historyCopyKnown(liveSnapshot, liveFirst, "valueLineHtml", "valueLine"), cleanHistoryText(liveFirst.valueLineHtml || liveSnapshot.valueLineHtml || liveSnapshot.valueLine || ""), "text"),
+      comparableAttribute("CTA", "CTA", 10, historyCtaKnown(snapshot, historyLead, historyQuiz), item.cta || liveSnapshotCta(snapshot), historyCtaKnown(liveSnapshot, liveLead, liveQuiz), live.cta, "text"),
+      comparableAttribute("Image", "image", 10, hasOwn(snapshot, "imageUrl"), snapshot.imageUrl, hasOwn(liveSnapshot, "imageUrl"), liveSnapshot.imageUrl, "exact"),
+      comparableAttribute("Button color", "button color", 5, hasOwn(snapshot, "accentColor"), snapshot.accentColor, hasOwn(liveSnapshot, "accentColor"), liveSnapshot.accentColor, "exact"),
+      comparableAttribute("Background", "background", 3, hasOwn(snapshot, "backgroundColor"), snapshot.backgroundColor, hasOwn(liveSnapshot, "backgroundColor"), liveSnapshot.backgroundColor, "exact"),
+      comparableAttribute("Text color", "text color", 3, hasOwn(snapshot, "textColor"), snapshot.textColor, hasOwn(liveSnapshot, "textColor"), liveSnapshot.textColor, "exact"),
+      comparableAttribute("Font", "font", 4, hasOwn(snapshot, "fontFamily"), snapshot.fontFamily, hasOwn(liveSnapshot, "fontFamily"), liveSnapshot.fontFamily, "exact"),
+      comparableAttribute("Headline size", "headline size", 3, historyStyleKnown(snapshot, historyFirst, "headlineFontSize"), historyFirst.headlineFontSize || snapshot.headlineFontSize, historyStyleKnown(liveSnapshot, liveFirst, "headlineFontSize"), liveFirst.headlineFontSize || liveSnapshot.headlineFontSize, "exact"),
+      comparableAttribute("Subheadline size", "subheadline size", 2, historyStyleKnown(snapshot, historyFirst, "subheadlineFontSize"), historyFirst.subheadlineFontSize || snapshot.subheadlineFontSize, historyStyleKnown(liveSnapshot, liveFirst, "subheadlineFontSize"), liveFirst.subheadlineFontSize || liveSnapshot.subheadlineFontSize, "exact"),
+      comparableAttribute("Button size", "button size", 2, historyStyleKnown(snapshot, historyLead, "buttonFontSize"), historyLead.buttonFontSize || snapshot.buttonFontSize, historyStyleKnown(liveSnapshot, liveLead, "buttonFontSize"), liveLead.buttonFontSize || liveSnapshot.buttonFontSize, "exact"),
+      comparableAttribute("Width", "width", 3, hasOwn(snapshot, "width"), snapshot.width, hasOwn(liveSnapshot, "width"), liveSnapshot.width, "exact"),
+      comparableAttribute("Height", "height", 2, hasOwn(snapshot, "height"), snapshot.height, hasOwn(liveSnapshot, "height"), liveSnapshot.height, "exact"),
+      comparableAttribute("Alignment", "alignment", 2, hasOwn(snapshot, "textAlign"), snapshot.textAlign, hasOwn(liveSnapshot, "textAlign"), liveSnapshot.textAlign, "exact"),
+      comparableAttribute("Image sizing", "image sizing", 2, hasOwn(snapshot, "sizeToImage"), Boolean(snapshot.sizeToImage), hasOwn(liveSnapshot, "sizeToImage"), Boolean(liveSnapshot.sizeToImage), "exact"),
+      comparableAttribute("First name field", "first name field", 2, hasOwn(historyQuiz, "showFirstName"), historyQuiz.showFirstName !== false, hasOwn(liveQuiz, "showFirstName"), liveQuiz.showFirstName !== false, "exact"),
+      comparableAttribute("Email field", "email field", 2, hasOwn(historyQuiz, "showEmail"), historyQuiz.showEmail !== false, hasOwn(liveQuiz, "showEmail"), liveQuiz.showEmail !== false, "exact"),
+      comparableAttribute("Progress", "progress", 3, hasOwn(historyQuiz, "progressEnabled"), Boolean(historyQuiz.progressEnabled), hasOwn(liveQuiz, "progressEnabled"), Boolean(liveQuiz.progressEnabled), "exact")
+    ];
+  }
+
+  function comparableAttribute(name, detailName, weight, historyKnown, historyValue, liveKnown, liveValue, type) {
+    var known = Boolean(historyKnown && liveKnown);
+    return {
+      name: name,
+      detailName: detailName,
+      weight: weight,
+      known: known,
+      liveKnown: Boolean(liveKnown),
+      score: known ? (type === "text" ? textSimilarity(historyValue, liveValue) : exactSimilarity(historyValue, liveValue)) : 0
+    };
+  }
+
+  function liveDifferenceDetailsFromAttributes(attributes) {
+    return attributes.map(function (attribute) {
+      var status = !attribute.known ? "unknown" : attribute.score >= 0.98 ? "same" : attribute.score >= 0.45 ? "close" : "different";
       return {
-        name: item.name,
+        name: attribute.name,
         status: status,
-        score: item.score,
-        label: status === "same" ? item.same : status === "close" ? item.close : item.different
+        score: attribute.score,
+        label: status === "same" ? "Same " + attribute.detailName : status === "close" ? "Similar " + attribute.detailName : status === "unknown" ? attribute.name + " unavailable" : "Different " + attribute.detailName
       };
     }).sort(function (a, b) {
-      var order = { different: 0, close: 1, same: 2 };
+      var order = { unknown: 0, different: 1, close: 2, same: 3 };
       if (order[a.status] !== order[b.status]) return order[a.status] - order[b.status];
       return a.name.localeCompare(b.name);
     });
   }
 
-  function liveSimilarityScore(item, live) {
-    var snapshot = item.snapshot || {};
-    var total = 0;
-    var score = 0;
+  function enabledHistoryFlowSteps(snapshot) {
+    return snapshot && Array.isArray(snapshot.flowSteps) ? snapshot.flowSteps.filter(function (step) { return step.enabled !== false; }) : [];
+  }
 
-    function add(weight, matched) {
-      total += weight;
-      score += weight * matched;
-    }
+  function historyFlowKnown(item, snapshot) {
+    return Array.isArray(snapshot.flowSteps) || Boolean(snapshot.proteinQuiz) || String(item.label || "").indexOf("Flow:") >= 0;
+  }
 
-    add(18, item.flow === live.flow ? 1 : 0);
-    add(18, textSimilarity(item.headline || cleanHistoryText(snapshot.headlineHtml || snapshot.headline || ""), live.headline));
-    add(12, textSimilarity(item.cta || liveSnapshotCta(snapshot), live.cta));
-    add(10, exactSimilarity(item.buttonColor || snapshot.accentColor, live.buttonColor));
-    add(8, exactSimilarity(snapshot.backgroundColor, live.backgroundColor));
-    add(12, exactSimilarity(snapshot.imageUrl, live.imageUrl));
-    add(5, exactSimilarity(snapshot.width, live.width));
-    add(5, exactSimilarity(snapshot.textAlign, live.textAlign));
-    add(6, exactSimilarity(Boolean(snapshot.sizeToImage), Boolean(live.snapshot.sizeToImage)));
-    add(3, exactSimilarity(Boolean(snapshot.proteinQuiz && snapshot.proteinQuiz.showFirstName === false), Boolean(live.snapshot.proteinQuiz && live.snapshot.proteinQuiz.showFirstName === false)));
-    add(3, exactSimilarity(Boolean(snapshot.proteinQuiz && snapshot.proteinQuiz.progressEnabled), Boolean(live.snapshot.proteinQuiz && live.snapshot.proteinQuiz.progressEnabled)));
+  function historyCopyKnown(snapshot, step, stepKey, fallbackKey) {
+    return hasOwn(step, stepKey) || hasOwn(snapshot, stepKey) || hasOwn(snapshot, fallbackKey);
+  }
 
-    return total ? score / total : 0;
+  function historyStyleKnown(snapshot, step, key) {
+    return hasOwn(step, key) || hasOwn(snapshot, key);
+  }
+
+  function historyCtaKnown(snapshot, leadStep, quiz) {
+    return hasOwn(leadStep, "buttonText") || hasOwn(quiz, "leadButtonText") || hasOwn(snapshot, "buttonText");
+  }
+
+  function hasOwn(object, key) {
+    return Boolean(object && Object.prototype.hasOwnProperty.call(object, key));
   }
 
   function liveSnapshotFlow(snapshot) {
@@ -4644,7 +4715,10 @@
 
   function liveSnapshotCta(snapshot) {
     var quiz = snapshot && snapshot.proteinQuiz || {};
-    return quiz.leadButtonText || snapshot.buttonText || "";
+    var leadStep = enabledHistoryFlowSteps(snapshot).filter(function (step) {
+      return step.type === "lead";
+    })[0] || {};
+    return leadStep.buttonText || quiz.leadButtonText || snapshot.buttonText || "";
   }
 
   function exactSimilarity(a, b) {
@@ -4668,7 +4742,7 @@
 
   function tokenizeComparableText(value) {
     return unique(normalizeComparableText(cleanHistoryText(value)).split(" ").filter(function (token) {
-      return token.length > 2;
+      return token.length > 2 || /^\d+$/.test(token);
     }));
   }
 
