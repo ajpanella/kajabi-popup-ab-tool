@@ -82,7 +82,6 @@
     savedColors: document.getElementById("saved-colors"),
     recommendations: document.getElementById("recommendation-list"),
     history: document.getElementById("variation-history"),
-    historicalTopThree: document.getElementById("historical-top-three"),
     previews: document.getElementById("variant-previews"),
     desktopPreview: document.getElementById("desktop-preview"),
     comparePreview: document.getElementById("compare-preview"),
@@ -3838,79 +3837,51 @@
   function renderFullVariantHistory(data) {
     if (!els.fullHistoryBody) return;
     var fullHistory = buildFullVariantHistory(data);
-    renderHistoricalTopThree(fullHistory);
-    var history = sortFullVariantHistory(applyFullHistoryFilters(fullHistory));
+    var filteredHistory = applyFullHistoryFilters(fullHistory);
+    var leaders = historicalTopThree(filteredHistory);
+    var history = sortFullVariantHistory(filteredHistory);
     updateFullHistorySortHeaders();
-    renderFullHistoryInsights(history);
-    renderConversionCoach(history);
+    renderFullHistoryInsights(filteredHistory);
+    renderConversionCoach(filteredHistory);
 
-    if (!history.length) {
+    if (!filteredHistory.length) {
       els.fullHistoryBody.innerHTML = "<tr><td colspan=\"15\">No matching historical variants yet.</td></tr>";
       return;
     }
 
-    els.fullHistoryBody.innerHTML = history.map(function (item) {
-      var snapshotHtml = item.snapshot
-        ? "<details class=\"dash-history-details\"><summary>View</summary><pre>" + escapeHtml(JSON.stringify(item.snapshot, null, 2)) + "</pre></details>"
-        : "";
-      var matchHtml = renderLiveMatchBadge(item);
-      var rowClass = compareFullHistoryToLive ? " class=\"dash-history-match-row dash-history-match-" + escapeHtmlAttr(item.liveMatchLevel) + "\"" : "";
-      return [
-        "<tr" + rowClass + ">",
-        "<td>" + (item.isLive ? "<span class=\"dash-live-badge\">Live</span>" : "<span class=\"dash-archive-badge\">Archived</span>") + "</td>",
-        "<td>" + escapeHtml(item.configVersion) + "</td>",
-        "<td>" + escapeHtml(item.publishedLabel) + "</td>",
-        "<td>" + escapeHtml(item.daysLabel) + "</td>",
-        "<td class=\"dash-history-text-cell\">" + escapeHtml(item.headline) + "</td>",
-        "<td class=\"dash-history-text-cell\">" + escapeHtml(item.cta) + "</td>",
-        "<td>" + escapeHtml(item.flowLabel) + "</td>",
-        "<td><span class=\"dash-color-pill\" style=\"--pill-color:" + escapeHtmlAttr(item.buttonColor) + "\"></span>" + escapeHtml(item.buttonColor) + "</td>",
-        "<td>" + formatNumber(item.views) + "</td>",
-        "<td>" + formatNumber(item.fullSubmissions) + "</td>",
-        "<td>" + formatPercent(item.cvr) + "</td>",
-        "<td>" + matchHtml + "</td>",
-        "<td>" + renderPatternTags(item) + "</td>",
-        "<td class=\"dash-history-text-cell\">" + escapeHtml(item.uniqueAttributes) + "</td>",
-        "<td><button class=\"dash-history-restore\" type=\"button\" data-history-restore=\"" + escapeHtmlAttr(item.key) + "\">Restore as Draft</button>" + snapshotHtml + "</td>",
-        "</tr>"
-      ].join("");
-    }).join("");
+    var rowsHtml = [];
+    if (leaders.length) {
+      rowsHtml.push(renderFullHistorySectionRow("Historical Top 3", "Best distinct archived tests, ranked with sample size considered", "top"));
+      leaders.forEach(function (item, index) {
+        rowsHtml.push(renderFullHistoryRow(item, index + 1));
+      });
+    }
+    if (history.length) {
+      rowsHtml.push(renderFullHistorySectionRow("All Historical Variants", fullHistorySort.key === "published" ? "Newest to oldest" : "Using your selected column sort", "all"));
+      history.forEach(function (item) {
+        rowsHtml.push(renderFullHistoryRow(item, 0));
+      });
+    }
+    els.fullHistoryBody.innerHTML = rowsHtml.join("");
   }
 
-  function renderHistoricalTopThree(history) {
-    if (!els.historicalTopThree) return;
+  function historicalTopThree(history) {
     var minimumVisitors = 25;
-    var candidates = history.filter(function (item) {
-      return item.uniqueVisitors >= minimumVisitors;
+    var ranked = history.filter(function (item) {
+      return !item.isLive && item.uniqueVisitors >= minimumVisitors;
     }).sort(function (a, b) {
       var scoreDifference = historicalLeaderboardScore(b) - historicalLeaderboardScore(a);
       if (Math.abs(scoreDifference) > 0.000001) return scoreDifference;
       if (b.cvr !== a.cvr) return b.cvr - a.cvr;
       return b.uniqueVisitors - a.uniqueVisitors;
-    }).slice(0, 3);
-
-    if (!candidates.length) {
-      els.historicalTopThree.innerHTML = "<p class=\"dash-empty-state\">No variant has reached " + minimumVisitors + " unique visitors yet. The leaderboard will appear as tests collect enough data.</p>";
-      return;
-    }
-
-    var cards = candidates.map(function (item, index) {
-      var confidence = item.uniqueVisitors >= 100 ? "Established" : item.uniqueVisitors >= 50 ? "Building" : "Early read";
-      var name = historicalVariantName(item);
-      return [
-        "<article class=\"dash-history-leader-card\">",
-        "<div class=\"dash-history-leader-rank\">#" + (index + 1) + "</div>",
-        "<div class=\"dash-history-leader-heading\"><div><span>" + escapeHtml(item.isLive ? "Live " + item.variant : "Archived") + "</span><strong>" + escapeHtml(name) + "</strong></div><em>" + escapeHtml(confidence) + "</em></div>",
-        "<p>" + escapeHtml(item.headline || "Headline unavailable") + "</p>",
-        "<dl><div><dt>CVR</dt><dd>" + formatPercent(item.cvr) + "</dd></div><div><dt>Leads</dt><dd>" + formatNumber(item.fullSubmissions) + "</dd></div><div><dt>Visitors</dt><dd>" + formatNumber(item.uniqueVisitors) + "</dd></div></dl>",
-        "</article>"
-      ].join("");
     });
-
-    while (cards.length < 3) {
-      cards.push("<article class=\"dash-history-leader-card dash-history-leader-empty\"><div class=\"dash-history-leader-rank\">#" + (cards.length + 1) + "</div><strong>Waiting for a qualified variant</strong><p>At least " + minimumVisitors + " unique visitors are required.</p></article>");
-    }
-    els.historicalTopThree.innerHTML = cards.join("");
+    var signatures = {};
+    return ranked.filter(function (item) {
+      var signature = historicalApproachSignature(item);
+      if (signatures[signature]) return false;
+      signatures[signature] = true;
+      return true;
+    }).slice(0, 3);
   }
 
   function historicalLeaderboardScore(item) {
@@ -3925,9 +3896,60 @@
     return Math.max(0, (center - margin) / denominator);
   }
 
-  function historicalVariantName(item) {
+  function historicalApproachSignature(item) {
     var snapshot = item.snapshot || {};
-    return snapshot.trackingLabel || item.configVersion || "Historical variant";
+    var quiz = snapshot.proteinQuiz || {};
+    return [
+      normalizeComparableText(item.headline),
+      normalizeComparableText(item.subheadline),
+      normalizeComparableText(item.cta),
+      normalizeComparableText(item.flow),
+      normalizeComparableText(snapshot.imageUrl),
+      normalizeComparableText(snapshot.accentColor),
+      normalizeComparableText(snapshot.backgroundColor),
+      quiz.showFirstName === false ? "no-name" : "name",
+      quiz.progressEnabled ? "progress" : "no-progress"
+    ].join("|");
+  }
+
+  function renderFullHistorySectionRow(title, detail, type) {
+    return [
+      "<tr class=\"dash-history-section-row dash-history-section-" + escapeHtmlAttr(type) + "\">",
+      "<td colspan=\"15\"><strong>" + escapeHtml(title) + "</strong><span>" + escapeHtml(detail) + "</span></td>",
+      "</tr>"
+    ].join("");
+  }
+
+  function renderFullHistoryRow(item, rank) {
+    var snapshotHtml = item.snapshot
+      ? "<details class=\"dash-history-details\"><summary>View</summary><pre>" + escapeHtml(JSON.stringify(item.snapshot, null, 2)) + "</pre></details>"
+      : "";
+    var matchHtml = renderLiveMatchBadge(item);
+    var rowClasses = [];
+    if (compareFullHistoryToLive) rowClasses.push("dash-history-match-row", "dash-history-match-" + item.liveMatchLevel);
+    if (rank) rowClasses.push("dash-history-top-row", "dash-history-top-rank-" + rank);
+    var rowClass = rowClasses.length ? " class=\"" + escapeHtmlAttr(rowClasses.join(" ")) + "\"" : "";
+    var statusHtml = item.isLive ? "<span class=\"dash-live-badge\">Live</span>" : "<span class=\"dash-archive-badge\">Archived</span>";
+    if (rank) statusHtml = "<span class=\"dash-history-rank-badge\">Top " + rank + "</span>" + statusHtml;
+    return [
+      "<tr" + rowClass + ">",
+      "<td>" + statusHtml + "</td>",
+      "<td>" + escapeHtml(item.configVersion) + "</td>",
+      "<td>" + escapeHtml(item.publishedLabel) + "</td>",
+      "<td>" + escapeHtml(item.daysLabel) + "</td>",
+      "<td class=\"dash-history-text-cell\">" + escapeHtml(item.headline) + "</td>",
+      "<td class=\"dash-history-text-cell\">" + escapeHtml(item.cta) + "</td>",
+      "<td>" + escapeHtml(item.flowLabel) + "</td>",
+      "<td><span class=\"dash-color-pill\" style=\"--pill-color:" + escapeHtmlAttr(item.buttonColor) + "\"></span>" + escapeHtml(item.buttonColor) + "</td>",
+      "<td>" + formatNumber(item.views) + "</td>",
+      "<td>" + formatNumber(item.fullSubmissions) + "</td>",
+      "<td>" + formatPercent(item.cvr) + "</td>",
+      "<td>" + matchHtml + "</td>",
+      "<td>" + renderPatternTags(item) + "</td>",
+      "<td class=\"dash-history-text-cell\">" + escapeHtml(item.uniqueAttributes) + "</td>",
+      "<td><button class=\"dash-history-restore\" type=\"button\" data-history-restore=\"" + escapeHtmlAttr(item.key) + "\">Restore as Draft</button>" + snapshotHtml + "</td>",
+      "</tr>"
+    ].join("");
   }
 
   function renderFullHistoryInsights(history) {
@@ -4296,7 +4318,6 @@
     var key = fullHistorySort.key || "published";
     var direction = fullHistorySort.direction === "asc" ? 1 : -1;
     return history.slice().sort(function (a, b) {
-      if (key === "published" && a.isLive !== b.isLive) return a.isLive ? -1 : 1;
       var comparison = compareFullHistoryValues(sortFullHistoryValue(a, key), sortFullHistoryValue(b, key));
       if (comparison === 0) comparison = compareFullHistoryValues(sortFullHistoryValue(a, "published"), sortFullHistoryValue(b, "published"));
       return comparison * direction;
