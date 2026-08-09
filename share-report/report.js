@@ -2,7 +2,9 @@
   "use strict";
 
   var config = null;
-  var rows = [];
+  var currentMetricAccumulators = {};
+  var historyGroups = {};
+  var processedRows = 0;
   var els = {
     status: document.getElementById("report-status"),
     updated: document.getElementById("report-updated"),
@@ -22,10 +24,10 @@
       await loadFreshConfig();
       config = window.LL_POPUP_CONFIG || { variants: [] };
       if (!config.trackingCsvUrl) throw new Error("The tracking source is not configured.");
-      rows = parseCsv(await fetchFreshText(config.trackingCsvUrl));
-      rows = rows.filter(function (row) {
-        return !config.testId || row.testId === config.testId;
-      });
+      initializeAggregates();
+      renderCurrentVariants();
+      els.leaderboard.innerHTML = emptyState("Loading historical results...");
+      await streamTrackingCsv(config.trackingCsvUrl, consumeTrackingRow, updateLoadingState);
       renderCurrentVariants();
       renderHistoricalLeaderboard();
       renderReadyState();
@@ -44,18 +46,57 @@
     });
   }
 
-  function fetchFreshText(url) {
+  function cacheBustedUrl(url) {
     var separator = String(url).indexOf("?") >= 0 ? "&" : "?";
-    return fetch(String(url) + separator + "report=" + Date.now(), { cache: "no-store" }).then(function (response) {
-      if (!response.ok) throw new Error("The latest tracking data could not be loaded.");
-      return response.text();
+    return String(url) + separator + "report=" + Date.now();
+  }
+
+  function initializeAggregates() {
+    currentMetricAccumulators = {};
+    historyGroups = {};
+    processedRows = 0;
+    activeVariants().forEach(function (variant) {
+      currentMetricAccumulators[variant.id] = metricAccumulator(variant.id);
     });
+  }
+
+  function consumeTrackingRow(row) {
+    processedRows += 1;
+    row.configVersion = normalizeRowConfigVersion(row);
+    if (config.testId && row.testId !== config.testId) return;
+
+    var variants = activeVariants();
+    var liveVariant = liveVariantForRow(row, variants);
+    if (liveVariant && currentMetricAccumulators[liveVariant.id]) {
+      accumulateMetric(currentMetricAccumulators[liveVariant.id], row);
+    }
+
+    if (!row.variantSnapshot && !row.variantLabel) return;
+    var version = normalizeVersion(row.configVersion || "unversioned");
+    var variant = row.variant || "Unknown";
+    var key = version + "::" + variant;
+    if (!historyGroups[key]) {
+      historyGroups[key] = createHistoryItem(variant, version, parseSnapshot(row.variantSnapshot), row.variantLabel);
+    }
+    accumulateMetric(historyGroups[key].metric, row);
+    var timestamp = parseDate(row.timestamp);
+    if (timestamp && (!historyGroups[key].firstSeen || timestamp < historyGroups[key].firstSeen)) {
+      historyGroups[key].firstSeen = timestamp;
+    }
+  }
+
+  function updateLoadingState(bytesRead, totalBytes) {
+    var loaded = formatBytes(bytesRead);
+    var total = totalBytes ? " of " + formatBytes(totalBytes) : "";
+    els.status.className = "report-status";
+    els.status.textContent = "Refreshing tracking data... " + loaded + total;
+    els.updated.textContent = formatNumber(processedRows) + " events processed";
   }
 
   function renderReadyState() {
     var refreshedAt = new Date();
     els.status.className = "report-status is-ready";
-    els.status.textContent = "Latest aggregate tracking data loaded successfully.";
+    els.status.textContent = "Latest aggregate tracking data loaded successfully. " + formatNumber(processedRows) + " events processed.";
     els.updated.textContent = "Updated " + refreshedAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
     els.version.textContent = "Live configuration: " + (config.configVersion || "Current") + (config.publishedAt ? " · Published " + formatDate(new Date(config.publishedAt)) : "");
   }
@@ -125,17 +166,8 @@
   }
 
   function buildCurrentMetrics(variants) {
-    var byVariant = {};
-    variants.forEach(function (variant) {
-      byVariant[variant.id] = metricAccumulator(variant.id);
-    });
-    rows.forEach(function (row) {
-      var variant = liveVariantForRow(row, variants);
-      if (!variant) return;
-      accumulateMetric(byVariant[variant.id], row);
-    });
     return variants.map(function (variant) {
-      return finalizeMetric(byVariant[variant.id]);
+      return finalizeMetric(currentMetricAccumulators[variant.id] || metricAccumulator(variant.id));
     });
   }
 
@@ -195,21 +227,8 @@
       map[variant.id] = getTrackingVersion(variant);
       return map;
     }, {});
-    var groups = {};
-    rows.forEach(function (row) {
-      var snapshot = parseSnapshot(row.variantSnapshot);
-      if (!snapshot && !row.variantLabel) return;
-      var version = normalizeVersion(row.configVersion || "unversioned");
-      var variant = row.variant || "Unknown";
-      var key = version + "::" + variant;
-      if (!groups[key]) groups[key] = createHistoryItem(variant, version, snapshot, row.variantLabel);
-      if (!groups[key].snapshot && snapshot) groups[key].snapshot = snapshot;
-      accumulateMetric(groups[key].metric, row);
-      var timestamp = parseDate(row.timestamp);
-      if (timestamp && (!groups[key].firstSeen || timestamp < groups[key].firstSeen)) groups[key].firstSeen = timestamp;
-    });
-    return Object.keys(groups).map(function (key) {
-      var item = groups[key];
+    return Object.keys(historyGroups).map(function (key) {
+      var item = historyGroups[key];
       var metric = finalizeMetric(item.metric);
       var snapshot = item.snapshot || {};
       var preview = variantPreview(snapshot);
@@ -388,46 +407,117 @@
     return aliases[normalized] || raw;
   }
 
-  function parseCsv(text) {
-    var lines = [];
+  async function streamTrackingCsv(url, onRecord, onProgress) {
+    var response = await fetch(cacheBustedUrl(url), { cache: "no-store" });
+    if (!response.ok) throw new Error("The latest tracking data could not be loaded.");
+    var totalBytes = Number(response.headers.get("content-length") || 0);
+    var parser = createCsvRecordParser(onRecord);
+    var bytesRead = 0;
+    var lastProgress = 0;
+
+    if (!response.body || !response.body.getReader || typeof TextDecoder === "undefined") {
+      var text = await response.text();
+      parser.write(text);
+      parser.finish();
+      onProgress(text.length, text.length);
+      return;
+    }
+
+    var reader = response.body.getReader();
+    var decoder = new TextDecoder();
+    while (true) {
+      var result = await reader.read();
+      if (result.done) break;
+      bytesRead += result.value.byteLength;
+      parser.write(decoder.decode(result.value, { stream: true }));
+      if (bytesRead - lastProgress >= 1024 * 1024) {
+        lastProgress = bytesRead;
+        onProgress(bytesRead, totalBytes);
+        await yieldToBrowser();
+      }
+    }
+    parser.write(decoder.decode());
+    parser.finish();
+    onProgress(bytesRead, totalBytes);
+  }
+
+  function createCsvRecordParser(onRecord) {
+    var headers = null;
+    var wantedIndexes = [];
     var row = [];
     var cell = "";
     var inQuotes = false;
-    for (var i = 0; i < text.length; i += 1) {
-      var character = text[i];
-      var next = text[i + 1];
-      if (character === "\"" && inQuotes && next === "\"") {
-        cell += "\"";
-        i += 1;
+    var quotePending = false;
+    var wantedHeaders = {
+      timestamp: true,
+      testId: true,
+      configVersion: true,
+      variant: true,
+      variantLabel: true,
+      variantSnapshot: true,
+      eventType: true,
+      sessionId: true
+    };
+
+    function emitRow() {
+      row.push(cell);
+      cell = "";
+      if (!headers) {
+        headers = row.map(canonicalHeader);
+        headers.forEach(function (header, index) {
+          if (wantedHeaders[header]) wantedIndexes.push([index, header]);
+        });
+      } else if (row.some(Boolean)) {
+        var record = {};
+        wantedIndexes.forEach(function (entry) {
+          record[entry[1]] = String(row[entry[0]] || "").trim();
+        });
+        onRecord(record);
+      }
+      row = [];
+    }
+
+    function processCharacter(character) {
+      if (quotePending) {
+        if (character === "\"") {
+          cell += "\"";
+          quotePending = false;
+          return;
+        }
+        quotePending = false;
+        inQuotes = false;
+      }
+      if (inQuotes) {
+        if (character === "\"") quotePending = true;
+        else cell += character;
       } else if (character === "\"") {
-        inQuotes = !inQuotes;
-      } else if (character === "," && !inQuotes) {
+        inQuotes = true;
+      } else if (character === ",") {
         row.push(cell);
         cell = "";
-      } else if ((character === "\n" || character === "\r") && !inQuotes) {
-        if (character === "\r" && next === "\n") i += 1;
-        row.push(cell);
-        lines.push(row);
-        row = [];
-        cell = "";
-      } else {
+      } else if (character === "\n") {
+        emitRow();
+      } else if (character !== "\r") {
         cell += character;
       }
     }
-    if (cell || row.length) {
-      row.push(cell);
-      lines.push(row);
-    }
-    var headers = lines.shift() || [];
-    return lines.filter(function (line) { return line.some(Boolean); }).map(function (line) {
-      var record = headers.reduce(function (record, header, index) {
-        var canonical = canonicalHeader(header);
-        if (canonical) record[canonical] = String(line[index] || "").trim();
-        return record;
-      }, {});
-      record.configVersion = normalizeRowConfigVersion(record);
-      return record;
-    });
+
+    return {
+      write: function (chunk) {
+        for (var i = 0; i < chunk.length; i += 1) processCharacter(chunk[i]);
+      },
+      finish: function () {
+        if (quotePending) {
+          quotePending = false;
+          inQuotes = false;
+        }
+        if (cell || row.length) emitRow();
+      }
+    };
+  }
+
+  function yieldToBrowser() {
+    return new Promise(function (resolve) { window.setTimeout(resolve, 0); });
   }
 
   function normalizeRowConfigVersion(record) {
@@ -563,6 +653,12 @@
 
   function formatNumber(value) {
     return Number(value || 0).toLocaleString();
+  }
+
+  function formatBytes(value) {
+    var bytes = Number(value || 0);
+    if (bytes < 1024 * 1024) return Math.max(0, Math.round(bytes / 1024)) + " KB";
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   }
 
   function formatPercent(value) {
