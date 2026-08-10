@@ -116,16 +116,17 @@
         }
       ],
       "trackingLabel": "Planned In Seconds",
-      "trackingStartedAt": "2026-07-26T00:43:22.521Z"
+      "trackingStartedAt": "2026-07-26T00:43:22.521Z",
+      "trackingLabelManual": false
     },
     {
       "id": "B",
       "name": "Headline Challenger - Stay Fuller",
       "active": true,
       "trafficSplit": 33,
-      "headline": "Get Your High-Protein Week Planned in Seconds",
+      "headline": "Know Exactly What To Eat For More Protein",
       "subheadline": "Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.",
-      "imageUrl": "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/same-image-new-mockup-34f5b82f1eaa.png",
+      "imageUrl": "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/your-personalized-protein-plan-mockup-66430600d5b5.png",
       "width": 810,
       "backgroundColor": "#fbfaf7",
       "textColor": "#1c2520",
@@ -161,7 +162,7 @@
         "showFirstName": false,
         "showEmail": true,
         "quizButtonText": "Calculate",
-        "leadHeadline": "Get Your High-Protein Week Planned in Seconds",
+        "leadHeadline": "Know Exactly What To Eat For More Protein",
         "leadSubheadline": "Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.",
         "firstNameLabel": "First name",
         "firstNamePlaceholder": "First Name",
@@ -170,10 +171,10 @@
         "leadButtonText": "Build My Free Plan",
         "backButtonText": "Back"
       },
-      "trackingVersion": "8/4/2026 · get-your-high-protein-week-p-vlay",
-      "trackingFingerprint": "{\"headline\":\"Get Your High-Protein Week Planned in Seconds\",\"headlineHtml\":\"<span>Get Your High-Protein Week Planned in Seconds</span>\",\"headlineFontSize\":44,\"subheadline\":\"Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.\",\"subheadlineHtml\":\"<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/same-image-new-mockup-34f5b82f1eaa.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"reminderEnabled\":true,\"reminderText\":\"Free Protein Plan\",\"reminderColor\":\"#ea8011\",\"reminderTextColor\":\"#ffffff\",\"reopenAfterCloseSeconds\":35,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Get Your High-Protein Week Planned in Seconds\",\"leadSubheadline\":\"Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"<span>Get Your High-Protein Week Planned in Seconds</span>\",\"subheadlineHtml\":\"<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/same-image-new-mockup-34f5b82f1eaa.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
+      "trackingVersion": "8/10/2026 · know-exactly-what-to-eat-for-9le4",
+      "trackingFingerprint": "{\"headline\":\"Know Exactly What To Eat For More Protein\",\"headlineHtml\":\"Know Exactly What To Eat For More Protein\",\"headlineFontSize\":44,\"subheadline\":\"Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.\",\"subheadlineHtml\":\"<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/your-personalized-protein-plan-mockup-66430600d5b5.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"reminderEnabled\":true,\"reminderText\":\"Free Protein Plan\",\"reminderColor\":\"#ea8011\",\"reminderTextColor\":\"#ffffff\",\"reopenAfterCloseSeconds\":35,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Know Exactly What To Eat For More Protein\",\"leadSubheadline\":\"Simple meals, a personalized grocery list, and protein already calculated - so you can stay full without overthinking your meals.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"Know Exactly What To Eat For More Protein\",\"subheadlineHtml\":\"<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/your-personalized-protein-plan-mockup-66430600d5b5.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
       "valueLine": "Simple meals, daily protein target, and grocery list included.",
-      "headlineHtml": "<span>Get Your High-Protein Week Planned in Seconds</span>",
+      "headlineHtml": "Know Exactly What To Eat For More Protein",
       "headlineFontSize": 44,
       "subheadlineFontSize": 26,
       "valueLineHtml": "<br>",
@@ -182,10 +183,10 @@
       "brandAccentColor": "#06b00b",
       "flowSteps": [
         {
-          "headlineHtml": "<span>Get Your High-Protein Week Planned in Seconds</span>",
+          "headlineHtml": "Know Exactly What To Eat For More Protein",
           "subheadlineHtml": "<span>Simple meals, a </span><b>personalized grocery list</b><span>, and </span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> your meals.</span>",
           "valueLineHtml": "<br>",
-          "imageUrl": "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/same-image-new-mockup-34f5b82f1eaa.png",
+          "imageUrl": "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/your-personalized-protein-plan-mockup-66430600d5b5.png",
           "id": "step_2b3tu6",
           "name": "Lead Form",
           "type": "lead",
@@ -217,17 +218,18 @@
       "reopenAfterCloseSeconds": 35,
       "reminderTextColor": "#ffffff",
       "trackingSources": [],
-      "trackingLabel": "Planned In Seconds · VLAY",
-      "trackingStartedAt": "2026-08-04T15:24:59.002Z"
+      "trackingLabel": "Know Exactly What",
+      "trackingStartedAt": "2026-08-10T14:36:38.603Z",
+      "trackingLabelManual": true
     },
     {
       "id": "C",
       "name": "Headline Challenger - In 30 Seconds",
       "active": true,
       "trafficSplit": 33,
-      "headline": "Get Your High-Protein Week Planned in Seconds",
+      "headline": "Know What To Eat For More Protein (In Seconds)",
       "subheadline": "Simple customizable meals, a printable grocery list, with protein already calculated - so you can stay full without overthinking it.",
-      "imageUrl": "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/same-image-new-mockup-34f5b82f1eaa.png",
+      "imageUrl": "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/your-personalized-protein-plan-mockup-66430600d5b5.png",
       "width": 810,
       "backgroundColor": "#fbfaf7",
       "textColor": "#1c2520",
@@ -263,7 +265,7 @@
         "showFirstName": false,
         "showEmail": true,
         "quizButtonText": "Calculate",
-        "leadHeadline": "Get Your High-Protein Week Planned in Seconds",
+        "leadHeadline": "Know What To Eat For More Protein (In Seconds)",
         "leadSubheadline": "Simple customizable meals, a printable grocery list, with protein already calculated - so you can stay full without overthinking it.",
         "firstNameLabel": "First name",
         "firstNamePlaceholder": "First Name",
@@ -272,10 +274,10 @@
         "leadButtonText": "Build My Free Plan",
         "backButtonText": "Back"
       },
-      "trackingVersion": "8/4/2026 · get-your-high-protein-week-p-w3l2",
-      "trackingFingerprint": "{\"headline\":\"Get Your High-Protein Week Planned in Seconds\",\"headlineHtml\":\"Get Your High-Protein Week Planned in Seconds\",\"headlineFontSize\":44,\"subheadline\":\"Simple customizable meals, a printable grocery list, with protein already calculated - so you can stay full without overthinking it.\",\"subheadlineHtml\":\"<span>Simple&nbsp;</span><b>customizable meals, </b>a printable<b> grocery list</b><span>, with&nbsp;</span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> <b>it.</b></span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/same-image-new-mockup-34f5b82f1eaa.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"reminderEnabled\":true,\"reminderText\":\"Free Protein Plan\",\"reminderColor\":\"#ea8011\",\"reminderTextColor\":\"#ffffff\",\"reopenAfterCloseSeconds\":35,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Get Your High-Protein Week Planned in Seconds\",\"leadSubheadline\":\"Simple customizable meals, a printable grocery list, with protein already calculated - so you can stay full without overthinking it.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"Get Your High-Protein Week Planned in Seconds\",\"subheadlineHtml\":\"<span>Simple&nbsp;</span><b>customizable meals, </b>a printable<b> grocery list</b><span>, with&nbsp;</span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> <b>it.</b></span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/same-image-new-mockup-34f5b82f1eaa.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
+      "trackingVersion": "8/10/2026 · know-what-to-eat-for-more-pr-iys6",
+      "trackingFingerprint": "{\"headline\":\"Know What To Eat For More Protein (In Seconds)\",\"headlineHtml\":\"Know What To Eat For More Protein (In Seconds)\",\"headlineFontSize\":44,\"subheadline\":\"Simple customizable meals, a printable grocery list, with protein already calculated - so you can stay full without overthinking it.\",\"subheadlineHtml\":\"<span>Simple&nbsp;</span><b>customizable meals, </b>a printable<b> grocery list</b><span>, with&nbsp;</span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> <b>it.</b></span>\",\"subheadlineFontSize\":26,\"valueLine\":\"Simple meals, daily protein target, and grocery list included.\",\"valueLineHtml\":\"<br>\",\"valueLineFontSize\":24,\"buttonText\":\"Show My Protein Plan\",\"buttonFontSize\":56,\"imageUrl\":\"https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/your-personalized-protein-plan-mockup-66430600d5b5.png\",\"imageAlt\":\"\",\"width\":810,\"height\":560,\"sizeToImage\":true,\"backgroundColor\":\"#fbfaf7\",\"textColor\":\"#1c2520\",\"brandAccentColor\":\"#06b00b\",\"accentColor\":\"#ea8011\",\"fontFamily\":\"Arial, Helvetica, sans-serif\",\"headlineFontWeight\":700,\"bodyFontWeight\":400,\"buttonFontWeight\":700,\"textAlign\":\"center\",\"reminderEnabled\":true,\"reminderText\":\"Free Protein Plan\",\"reminderColor\":\"#ea8011\",\"reminderTextColor\":\"#ffffff\",\"reopenAfterCloseSeconds\":35,\"proteinQuiz\":{\"targetWeightLabel\":\"Target weight in lbs\",\"targetWeightPlaceholder\":\"155\",\"strengthDaysLabel\":\"Strength training days per week\",\"strengthDaysPlaceholder\":\"Select days\",\"ageLabel\":\"Age\",\"agePlaceholder\":\"48\",\"multiStepEnabled\":false,\"targetWeightAnswerStyle\":\"dropdown\",\"strengthDaysAnswerStyle\":\"dropdown\",\"ageAnswerStyle\":\"dropdown\",\"progressEnabled\":true,\"progressStepOneLabel\":\"Step 1 of 2: Quick Calculator\",\"progressStepOneText\":\"Answer 3 quick questions to calculate your personalized protein target immediately.\",\"progressStepTwoLabel\":\"Step 2 of 2: Send Your Plan\",\"progressStepTwoText\":\"Your custom plan is almost ready.\",\"progressSingleStepLabel\":\"Step 1\",\"progressSingleStepLabelFontSize\":\"20\",\"targetPreviewStyle\":\"inline\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showQuizStep\":false,\"showFirstName\":false,\"showEmail\":true,\"quizButtonText\":\"Calculate\",\"leadHeadline\":\"Know What To Eat For More Protein (In Seconds)\",\"leadSubheadline\":\"Simple customizable meals, a printable grocery list, with protein already calculated - so you can stay full without overthinking it.\",\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"leadButtonText\":\"Build My Free Plan\",\"backButtonText\":\"Back\"},\"flowSteps\":[{\"headlineHtml\":\"Know What To Eat For More Protein (In Seconds)\",\"subheadlineHtml\":\"<span>Simple&nbsp;</span><b>customizable meals, </b>a printable<b> grocery list</b><span>, with&nbsp;</span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> <b>it.</b></span>\",\"valueLineHtml\":\"<br>\",\"imageUrl\":\"https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/your-personalized-protein-plan-mockup-66430600d5b5.png\",\"id\":\"step_2b3tu6\",\"name\":\"Lead Form\",\"type\":\"lead\",\"enabled\":true,\"fields\":[\"email\"],\"firstNameLabel\":\"First name\",\"firstNamePlaceholder\":\"First Name\",\"emailLabel\":\"Email\",\"emailPlaceholder\":\"Email\",\"buttonText\":\"Build My Free Plan\",\"progressEnabled\":true,\"progressLabel\":\"Step 1\",\"targetPreviewStyle\":\"off\",\"targetPreviewLabel\":\"Your Daily Target:\",\"showFirstName\":false,\"showEmail\":true,\"eyebrowColor\":\"#6b7280\"}]}",
       "valueLine": "Simple meals, daily protein target, and grocery list included.",
-      "headlineHtml": "Get Your High-Protein Week Planned in Seconds",
+      "headlineHtml": "Know What To Eat For More Protein (In Seconds)",
       "headlineFontSize": 44,
       "subheadlineFontSize": 26,
       "valueLineHtml": "<br>",
@@ -284,10 +286,10 @@
       "brandAccentColor": "#06b00b",
       "flowSteps": [
         {
-          "headlineHtml": "Get Your High-Protein Week Planned in Seconds",
+          "headlineHtml": "Know What To Eat For More Protein (In Seconds)",
           "subheadlineHtml": "<span>Simple&nbsp;</span><b>customizable meals, </b>a printable<b> grocery list</b><span>, with&nbsp;</span><b>protein already calculated</b><span> - so you can </span><b>stay full without overthinking</b><span> <b>it.</b></span>",
           "valueLineHtml": "<br>",
-          "imageUrl": "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/same-image-new-mockup-34f5b82f1eaa.png",
+          "imageUrl": "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/uploads/your-personalized-protein-plan-mockup-66430600d5b5.png",
           "id": "step_2b3tu6",
           "name": "Lead Form",
           "type": "lead",
@@ -319,11 +321,12 @@
       "reopenAfterCloseSeconds": 35,
       "reminderTextColor": "#ffffff",
       "trackingSources": [],
-      "trackingLabel": "Planned In Seconds · W3L2",
-      "trackingStartedAt": "2026-08-04T15:24:59.002Z"
+      "trackingLabel": "Know What (In Seconds)",
+      "trackingStartedAt": "2026-08-10T14:36:38.603Z",
+      "trackingLabelManual": true
     }
   ],
-  "configVersion": "8/4/2026",
+  "configVersion": "8/10/2026",
   "dashboardDraftResetToken": "2026-07-29-control-c-promoted-to-a",
   "changeNote": "Promoted unchanged winning control from C to A; retained Stay Fuller in B and moved In 30 Seconds to C",
   "savedColors": [
@@ -376,10 +379,10 @@
     "leadButtonText": "Show My Protein Plan",
     "backButtonText": "Back"
   },
-  "draftSavedAt": "2026-08-04T15:24:59.018Z",
+  "draftSavedAt": "2026-08-10T14:36:38.613Z",
   "reopenAfterCloseSeconds": 35,
   "trackingCsvUrl": "https://docs.google.com/spreadsheets/d/e/2PACX-1vTL2htdRxc9IM_ok_bTcrYPMccocLdF0I8_yNIZRkkRp3a23yCQDA4gBuWzByWQNGLVxtniZJvAAlAY/pub?output=csv",
-  "publishedAt": "2026-08-04T15:24:59.002Z",
-  "publishId": "publish-20260804152459"
+  "publishedAt": "2026-08-10T14:36:38.603Z",
+  "publishId": "publish-20260810143638"
 };
 })();
