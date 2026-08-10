@@ -11,6 +11,7 @@
     version: document.getElementById("report-version"),
     currentGrid: document.getElementById("current-variant-grid"),
     leaderboard: document.getElementById("historical-leaderboard"),
+    history: document.getElementById("previous-test-history"),
     copyLink: document.getElementById("copy-report-link"),
     print: document.getElementById("print-report")
   };
@@ -27,9 +28,11 @@
       initializeAggregates();
       renderCurrentVariants();
       els.leaderboard.innerHTML = emptyState("Loading historical results...");
+      els.history.innerHTML = emptyState("Loading previous tests...");
       await streamTrackingCsv(config.trackingCsvUrl, consumeTrackingRow, updateLoadingState);
       renderCurrentVariants();
       renderHistoricalLeaderboard();
+      renderPreviousTests();
       renderReadyState();
     } catch (error) {
       renderError(error);
@@ -107,6 +110,7 @@
     els.updated.textContent = "Refresh the page to try again";
     if (!els.currentGrid.children.length) els.currentGrid.innerHTML = emptyState("Current variant data is temporarily unavailable.");
     if (!els.leaderboard.children.length) els.leaderboard.innerHTML = emptyState("Historical results are temporarily unavailable.");
+    if (!els.history.children.length) els.history.innerHTML = emptyState("Previous test results are temporarily unavailable.");
   }
 
   function renderCurrentVariants() {
@@ -163,6 +167,35 @@
         "</article>"
       ].join("");
     }).join("");
+  }
+
+  function renderPreviousTests() {
+    var history = previousTests(buildHistoricalVariants());
+    if (!history.length) {
+      els.history.innerHTML = emptyState("No archived variant has reached 200 unique sessions yet.");
+      return;
+    }
+    els.history.innerHTML = [
+      "<div class=\"history-table-scroll\"><table class=\"history-table\">",
+      "<thead><tr><th>Previous variant</th><th>Tested</th><th>Unique sessions</th><th>Leads</th><th>CVR</th><th>Closest live match</th><th>Attributes</th></tr></thead>",
+      "<tbody>",
+      history.map(function (item) {
+        var match = bestLiveMatch(item.snapshot);
+        return [
+          "<tr>",
+          "<td><span class=\"history-version\">" + escapeHtml(item.version) + "</span><strong>" + escapeHtml(item.headline || "Historical variant") + "</strong></td>",
+          "<td data-label=\"Tested\">" + escapeHtml(item.publishedLabel || "Unavailable") + "</td>",
+          "<td data-label=\"Unique sessions\"><strong>" + formatNumber(item.sessions) + "</strong></td>",
+          "<td data-label=\"Leads\"><strong>" + formatNumber(item.leads) + "</strong></td>",
+          "<td data-label=\"CVR\"><strong class=\"history-cvr\">" + formatPercent(item.cvr) + "</strong></td>",
+          "<td data-label=\"Closest live match\"><span class=\"history-match\">" + formatPercent(match.score) + " to Live " + escapeHtml(match.variant || "A") + "</span></td>",
+          "<td data-label=\"Attributes\"><span class=\"history-attributes\">" + escapeHtml(describeVariantAttributes(item.snapshot)) + "</span></td>",
+          "</tr>"
+        ].join("");
+      }).join(""),
+      "</tbody></table></div>",
+      "<p class=\"history-count\">Showing " + formatNumber(history.length) + " archived variant" + (history.length === 1 ? "" : "s") + " with 200+ unique sessions.</p>"
+    ].join("");
   }
 
   function buildCurrentMetrics(variants) {
@@ -272,6 +305,18 @@
       signatures[signature] = true;
       return true;
     }).slice(0, 3);
+  }
+
+  function previousTests(history) {
+    return history.filter(function (item) {
+      return !item.isLive && item.sessions >= 200;
+    }).sort(function (a, b) {
+      var aTime = a.firstSeen ? a.firstSeen.getTime() : 0;
+      var bTime = b.firstSeen ? b.firstSeen.getTime() : 0;
+      if (bTime !== aTime) return bTime - aTime;
+      if (a.version !== b.version) return String(b.version).localeCompare(String(a.version));
+      return String(a.variant).localeCompare(String(b.variant));
+    });
   }
 
   function leaderboardScore(item) {
