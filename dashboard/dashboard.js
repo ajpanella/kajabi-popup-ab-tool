@@ -429,14 +429,13 @@
     persistCsvUrl();
     setCsvLoading(true);
 
-    fetch(csvUrl, { cache: "no-store" })
-      .then(function (response) {
-        if (!response.ok) throw new Error("Unable to load CSV");
-        return response.text();
-      })
-      .then(function (text) {
-        rows = parseCsv(text);
+    loadCompactTrackingData(csvUrl)
+      .then(function (result) {
+        rows = result.rows;
         renderCsvLoadStatus(rows);
+        if (els.csvLoadStatus) {
+          els.csvLoadStatus.textContent += " | compact feed" + (result.transferBytes ? " (" + formatFileSize(result.transferBytes) + ")" : "");
+        }
         reconcileLegacyVariantVersions();
         populateFilters();
         updateDashboard();
@@ -447,6 +446,74 @@
       .finally(function () {
         setCsvLoading(false);
       });
+  }
+
+  function loadCompactTrackingData(csvUrl) {
+    var testId = config.testId || originalConfig.testId || "";
+    var sources = [];
+    if (/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+      sources.push("/api/tracking-data?url=" + encodeURIComponent(csvUrl) + "&testId=" + encodeURIComponent(testId));
+    }
+    var webhookUrl = String(config.webhookUrl || originalConfig.webhookUrl || "").trim();
+    if (webhookUrl) {
+      sources.push(webhookUrl + (webhookUrl.indexOf("?") >= 0 ? "&" : "?") + "mode=dashboard&testId=" + encodeURIComponent(testId) + "&refresh=" + Date.now());
+    }
+    if (!sources.length) return Promise.reject(new Error("Add the tracking webhook URL before loading data."));
+
+    var attempt = function (index, priorError) {
+      if (index >= sources.length) {
+        return Promise.reject(priorError || new Error("The compact tracking feed is unavailable. Redeploy the latest Apps Script tracker, then refresh."));
+      }
+      return fetch(sources[index], { cache: "no-store" }).then(function (response) {
+        if (!response.ok) throw new Error("Compact tracking feed returned HTTP " + response.status + ".");
+        var transferBytes = Number(response.headers.get("X-Tracking-Bytes") || 0);
+        return response.json().then(function (payload) {
+          payload._transferBytes = transferBytes;
+          return payload;
+        });
+      }).then(function (payload) {
+        if (!payload || payload.ok !== true || !Array.isArray(payload.rows) || !Array.isArray(payload.fields)) {
+          throw new Error("The compact tracking feed is not deployed yet.");
+        }
+        return {
+          rows: decodeCompactTrackingRows(payload),
+          sourceBytes: Number(payload.sourceBytes || 0),
+          transferBytes: Number(payload._transferBytes || 0),
+          rowsProcessed: Number(payload.rowsProcessed || 0)
+        };
+      }).catch(function (error) {
+        return attempt(index + 1, error);
+      });
+    };
+    return attempt(0);
+  }
+
+  function decodeCompactTrackingRows(payload) {
+    var fields = payload.fields || [];
+    var snapshots = payload.snapshots || {};
+    var snapshotSeen = {};
+    return (payload.rows || []).map(function (values) {
+      var record = {};
+      fields.forEach(function (field, index) {
+        if (field !== "snapshotKey") record[field] = values[index] == null ? "" : String(values[index]);
+      });
+      var snapshotKeyIndex = fields.indexOf("snapshotKey");
+      var snapshotKey = snapshotKeyIndex >= 0 ? String(values[snapshotKeyIndex] || "") : "";
+      if (snapshotKey && !snapshotSeen[snapshotKey] && snapshots[snapshotKey]) {
+        snapshotSeen[snapshotKey] = true;
+        record.variantSnapshot = JSON.stringify(snapshots[snapshotKey]);
+      } else {
+        record.variantSnapshot = "";
+      }
+      return record;
+    });
+  }
+
+  function formatFileSize(bytes) {
+    var value = Number(bytes || 0);
+    if (!value) return "0 KB";
+    if (value < 1024 * 1024) return Math.max(1, Math.round(value / 1024)) + " KB";
+    return (value / (1024 * 1024)).toFixed(1) + " MB";
   }
 
   function persistCsvUrl() {

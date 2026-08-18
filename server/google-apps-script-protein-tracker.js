@@ -53,7 +53,85 @@ function doGet(e) {
   if (e && e.parameter && e.parameter.mode === "pulse") {
     return jsonResponse(buildPulseSummary(e.parameter.testId || ""));
   }
+  if (e && e.parameter && e.parameter.mode === "dashboard") {
+    return jsonResponse(buildDashboardData(e.parameter.testId || ""));
+  }
   return textResponse("Kajabi popup webhook is running.");
+}
+
+function buildDashboardData(testId) {
+  var sheet = getSheet();
+  ensureHeaders(sheet);
+  var rowCount = Math.max(0, sheet.getLastRow() - 1);
+  var fields = ["timestamp", "testId", "configVersion", "changeNote", "variant", "variantLabel", "snapshotKey", "eventType", "pageUrl", "deviceType", "sessionId"];
+  var rows = [];
+  var snapshotRows = {};
+  var snapshots = {};
+
+  if (rowCount) {
+    var af = sheet.getRange(2, 1, rowCount, 6).getValues();
+    var hi = sheet.getRange(2, 8, rowCount, 2).getDisplayValues();
+    var deviceTypes = sheet.getRange(2, 12, rowCount, 1).getDisplayValues();
+    var sessionIds = sheet.getRange(2, 19, rowCount, 1).getDisplayValues();
+
+    for (var i = 0; i < rowCount; i += 1) {
+      var rowTestId = String(af[i][1] || "");
+      if (testId && rowTestId !== testId) continue;
+      var version = normalizePulseVersion(af[i][2] || "unversioned");
+      var variant = String(af[i][4] || "Unknown");
+      var label = String(af[i][5] || "");
+      if (version === "6/30/2026" && label.indexOf("Flow: Single-step") >= 0) {
+        version = "6/30/2026 Single Step";
+      }
+      var snapshotKey = rowTestId + "::" + version + "::" + variant;
+      if (!snapshotRows[snapshotKey]) snapshotRows[snapshotKey] = i + 2;
+      var timestamp = pulseDate(af[i][0]);
+      rows.push([
+        timestamp ? timestamp.toISOString() : String(af[i][0] || ""),
+        rowTestId,
+        version,
+        String(af[i][3] || ""),
+        variant,
+        label,
+        snapshotKey,
+        String(hi[i][0] || ""),
+        String(hi[i][1] || ""),
+        String(deviceTypes[i][0] || ""),
+        String(sessionIds[i][0] || "")
+      ]);
+    }
+  }
+
+  var snapshotKeys = Object.keys(snapshotRows);
+  var ranges = snapshotKeys.length
+    ? sheet.getRangeList(snapshotKeys.map(function (key) { return "G" + snapshotRows[key]; })).getRanges()
+    : [];
+  snapshotKeys.forEach(function (key, index) {
+    snapshots[key] = compactDashboardSnapshot(ranges[index] ? ranges[index].getDisplayValue() : "");
+  });
+
+  return {
+    ok: true,
+    schemaVersion: 2,
+    generatedAt: new Date().toISOString(),
+    rowsProcessed: rowCount,
+    sourceBytes: 0,
+    fields: fields,
+    snapshots: snapshots,
+    rows: rows
+  };
+}
+
+function compactDashboardSnapshot(value) {
+  if (!value) return null;
+  try {
+    var snapshot = JSON.parse(value);
+    delete snapshot.trackingFingerprint;
+    delete snapshot.trackingSources;
+    return snapshot;
+  } catch (error) {
+    return null;
+  }
 }
 
 function buildPulseSummary(testId) {
