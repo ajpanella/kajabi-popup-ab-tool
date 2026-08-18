@@ -3,8 +3,11 @@
 
   var config = null;
   var currentMetricAccumulators = {};
+  var summarizedCurrentMetrics = {};
   var historyGroups = {};
   var processedRows = 0;
+  var compactPayloadBytes = 0;
+  var usingCompactSummary = false;
   var els = {
     status: document.getElementById("report-status"),
     updated: document.getElementById("report-updated"),
@@ -29,7 +32,10 @@
       renderCurrentVariants();
       els.leaderboard.innerHTML = emptyState("Loading historical results...");
       els.history.innerHTML = emptyState("Loading previous tests...");
-      await streamTrackingCsv(config.trackingCsvUrl, consumeTrackingRow, updateLoadingState);
+      usingCompactSummary = await loadCompactPulseSummary();
+      if (!usingCompactSummary) {
+        await streamTrackingCsv(config.trackingCsvUrl, consumeTrackingRow, updateLoadingState);
+      }
       renderCurrentVariants();
       renderHistoricalLeaderboard();
       renderPreviousTests();
@@ -56,10 +62,61 @@
 
   function initializeAggregates() {
     currentMetricAccumulators = {};
+    summarizedCurrentMetrics = {};
     historyGroups = {};
     processedRows = 0;
+    compactPayloadBytes = 0;
+    usingCompactSummary = false;
     activeVariants().forEach(function (variant) {
       currentMetricAccumulators[variant.id] = metricAccumulator(variant.id);
+      summarizedCurrentMetrics[variant.id] = emptyMetric(variant.id);
+    });
+  }
+
+  async function loadCompactPulseSummary() {
+    var endpoint = config.trackingSummaryUrl || config.webhookUrl;
+    if (!endpoint) return false;
+    var separator = String(endpoint).indexOf("?") >= 0 ? "&" : "?";
+    var url = String(endpoint) + separator + "mode=pulse&testId=" + encodeURIComponent(config.testId || "") + "&report=" + Date.now();
+    try {
+      els.status.textContent = "Loading compact tracking summary...";
+      var response = await fetch(url, { cache: "no-store" });
+      if (!response.ok) return false;
+      var text = await response.text();
+      compactPayloadBytes = new Blob([text]).size;
+      var summary = JSON.parse(text);
+      if (!summary || summary.ok !== true || !Array.isArray(summary.groups)) return false;
+      applyCompactPulseSummary(summary);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
+
+  function applyCompactPulseSummary(summary) {
+    processedRows = Number(summary.rowsProcessed || 0);
+    summary.groups.forEach(function (group) {
+      if (config.testId && group.testId && group.testId !== config.testId) return;
+      var version = normalizeVersion(group.version || "unversioned");
+      var variant = String(group.variant || "Unknown");
+      var key = version + "::" + variant;
+      var item = createHistoryItem(variant, version, group.snapshot || null, group.label || "");
+      item.firstSeen = parseDate(group.firstSeen);
+      item.summary = {
+        sessions: Number(group.sessions || 0),
+        leads: Number(group.leads || 0)
+      };
+      historyGroups[key] = item;
+
+      var liveVariant = liveVariantForRow({ variant: variant, configVersion: version }, activeVariants());
+      if (liveVariant && summarizedCurrentMetrics[liveVariant.id]) {
+        summarizedCurrentMetrics[liveVariant.id].sessions += item.summary.sessions;
+        summarizedCurrentMetrics[liveVariant.id].leads += item.summary.leads;
+      }
+    });
+    Object.keys(summarizedCurrentMetrics).forEach(function (variantId) {
+      var metric = summarizedCurrentMetrics[variantId];
+      metric.cvr = rate(metric.leads, metric.sessions);
     });
   }
 
@@ -99,7 +156,9 @@
   function renderReadyState() {
     var refreshedAt = new Date();
     els.status.className = "report-status is-ready";
-    els.status.textContent = "Latest aggregate tracking data loaded successfully. " + formatNumber(processedRows) + " events processed.";
+    els.status.textContent = usingCompactSummary
+      ? "Compact tracking summary loaded: " + formatBytes(compactPayloadBytes) + "."
+      : "Latest aggregate tracking data loaded successfully. " + formatNumber(processedRows) + " events processed.";
     els.updated.textContent = "Updated " + refreshedAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
     els.version.textContent = "Live configuration: " + (config.configVersion || "Current") + (config.publishedAt ? " · Published " + formatDate(new Date(config.publishedAt)) : "");
   }
@@ -199,6 +258,11 @@
   }
 
   function buildCurrentMetrics(variants) {
+    if (usingCompactSummary) {
+      return variants.map(function (variant) {
+        return summarizedCurrentMetrics[variant.id] || emptyMetric(variant.id);
+      });
+    }
     return variants.map(function (variant) {
       return finalizeMetric(currentMetricAccumulators[variant.id] || metricAccumulator(variant.id));
     });
@@ -262,7 +326,9 @@
     }, {});
     return Object.keys(historyGroups).map(function (key) {
       var item = historyGroups[key];
-      var metric = finalizeMetric(item.metric);
+      var metric = item.summary
+        ? { sessions: item.summary.sessions, leads: item.summary.leads, cvr: rate(item.summary.leads, item.summary.sessions) }
+        : finalizeMetric(item.metric);
       var snapshot = item.snapshot || {};
       var preview = variantPreview(snapshot);
       item.sessions = metric.sessions;
@@ -286,7 +352,8 @@
       sessions: 0,
       leads: 0,
       cvr: 0,
-      isLive: false
+      isLive: false,
+      summary: null
     };
   }
 

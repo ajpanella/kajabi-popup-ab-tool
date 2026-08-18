@@ -61,10 +61,12 @@ tag
 ## 3. Deploy the webhook
 
 1. In the Google Sheet, open `Extensions > Apps Script`.
-2. Paste the contents of `server/google-apps-script.js`.
+2. Paste the contents of `server/google-apps-script-protein-tracker.js`.
 3. Deploy as a Web App.
 4. Set access to allow anonymous requests if the popup will post directly from public blog pages.
 5. Copy the Web App URL into `webhookUrl` in `popup/variants.js`.
+
+The same Web App URL also serves the compact Test Pulse summary at `?mode=pulse`. The public pulse report uses this anonymous aggregate instead of downloading the full event CSV. The summary is cached for five minutes and contains no names, emails, quiz answers, page URLs, or user agents.
 
 ## 4. Add the popup to Kajabi blog articles
 
