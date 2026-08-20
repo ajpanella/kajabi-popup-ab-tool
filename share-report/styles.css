@@ -456,6 +456,36 @@ button {
   text-align: center;
 }
 
+.popup-miniature-question {
+  margin: 1px 2px 8px;
+  color: var(--popup-text, var(--ink));
+  font-size: 11px;
+  font-weight: var(--headline-weight, 700);
+  line-height: 1.25;
+  text-align: center;
+}
+
+.popup-miniature-choices {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+
+.popup-miniature-choices span {
+  display: grid;
+  place-items: center;
+  min-height: 29px;
+  border: 1px solid var(--popup-button, var(--orange));
+  border-radius: 4px;
+  padding: 5px 8px;
+  color: #ffffff;
+  background: var(--popup-button, var(--orange));
+  font-size: 9px;
+  font-weight: var(--button-weight, 800);
+  line-height: 1.2;
+  text-align: center;
+}
+
 .variant-report-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

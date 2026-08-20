@@ -191,6 +191,9 @@
     var progress = preview.progressEnabled
       ? "<div class=\"popup-miniature-progress\"><span>" + escapeHtml(preview.progressLabel) + "</span><strong>1/" + Math.max(1, preview.stepCount) + "</strong></div><div class=\"popup-miniature-progress-track\"><span style=\"width:" + Math.round(100 / Math.max(1, preview.stepCount)) + "%\"></span></div>"
       : "";
+    var firstStepContent = preview.firstStepType === "question" && preview.choices.length
+      ? "<div class=\"popup-miniature-question\">" + escapeHtml(preview.questionLabel) + "</div><div class=\"popup-miniature-choices\">" + preview.choices.map(function (choice) { return "<span>" + escapeHtml(choice) + "</span>"; }).join("") + "</div>"
+      : "<div class=\"popup-miniature-input\">" + escapeHtml(preview.emailPlaceholder) + "</div><div class=\"popup-miniature-button\">" + escapeHtml(preview.buttonText) + "</div>";
     return [
       "<article class=\"variant-report-card" + (isLeader ? " is-current-leader" : "") + "\">",
       isLeader ? "<span class=\"current-leader-flag\">Current leader</span>" : "",
@@ -198,7 +201,7 @@
       "<div class=\"popup-miniature" + (preview.imageUrl ? "" : " no-image") + "\" style=\"--popup-bg:" + safeColor(variant.backgroundColor, "#fbfaf7") + ";--popup-text:" + safeColor(variant.textColor, "#172026") + ";--popup-button:" + safeColor(variant.accentColor, "#ea8011") + ";--popup-brand:" + safeColor(variant.brandAccentColor, "#06b00b") + ";--popup-font:" + safeFont(variant.fontFamily) + ";--popup-align:" + safeAlignment(variant.textAlign) + ";--headline-weight:" + safeWeight(variant.headlineFontWeight, 700) + ";--body-weight:" + safeWeight(variant.bodyFontWeight, 400) + ";--button-weight:" + safeWeight(variant.buttonFontWeight, 700) + "\">",
       preview.imageUrl ? "<img class=\"popup-miniature-image\" src=\"" + escapeHtmlAttr(preview.imageUrl) + "\" alt=\"\">" : "<span class=\"popup-miniature-image\"></span>",
       "<div class=\"popup-miniature-copy\"><h3>" + escapeHtml(preview.headline) + "</h3><p>" + escapeHtml(preview.subheadline) + "</p></div>",
-      "<div class=\"popup-miniature-form\">" + progress + "<div class=\"popup-miniature-input\">" + escapeHtml(preview.emailPlaceholder) + "</div><div class=\"popup-miniature-button\">" + escapeHtml(preview.buttonText) + "</div></div>",
+      "<div class=\"popup-miniature-form\">" + progress + firstStepContent + "</div>",
       "</div>",
       "<div class=\"variant-report-stats\"><div><span>Unique sessions</span><strong>" + formatNumber(metric.sessions) + "</strong></div><div><span>Leads</span><strong>" + formatNumber(metric.leads) + "</strong></div><div><span>CVR</span><strong>" + formatPercent(metric.cvr) + "</strong></div></div>",
       "</article>"
@@ -447,16 +450,27 @@
     var first = steps[0] || {};
     var lead = steps.filter(function (step) { return step.type === "lead"; })[0] || first;
     var quiz = variant.proteinQuiz || {};
+    var firstHasImageSetting = Object.prototype.hasOwnProperty.call(first, "imageUrl");
     return {
       headline: stripHtml(first.headlineHtml || variant.headlineHtml || variant.headline || quiz.leadHeadline || ""),
       subheadline: stripHtml(first.subheadlineHtml || variant.subheadlineHtml || variant.subheadline || quiz.leadSubheadline || ""),
       buttonText: lead.buttonText || quiz.leadButtonText || variant.buttonText || "Continue",
-      imageUrl: first.imageUrl || variant.imageUrl || "",
+      imageUrl: firstHasImageSetting ? (first.imageUrl || "") : (variant.imageUrl || ""),
       emailPlaceholder: lead.emailPlaceholder || quiz.emailPlaceholder || "Email",
       progressEnabled: lead.progressEnabled !== undefined ? lead.progressEnabled : Boolean(quiz.progressEnabled),
       progressLabel: lead.progressLabel || quiz.progressSingleStepLabel || "Step 1",
-      stepCount: Math.max(1, steps.length)
+      stepCount: Math.max(1, steps.length),
+      firstStepType: first.type || (steps.length === 1 ? "lead" : ""),
+      questionLabel: first.questionLabel || "",
+      choices: flowChoiceLabels(first)
     };
+  }
+
+  function flowChoiceLabels(step) {
+    if (!step || step.type !== "question" || step.answerStyle !== "ranges") return [];
+    return String(step.optionsText || "").split(/\r?\n/).map(function (line) {
+      return String(line || "").split("|")[0].trim();
+    }).filter(Boolean);
   }
 
   function describeVariantAttributes(snapshot) {
