@@ -67,6 +67,18 @@ function buildDashboardData(testId) {
   var rows = [];
   var snapshotRows = {};
   var snapshots = {};
+  var dictionary = [];
+  var dictionaryIndexes = {};
+
+  function encodeValue(value) {
+    var text = String(value == null ? "" : value);
+    var key = "$" + text;
+    if (Object.prototype.hasOwnProperty.call(dictionaryIndexes, key)) return dictionaryIndexes[key];
+    var index = dictionary.length;
+    dictionary.push(text);
+    dictionaryIndexes[key] = index;
+    return index;
+  }
 
   if (rowCount) {
     var af = sheet.getRange(2, 1, rowCount, 6).getValues();
@@ -98,7 +110,7 @@ function buildDashboardData(testId) {
         String(hi[i][1] || ""),
         String(deviceTypes[i][0] || ""),
         String(sessionIds[i][0] || "")
-      ]);
+      ].map(encodeValue));
     }
   }
 
@@ -117,6 +129,7 @@ function buildDashboardData(testId) {
     rowsProcessed: rowCount,
     sourceBytes: 0,
     fields: fields,
+    dictionary: dictionary,
     snapshots: snapshots,
     rows: rows
   };

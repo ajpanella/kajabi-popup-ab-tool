@@ -306,6 +306,8 @@ function compactTrackingCsv(sourceUrl, testId) {
     const compactRows = [];
     const snapshots = {};
     const snapshotRows = {};
+    const dictionary = [];
+    const dictionaryIndexes = new Map();
     let headers = null;
     let rowsProcessed = 0;
     let sourceBytes = 0;
@@ -333,7 +335,7 @@ function compactTrackingCsv(sourceUrl, testId) {
           value("timestamp"), rowTestId, version, value("changeNote"), variant,
           value("variantLabel"), snapshotKey, value("eventType"), value("pageUrl"),
           value("deviceType"), value("sessionId")
-        ]);
+        ].map(encodeValue));
       });
       stream.on("data", (chunk) => parser.write(chunk.toString("utf8")));
       stream.on("end", () => {
@@ -345,6 +347,7 @@ function compactTrackingCsv(sourceUrl, testId) {
           rowsProcessed: rowsProcessed,
           sourceBytes: sourceBytes,
           fields: ["timestamp", "testId", "configVersion", "changeNote", "variant", "variantLabel", "snapshotKey", "eventType", "pageUrl", "deviceType", "sessionId"],
+          dictionary: dictionary,
           snapshots: snapshots,
           rows: compactRows
         });
@@ -352,6 +355,15 @@ function compactTrackingCsv(sourceUrl, testId) {
       stream.on("error", reject);
       response.on("error", reject);
     }, reject);
+
+    function encodeValue(value) {
+      const text = String(value == null ? "" : value);
+      if (dictionaryIndexes.has(text)) return dictionaryIndexes.get(text);
+      const index = dictionary.length;
+      dictionary.push(text);
+      dictionaryIndexes.set(text, index);
+      return index;
+    }
   });
 }
 

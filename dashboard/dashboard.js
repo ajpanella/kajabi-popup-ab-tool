@@ -490,15 +490,16 @@
 
   function decodeCompactTrackingRows(payload) {
     var fields = payload.fields || [];
+    var dictionary = Array.isArray(payload.dictionary) ? payload.dictionary : null;
     var snapshots = payload.snapshots || {};
     var snapshotSeen = {};
     return (payload.rows || []).map(function (values) {
       var record = {};
       fields.forEach(function (field, index) {
-        if (field !== "snapshotKey") record[field] = values[index] == null ? "" : String(values[index]);
+        if (field !== "snapshotKey") record[field] = decodeCompactValue(values[index], dictionary);
       });
       var snapshotKeyIndex = fields.indexOf("snapshotKey");
-      var snapshotKey = snapshotKeyIndex >= 0 ? String(values[snapshotKeyIndex] || "") : "";
+      var snapshotKey = snapshotKeyIndex >= 0 ? decodeCompactValue(values[snapshotKeyIndex], dictionary) : "";
       if (snapshotKey && !snapshotSeen[snapshotKey] && snapshots[snapshotKey]) {
         snapshotSeen[snapshotKey] = true;
         record.variantSnapshot = JSON.stringify(snapshots[snapshotKey]);
@@ -507,6 +508,13 @@
       }
       return record;
     });
+  }
+
+  function decodeCompactValue(value, dictionary) {
+    if (dictionary && Number.isInteger(value) && value >= 0 && value < dictionary.length) {
+      return String(dictionary[value] == null ? "" : dictionary[value]);
+    }
+    return value == null ? "" : String(value);
   }
 
   function formatFileSize(bytes) {
