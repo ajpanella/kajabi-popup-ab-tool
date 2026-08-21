@@ -37,9 +37,7 @@
       els.leaderboard.innerHTML = emptyState("Loading historical results...");
       els.history.innerHTML = emptyState("Loading previous tests...");
       usingCompactSummary = await loadCompactPulseSummary();
-      if (!usingCompactSummary) {
-        await streamTrackingCsv(config.trackingCsvUrl, consumeTrackingRow, updateLoadingState);
-      }
+      if (!usingCompactSummary) throw new Error("Compact tracking summary is unavailable. The report stopped before downloading the full tracking CSV.");
       renderCurrentVariants();
       renderHistoricalLeaderboard();
       renderPreviousTests();
