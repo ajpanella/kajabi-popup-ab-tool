@@ -450,12 +450,11 @@
     var first = steps[0] || {};
     var lead = steps.filter(function (step) { return step.type === "lead"; })[0] || first;
     var quiz = variant.proteinQuiz || {};
-    var firstHasImageSetting = Object.prototype.hasOwnProperty.call(first, "imageUrl");
     return {
       headline: stripHtml(first.headlineHtml || variant.headlineHtml || variant.headline || quiz.leadHeadline || ""),
       subheadline: stripHtml(first.subheadlineHtml || variant.subheadlineHtml || variant.subheadline || quiz.leadSubheadline || ""),
       buttonText: lead.buttonText || quiz.leadButtonText || variant.buttonText || "Continue",
-      imageUrl: firstHasImageSetting ? (first.imageUrl || "") : (variant.imageUrl || ""),
+      imageUrl: first.imageUrl || variant.imageUrl || "",
       emailPlaceholder: lead.emailPlaceholder || quiz.emailPlaceholder || "Email",
       progressEnabled: first.progressEnabled !== undefined ? first.progressEnabled : Boolean(quiz.progressEnabled),
       progressLabel: formatFlowProgressLabel(
