@@ -324,6 +324,7 @@ button {
 
 .variant-report-card {
   position: relative;
+  container-type: inline-size;
   min-width: 0;
   overflow: hidden;
   border: 1px solid var(--line);
@@ -546,8 +547,9 @@ button {
 
 .variant-report-stats div {
   min-width: 0;
-  padding: 12px 7px;
+  padding: 11px 4px;
   border-right: 1px solid var(--line);
+  text-align: center;
 }
 
 .variant-report-stats div:last-child {
@@ -561,14 +563,22 @@ button {
 
 .variant-report-stats span {
   color: var(--muted);
-  font-size: 7px;
+  min-height: 18px;
+  font-size: clamp(6px, 2.15cqi, 8px);
   font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 
 .variant-report-stats strong {
   margin-top: 5px;
-  font-size: 17px;
+  overflow: hidden;
+  font-size: clamp(10px, 3.8cqi, 16px);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.1;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .historical-leaderboard {
