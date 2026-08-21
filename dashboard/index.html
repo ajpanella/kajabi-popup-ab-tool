@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../popup/popup.css?v=35">
-    <link rel="stylesheet" href="./dashboard.css?v=64">
+    <link rel="stylesheet" href="./dashboard.css?v=65">
     <link rel="stylesheet" href="./workspace.css?v=8">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/variants.js?v=20260729-2"></script>
@@ -65,7 +65,7 @@
               </section>
             </div>
             <section class="studio-surface studio-overview-previews">
-              <div class="studio-section-heading"><div><span class="studio-kicker">Experience</span><h2>Live variant previews</h2></div><div class="dash-toggle" role="group" aria-label="Preview size"><button id="desktop-preview" class="is-active" type="button">Desktop</button><button id="compare-preview" type="button">Side by side</button><button id="mobile-preview" type="button">Mobile</button></div><div id="flow-preview-tabs" class="dash-toggle dash-flow-preview-tabs" role="group" aria-label="Preview step"></div></div>
+              <div class="studio-section-heading"><div><span class="studio-kicker">Experience</span><h2>Live variant previews</h2></div><div class="dash-toggle" role="group" aria-label="Preview device"><button id="desktop-preview" class="is-active" type="button">Desktop</button><button id="mobile-preview" type="button">Mobile</button></div><div id="flow-preview-tabs" class="dash-toggle dash-flow-preview-tabs" role="group" aria-label="Preview step"></div></div>
               <div id="variant-previews" class="dash-preview-grid"></div>
             </section>
           </section>
@@ -101,9 +101,8 @@
               <header class="studio-compare-header">
                 <div><span class="studio-kicker">Visual review</span><h2 id="studio-compare-title">Compare active variants</h2><p>Review the same popup step across every live draft.</p></div>
                 <div class="studio-compare-header-actions">
-                  <div class="dash-toggle" role="group" aria-label="Comparison layout">
-                    <button type="button" data-build-compare-mode="desktop">Desktop</button>
-                    <button type="button" class="is-active" data-build-compare-mode="compare">Side by side</button>
+                  <div class="dash-toggle" role="group" aria-label="Comparison device">
+                    <button type="button" class="is-active" data-build-compare-mode="desktop">Desktop</button>
                     <button type="button" data-build-compare-mode="mobile">Mobile</button>
                   </div>
                   <button class="studio-icon-button" type="button" data-close-compare aria-label="Close variant comparison"><i data-lucide="x"></i></button>
@@ -199,7 +198,7 @@
     <div id="studio-settings-scrim" class="studio-settings-scrim"></div>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./dashboard.js?v=119"></script>
-    <script src="./workspace.js?v=4"></script>
+    <script src="./dashboard.js?v=120"></script>
+    <script src="./workspace.js?v=5"></script>
   </body>
 </html>

@@ -1552,7 +1552,8 @@ body {
 }
 
 .dash-preview-grid.is-compare {
-  grid-template-columns: repeat(var(--dash-preview-columns, 2), minmax(0, 1fr));
+  grid-template-columns: repeat(var(--dash-preview-columns, 2), minmax(300px, 1fr));
+  overflow-x: auto;
 }
 
 .dash-traffic-control {
@@ -1585,7 +1586,8 @@ body {
 }
 
 .dash-preview-grid.is-mobile {
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  grid-template-columns: repeat(var(--dash-preview-columns, 2), minmax(280px, 1fr));
+  overflow-x: auto;
 }
 
 @media (max-width: 980px) {
@@ -1594,7 +1596,7 @@ body {
   }
 
   .dash-preview-grid.is-compare {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(var(--dash-preview-columns, 2), minmax(300px, 1fr));
   }
 }
 

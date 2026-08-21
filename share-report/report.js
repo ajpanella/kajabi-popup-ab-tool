@@ -8,6 +8,7 @@
   var processedRows = 0;
   var compactPayloadBytes = 0;
   var usingCompactSummary = false;
+  var reportPreviewMode = "desktop";
   var els = {
     status: document.getElementById("report-status"),
     updated: document.getElementById("report-updated"),
@@ -21,6 +22,9 @@
 
   els.copyLink.addEventListener("click", copyReportLink);
   els.print.addEventListener("click", function () { window.print(); });
+  Array.prototype.forEach.call(document.querySelectorAll("[data-report-preview-mode]"), function (button) {
+    button.addEventListener("click", function () { setReportPreviewMode(button.dataset.reportPreviewMode); });
+  });
   loadReport();
 
   async function loadReport() {
@@ -188,6 +192,21 @@
       var metric = metrics.find(function (item) { return item.variant === variant.id; }) || emptyMetric(variant.id);
       return renderVariantCard(variant, metric, Boolean(leader && leader.variant === variant.id && leader.sessions > 0));
     }).join("");
+    applyReportPreviewMode();
+  }
+
+  function setReportPreviewMode(mode) {
+    reportPreviewMode = mode === "mobile" ? "mobile" : "desktop";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-report-preview-mode]"), function (button) {
+      var active = button.dataset.reportPreviewMode === reportPreviewMode;
+      button.classList.toggle("is-active", active);
+      button.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+    applyReportPreviewMode();
+  }
+
+  function applyReportPreviewMode() {
+    els.currentGrid.classList.toggle("is-mobile-preview", reportPreviewMode === "mobile");
   }
 
   function renderVariantCard(variant, metric, isLeader) {

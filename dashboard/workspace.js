@@ -207,7 +207,7 @@
     compareModal.classList.add("is-open");
     compareModal.setAttribute("aria-hidden", "false");
     document.body.classList.add("studio-compare-open");
-    setComparisonMode("compare");
+    setComparisonMode("desktop");
     refreshIcons();
   }
 
@@ -233,7 +233,6 @@
   function setComparisonMode(mode) {
     var sourceButtons = {
       desktop: document.getElementById("desktop-preview"),
-      compare: document.getElementById("compare-preview"),
       mobile: document.getElementById("mobile-preview")
     };
     if (sourceButtons[mode]) sourceButtons[mode].click();

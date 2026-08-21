@@ -84,7 +84,6 @@
     history: document.getElementById("variation-history"),
     previews: document.getElementById("variant-previews"),
     desktopPreview: document.getElementById("desktop-preview"),
-    comparePreview: document.getElementById("compare-preview"),
     mobilePreview: document.getElementById("mobile-preview"),
     quizStepPreview: document.getElementById("quiz-step-preview"),
     leadStepPreview: document.getElementById("lead-step-preview"),
@@ -220,10 +219,6 @@
 
   els.desktopPreview.addEventListener("click", function () {
     setPreviewMode("desktop");
-  });
-
-  els.comparePreview.addEventListener("click", function () {
-    setPreviewMode("compare");
   });
 
   els.mobilePreview.addEventListener("click", function () {
@@ -2402,7 +2397,7 @@
   function renderPreviews(mode) {
     renderPreviewFlowTabs();
     els.previews.innerHTML = "";
-    els.previews.classList.toggle("is-compare", mode === "compare");
+    els.previews.classList.toggle("is-compare", mode === "desktop");
     els.previews.classList.toggle("is-mobile", mode === "mobile");
     els.previews.style.setProperty("--dash-preview-columns", String(Math.max(1, activeVariants().length)));
     activeVariants().forEach(function (variant) {
@@ -2414,7 +2409,7 @@
       title.innerHTML = "<strong>Variant " + escapeHtml(variant.id) + "</strong><span>" + escapeHtml(variant.trafficSplit) + "% split</span>";
 
       var stage = document.createElement("div");
-      stage.className = "dash-preview-stage" + (mode === "mobile" ? " is-mobile" : "") + (mode === "compare" ? " is-compare" : "");
+      stage.className = "dash-preview-stage" + (mode === "mobile" ? " is-mobile" : " is-compare");
       var steps = ensureFlowSteps(variant);
       var preview = buildPreview(variant, Math.min(Number(previewStep || 0), steps.length - 1));
       stage.appendChild(preview);
@@ -3234,11 +3229,10 @@
   }
 
   function setPreviewMode(mode) {
-    previewMode = mode;
-    els.desktopPreview.classList.toggle("is-active", mode === "desktop");
-    els.comparePreview.classList.toggle("is-active", mode === "compare");
-    els.mobilePreview.classList.toggle("is-active", mode === "mobile");
-    renderPreviews(mode);
+    previewMode = mode === "mobile" ? "mobile" : "desktop";
+    els.desktopPreview.classList.toggle("is-active", previewMode === "desktop");
+    els.mobilePreview.classList.toggle("is-active", previewMode === "mobile");
+    renderPreviews(previewMode);
   }
 
   function setPreviewStep(step) {

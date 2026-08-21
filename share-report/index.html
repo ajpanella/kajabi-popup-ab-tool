@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css?v=5">
+    <link rel="stylesheet" href="./styles.css?v=6">
   </head>
   <body>
     <header class="report-header">
@@ -43,7 +43,7 @@
       <section class="report-section" aria-labelledby="current-test-heading">
         <div class="report-section-heading">
           <div><span class="report-kicker">Current Test</span><h2 id="current-test-heading">Live variants</h2></div>
-          <p>Step 1: visitor to quiz completion · Step 2: quiz completion to lead</p>
+          <div class="report-preview-tools"><div class="report-view-toggle" role="group" aria-label="Preview device"><button type="button" class="is-active" data-report-preview-mode="desktop">Desktop</button><button type="button" data-report-preview-mode="mobile">Mobile</button></div><p>Step 1: visitor to quiz completion · Step 2: quiz completion to lead</p></div>
         </div>
         <div id="current-variant-grid" class="current-variant-grid"></div>
       </section>
@@ -70,6 +70,6 @@
       </footer>
     </main>
 
-    <script src="./report.js?v=8"></script>
+    <script src="./report.js?v=9"></script>
   </body>
 </html>
