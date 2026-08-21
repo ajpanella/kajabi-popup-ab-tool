@@ -457,13 +457,23 @@
       buttonText: lead.buttonText || quiz.leadButtonText || variant.buttonText || "Continue",
       imageUrl: firstHasImageSetting ? (first.imageUrl || "") : (variant.imageUrl || ""),
       emailPlaceholder: lead.emailPlaceholder || quiz.emailPlaceholder || "Email",
-      progressEnabled: lead.progressEnabled !== undefined ? lead.progressEnabled : Boolean(quiz.progressEnabled),
-      progressLabel: lead.progressLabel || quiz.progressSingleStepLabel || "Step 1",
+      progressEnabled: first.progressEnabled !== undefined ? first.progressEnabled : Boolean(quiz.progressEnabled),
+      progressLabel: formatFlowProgressLabel(
+        first.progressLabel || quiz.progressSingleStepLabel || "Step {current} of {total}",
+        1,
+        Math.max(1, steps.length)
+      ),
       stepCount: Math.max(1, steps.length),
       firstStepType: first.type || (steps.length === 1 ? "lead" : ""),
       questionLabel: first.questionLabel || "",
       choices: flowChoiceLabels(first)
     };
+  }
+
+  function formatFlowProgressLabel(label, current, total) {
+    return String(label || "Step {current} of {total}")
+      .replace(/\{current\}/g, String(current))
+      .replace(/\{total\}/g, String(total));
   }
 
   function flowChoiceLabels(step) {
