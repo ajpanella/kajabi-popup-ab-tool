@@ -149,7 +149,7 @@ function compactDashboardSnapshot(value) {
 
 function buildPulseSummary(testId) {
   var cache = CacheService.getScriptCache();
-  var cacheKey = "pulse-v1-" + (testId || "all");
+  var cacheKey = "pulse-v2-" + (testId || "all");
   var cached = cache.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
@@ -183,9 +183,11 @@ function buildPulseSummary(testId) {
           snapshotRow: i + 2,
           sessions: {},
           actionSessions: {},
+          quizSessions: {},
           leadSessions: {},
           views: 0,
           actions: 0,
+          quizEvents: 0,
           leadEvents: 0
         };
       }
@@ -207,6 +209,7 @@ function buildPulseSummary(testId) {
       group.sessions[sessionId] = true;
     });
     var sessions = Object.keys(group.sessions).length || Math.max(group.views, group.actions, group.leadEvents);
+    var quizCompletions = Object.keys(group.quizSessions).length || group.quizEvents;
     var leads = Object.keys(group.leadSessions).length || group.leadEvents;
     var snapshotValue = snapshotRanges[index] ? snapshotRanges[index].getDisplayValue() : "";
     return {
@@ -216,6 +219,7 @@ function buildPulseSummary(testId) {
       label: group.label,
       firstSeen: group.firstSeen ? group.firstSeen.toISOString() : "",
       sessions: sessions,
+      quizCompletions: quizCompletions,
       leads: leads,
       snapshot: compactPulseSnapshot(snapshotValue)
     };
@@ -244,6 +248,10 @@ function accumulatePulseGroup(group, rawType, rawSessionId) {
   if (type === "popup_view") {
     group.views += 1;
     if (sessionId) group.sessions[sessionId] = true;
+  }
+  if (type === "popup_quiz_submit") {
+    group.quizEvents += 1;
+    if (sessionId) group.quizSessions[sessionId] = true;
   }
   if (type === "popup_lead_submit" || type === "kajabi_form_submitted") {
     group.leadEvents += 1;

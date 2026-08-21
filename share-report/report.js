@@ -104,6 +104,7 @@
       item.firstSeen = parseDate(group.firstSeen);
       item.summary = {
         sessions: Number(group.sessions || 0),
+        quizCompletions: Number(group.quizCompletions || 0),
         leads: Number(group.leads || 0)
       };
       historyGroups[key] = item;
@@ -111,12 +112,15 @@
       var liveVariant = liveVariantForRow({ variant: variant, configVersion: version }, activeVariants());
       if (liveVariant && summarizedCurrentMetrics[liveVariant.id]) {
         summarizedCurrentMetrics[liveVariant.id].sessions += item.summary.sessions;
+        summarizedCurrentMetrics[liveVariant.id].quizCompletions += item.summary.quizCompletions;
         summarizedCurrentMetrics[liveVariant.id].leads += item.summary.leads;
       }
     });
     Object.keys(summarizedCurrentMetrics).forEach(function (variantId) {
       var metric = summarizedCurrentMetrics[variantId];
       metric.cvr = rate(metric.leads, metric.sessions);
+      metric.step1Cvr = rate(metric.quizCompletions, metric.sessions);
+      metric.step2Cvr = rate(metric.leads, metric.quizCompletions);
     });
   }
 
@@ -188,6 +192,9 @@
 
   function renderVariantCard(variant, metric, isLeader) {
     var preview = variantPreview(variant);
+    var hasQuizStep = preview.stepCount > 1 && preview.firstStepType !== "lead";
+    var step1Cvr = hasQuizStep ? metric.step1Cvr : metric.cvr;
+    var step2Cvr = hasQuizStep ? metric.step2Cvr : null;
     var progress = preview.progressEnabled
       ? "<div class=\"popup-miniature-progress\"><span>" + escapeHtml(preview.progressLabel) + "</span><strong>1/" + Math.max(1, preview.stepCount) + "</strong></div><div class=\"popup-miniature-progress-track\"><span style=\"width:" + Math.round(100 / Math.max(1, preview.stepCount)) + "%\"></span></div>"
       : "";
@@ -203,7 +210,7 @@
       "<div class=\"popup-miniature-copy\"><h3>" + escapeHtml(preview.headline) + "</h3><p>" + escapeHtml(preview.subheadline) + "</p></div>",
       "<div class=\"popup-miniature-form\">" + progress + firstStepContent + "</div>",
       "</div>",
-      "<div class=\"variant-report-stats\"><div><span>Unique sessions</span><strong>" + formatNumber(metric.sessions) + "</strong></div><div><span>Leads</span><strong>" + formatNumber(metric.leads) + "</strong></div><div><span>CVR</span><strong>" + formatPercent(metric.cvr) + "</strong></div></div>",
+      "<div class=\"variant-report-stats\"><div><span>Unique sessions</span><strong>" + formatNumber(metric.sessions) + "</strong></div><div><span>Step 1 CVR</span><strong>" + formatOptionalPercent(step1Cvr) + "</strong></div><div><span>Step 2 CVR</span><strong>" + formatOptionalPercent(step2Cvr) + "</strong></div><div><span>Leads</span><strong>" + formatNumber(metric.leads) + "</strong></div><div><span>Overall CVR</span><strong>" + formatPercent(metric.cvr) + "</strong></div></div>",
       "</article>"
     ].join("");
   }
@@ -287,8 +294,10 @@
       variant: variant,
       sessions: new Set(),
       actionSessions: new Set(),
+      quizSessions: new Set(),
       leadSessions: new Set(),
       views: 0,
+      quizEvents: 0,
       leadEvents: 0,
       actionEvents: 0
     };
@@ -305,6 +314,10 @@
       metric.views += 1;
       if (sessionId) metric.sessions.add(sessionId);
     }
+    if (type === "popup_quiz_submit") {
+      metric.quizEvents += 1;
+      if (sessionId) metric.quizSessions.add(sessionId);
+    }
     if (type === "popup_lead_submit" || type === "kajabi_form_submitted") {
       metric.leadEvents += 1;
       if (sessionId) metric.leadSessions.add(sessionId);
@@ -314,12 +327,21 @@
   function finalizeMetric(metric) {
     metric.actionSessions.forEach(function (sessionId) { metric.sessions.add(sessionId); });
     var sessions = metric.sessions.size || Math.max(metric.views, metric.actionEvents, metric.leadEvents);
+    var quizCompletions = metric.quizSessions.size || metric.quizEvents;
     var leads = metric.leadSessions.size || metric.leadEvents;
-    return { variant: metric.variant, sessions: sessions, leads: leads, cvr: rate(leads, sessions) };
+    return {
+      variant: metric.variant,
+      sessions: sessions,
+      quizCompletions: quizCompletions,
+      leads: leads,
+      step1Cvr: rate(quizCompletions, sessions),
+      step2Cvr: rate(leads, quizCompletions),
+      cvr: rate(leads, sessions)
+    };
   }
 
   function emptyMetric(variant) {
-    return { variant: variant, sessions: 0, leads: 0, cvr: 0 };
+    return { variant: variant, sessions: 0, quizCompletions: 0, leads: 0, step1Cvr: 0, step2Cvr: 0, cvr: 0 };
   }
 
   function buildHistoricalVariants() {
@@ -798,6 +820,10 @@
 
   function formatPercent(value) {
     return (Number(value || 0) * 100).toFixed(1) + "%";
+  }
+
+  function formatOptionalPercent(value) {
+    return value === null || value === undefined ? "N/A" : formatPercent(value);
   }
 
   function rate(numerator, denominator) {

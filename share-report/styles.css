@@ -490,13 +490,13 @@ button {
 
 .variant-report-stats {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   border-top: 1px solid var(--line);
 }
 
 .variant-report-stats div {
   min-width: 0;
-  padding: 12px 10px;
+  padding: 12px 7px;
   border-right: 1px solid var(--line);
 }
 
@@ -511,14 +511,14 @@ button {
 
 .variant-report-stats span {
   color: var(--muted);
-  font-size: 8px;
+  font-size: 7px;
   font-weight: 800;
   text-transform: uppercase;
 }
 
 .variant-report-stats strong {
   margin-top: 5px;
-  font-size: 19px;
+  font-size: 17px;
 }
 
 .historical-leaderboard {
