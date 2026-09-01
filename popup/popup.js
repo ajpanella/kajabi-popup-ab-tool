@@ -2,7 +2,7 @@
   "use strict";
 
   var config = window.LL_POPUP_CONFIG;
-  if (!config || !Array.isArray(config.variants)) return;
+  if (!config || config.campaignEnabled === false || !Array.isArray(config.variants)) return;
 
   var LEGACY_PROTEIN_MOCKUP_URL = "https://res.cloudinary.com/dsvlnioq9/image/upload/v1782135119/protien_plan_calculate_preview_and_male_female_pomke9.png";
   var PROJECT_PROTEIN_MOCKUP_URL = "https://ajpanella.github.io/kajabi-popup-ab-tool/popup/assets/your-personalized-protein-plan-mockup.png";
@@ -1192,6 +1192,7 @@
     var params = new URLSearchParams(window.location.search);
     return Object.assign({
       timestamp: new Date().toISOString(),
+      campaignId: config.campaignId || "high-protein",
       testId: config.testId || "",
       configVersion: variant.trackingVersion || config.configVersion || "v1",
       changeNote: config.changeNote || "",

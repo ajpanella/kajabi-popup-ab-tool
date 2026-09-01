@@ -9,6 +9,9 @@
   var compactPayloadBytes = 0;
   var usingCompactSummary = false;
   var reportPreviewMode = "desktop";
+  var campaignId = new URLSearchParams(window.location.search).get("campaign") || "high-protein";
+  var campaignRouter = window.LL_POPUP_CAMPAIGN_ROUTER;
+  var campaign = campaignRouter ? campaignRouter.byId(campaignId) : { id: "high-protein", name: "High Protein Meals", configPath: "popup/variants.js" };
   var els = {
     status: document.getElementById("report-status"),
     updated: document.getElementById("report-updated"),
@@ -19,6 +22,8 @@
     copyLink: document.getElementById("copy-report-link"),
     print: document.getElementById("print-report")
   };
+
+  initializeCampaignUi();
 
   els.copyLink.addEventListener("click", copyReportLink);
   els.print.addEventListener("click", function () { window.print(); });
@@ -31,6 +36,7 @@
     try {
       await loadFreshConfig();
       config = window.LL_POPUP_CONFIG || { variants: [] };
+      updateCampaignStatusUi();
       if (!config.trackingCsvUrl) throw new Error("The tracking source is not configured.");
       initializeAggregates();
       renderCurrentVariants();
@@ -50,7 +56,7 @@
   function loadFreshConfig() {
     return new Promise(function (resolve, reject) {
       var script = document.createElement("script");
-      script.src = "../popup/variants.js?report=" + Date.now();
+      script.src = "../" + campaign.configPath + "?report=" + Date.now();
       script.onload = resolve;
       script.onerror = function () { reject(new Error("The current popup configuration could not be loaded.")); };
       document.head.appendChild(script);
@@ -162,11 +168,29 @@
   function renderReadyState() {
     var refreshedAt = new Date();
     els.status.className = "report-status is-ready";
-    els.status.textContent = usingCompactSummary
+    els.status.textContent = config.campaignEnabled === false
+      ? "This campaign is currently off. The previews are drafts and no matching articles will show this popup."
+      : usingCompactSummary
       ? "Compact tracking summary loaded: " + formatBytes(compactPayloadBytes) + "."
       : "Latest aggregate tracking data loaded successfully. " + formatNumber(processedRows) + " events processed.";
     els.updated.textContent = "Updated " + refreshedAt.toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
     els.version.textContent = "Live configuration: " + (config.configVersion || "Current") + (config.publishedAt ? " · Published " + formatDate(new Date(config.publishedAt)) : "");
+  }
+
+  function initializeCampaignUi() {
+    Array.prototype.forEach.call(document.querySelectorAll("[data-report-campaign]"), function (tab) {
+      var active = tab.dataset.reportCampaign === campaign.id;
+      tab.classList.toggle("is-active", active);
+      if (active) tab.setAttribute("aria-current", "page");
+    });
+    var title = document.getElementById("report-title");
+    if (title) title.textContent = campaign.name + " Test Pulse";
+    document.title = campaign.name + " Test Pulse";
+  }
+
+  function updateCampaignStatusUi() {
+    var heading = document.getElementById("current-test-heading");
+    if (heading) heading.textContent = config.campaignEnabled === false ? "Draft variants (campaign off)" : "Live variants";
   }
 
   function renderError(error) {
@@ -785,7 +809,7 @@
   }
 
   function copyReportLink() {
-    var url = window.location.origin + window.location.pathname;
+    var url = window.location.origin + window.location.pathname + window.location.search;
     var promise = navigator.clipboard && navigator.clipboard.writeText
       ? navigator.clipboard.writeText(url)
       : fallbackCopy(url);

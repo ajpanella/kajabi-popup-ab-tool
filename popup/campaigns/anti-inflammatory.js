@@ -1,9 +1,9 @@
 (function () {
   window.LL_POPUP_CONFIG = {
-  "campaignId": "high-protein",
-  "campaignName": "High Protein Meals",
-  "campaignEnabled": true,
-  "testId": "blog-optin-v1",
+  "campaignId": "anti-inflammatory",
+  "campaignName": "Anti-Inflammatory Diet",
+  "campaignEnabled": false,
+  "testId": "anti-inflammatory-blog-optin-v1",
   "webhookUrl": "https://script.google.com/macros/s/AKfycbzZmjBOkq6JYxFEeMzemDozYiUOuAYZjkBAw5-0afFO_JLb1-riB9jeAIfWn40nlDqVnQ/exec",
   "kajabiFormEmbed": "<script src=https://www.longevitylifestyle.me/forms/2148823405/embed.js></script>",
   "cooldownDaysAfterClose": 7,
@@ -16,7 +16,7 @@
   "variants": [
     {
       "id": "A",
-      "name": "Control - Winning Variant",
+      "name": "Anti-Inflammatory Draft A",
       "active": true,
       "trafficSplit": 34,
       "headline": "Get Your High-Protein Week Planned in Seconds",
@@ -118,13 +118,13 @@
           "configVersion": "7/25/2026 #2"
         }
       ],
-      "trackingLabel": "Planned In Seconds",
+      "trackingLabel": "Anti-Inflammatory Draft A",
       "trackingStartedAt": "2026-07-26T00:43:22.521Z",
       "trackingLabelManual": false
     },
     {
       "id": "B",
-      "name": "Plan Goal Question",
+      "name": "Anti-Inflammatory Draft B",
       "active": true,
       "trafficSplit": 33,
       "headline": "Get Your High-Protein Week Planned in Seconds",
@@ -219,13 +219,13 @@
       "trackingVersion": "8/18/2026 · plan-goal-choice-buttons",
       "trackingFingerprint": "plan-goal-choice-buttons-v1",
       "trackingSources": [],
-      "trackingLabel": "Plan Goal Choices",
+      "trackingLabel": "Anti-Inflammatory Draft B",
       "trackingStartedAt": "2026-08-18T00:00:00.000Z",
       "trackingLabelManual": true
     },
     {
       "id": "C",
-      "name": "Protein Challenge Question",
+      "name": "Anti-Inflammatory Draft C",
       "active": true,
       "trafficSplit": 33,
       "headline": "Get Your High-Protein Week Planned in Seconds",
@@ -320,14 +320,14 @@
       "trackingVersion": "8/18/2026 · protein-challenge-choice-buttons",
       "trackingFingerprint": "protein-challenge-choice-buttons-v1",
       "trackingSources": [],
-      "trackingLabel": "Protein Challenge Choices",
+      "trackingLabel": "Anti-Inflammatory Draft C",
       "trackingStartedAt": "2026-08-18T00:00:00.000Z",
       "trackingLabelManual": true
     }
   ],
-  "configVersion": "8/18/2026",
+  "configVersion": "Draft - Not Live",
   "dashboardDraftResetToken": "2026-08-18-two-step-choice-buttons",
-  "changeNote": "Changed B and C to two-step choice-button quiz popups with an email form on step 2.",
+  "changeNote": "Initial anti-inflammatory campaign draft. Popup routing is disabled until the lead magnet is ready.",
   "savedColors": [
     "#07b00c",
     "#ea8011",

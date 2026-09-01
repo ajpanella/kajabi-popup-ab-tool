@@ -9,9 +9,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../popup/popup.css?v=35">
     <link rel="stylesheet" href="./dashboard.css?v=65">
-    <link rel="stylesheet" href="./workspace.css?v=8">
+    <link rel="stylesheet" href="./workspace.css?v=9">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="../popup/variants.js?v=20260729-2"></script>
+    <script src="../popup/campaign-router.js?v=1"></script>
+    <script src="./campaign-bootstrap.js?v=1"></script>
   </head>
   <body class="ll-studio-body">
     <div class="studio-shell">
@@ -35,7 +36,11 @@
         <header class="studio-topbar">
           <div class="studio-breadcrumb"><span>Popup Test Studio</span><i data-lucide="chevron-right"></i><strong id="studio-workspace-name">Build</strong></div>
           <div class="studio-topbar-actions">
-            <label class="studio-test-picker"><span>Active test</span><select aria-label="Active test"><option>Protein Plan - Blog Opt-in</option></select></label>
+            <nav class="studio-campaign-tabs" aria-label="Popup campaign">
+              <a data-campaign-tab="high-protein" href="?campaign=high-protein">High Protein</a>
+              <a data-campaign-tab="anti-inflammatory" href="?campaign=anti-inflammatory">Anti-Inflammatory</a>
+            </nav>
+            <span id="campaign-status-pill" class="studio-campaign-status"></span>
             <span class="studio-save-state"><i data-lucide="check"></i> Draft saved</span>
             <button id="load-data" class="studio-icon-button" type="button" aria-label="Refresh tracking data"><i data-lucide="refresh-cw"></i></button>
             <button class="studio-publish-command" type="button" data-open-publishing><i data-lucide="rocket"></i> Review &amp; Publish</button>
@@ -114,7 +119,7 @@
           </div>
 
           <section class="studio-workspace" data-workspace-panel="analyze" hidden>
-            <div class="studio-page-heading"><div><span class="studio-kicker">Performance</span><h1>Analyze active test</h1><p>Conversion is calculated from unique visitor sessions to unique lead sessions.</p></div><div class="studio-heading-actions"><a class="studio-publish-command studio-share-report-link" href="https://ajpanella.github.io/kajabi-popup-ab-tool/share-report/" target="_blank" rel="noopener"><i data-lucide="share-2"></i> Share Live Report</a><button id="toggle-analysis-filters" class="studio-secondary-command" type="button"><i data-lucide="sliders-horizontal"></i> Filters</button></div></div>
+            <div class="studio-page-heading"><div><span class="studio-kicker">Performance</span><h1>Analyze active test</h1><p>Conversion is calculated from unique visitor sessions to unique lead sessions.</p></div><div class="studio-heading-actions"><a id="share-live-report" class="studio-publish-command studio-share-report-link" href="https://ajpanella.github.io/kajabi-popup-ab-tool/share-report/" target="_blank" rel="noopener"><i data-lucide="share-2"></i> Share Live Report</a><button id="toggle-analysis-filters" class="studio-secondary-command" type="button"><i data-lucide="sliders-horizontal"></i> Filters</button></div></div>
             <section id="analysis-filterbar" class="studio-filter-band">
               <label class="studio-source-field">Published CSV URL<input id="csv-url" type="url" placeholder="Google Sheets CSV URL"></label>
               <label>Test<select id="filter-test-id"></select></label>
@@ -176,6 +181,7 @@
       <nav><button class="is-active" type="button" data-settings-tab="test">Test</button><button type="button" data-settings-tab="delivery">Delivery</button><button type="button" data-settings-tab="publishing">Publishing</button><button type="button" data-settings-tab="embed">Embed</button><button type="button" data-settings-tab="colors">Colors</button></nav>
       <div class="studio-settings-scroll">
         <div class="studio-settings-panel is-active" data-settings-panel="test">
+          <section><h3>Campaign</h3><label class="studio-campaign-enabled"><input id="campaign-enabled" type="checkbox"> <span>Show this popup campaign on matching articles</span></label><p id="campaign-route-note" class="studio-settings-help"></p></section>
           <section><h3>Experiment</h3><label>Test format<select id="variant-mode"><option value="ab">A/B test</option><option value="abc">A/B/C test</option></select></label><div class="studio-traffic-setting"><span>Traffic allocation</span><strong id="traffic-summary">A 50% / B 50%</strong><button id="balance-traffic" class="studio-outline-command" type="button">Balance evenly</button></div></section>
           <section><h3>Trigger</h3><div class="studio-two-fields"><label>Delay seconds<input id="delay-seconds" type="number" min="0" step="1" placeholder="35"></label><label>Scroll trigger %<input id="scroll-depth" type="number" min="0" max="100" step="5" placeholder="0"></label></div></section>
           <section><h3>Version</h3><label>New publish version<input id="config-version" type="text" placeholder="v1"></label><label>Change note<input id="change-note" type="text" placeholder="What changed in this version?"></label></section>
@@ -198,7 +204,7 @@
     <div id="studio-settings-scrim" class="studio-settings-scrim"></div>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./dashboard.js?v=120"></script>
+    <script src="./dashboard.js?v=121"></script>
     <script src="./workspace.js?v=5"></script>
   </body>
 </html>

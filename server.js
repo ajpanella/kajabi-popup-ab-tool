@@ -82,10 +82,17 @@ function publishLocalGitHub(request, response) {
     const publishPath = String(payload.path || "popup/variants.js").replace(/^\/+/, "");
     const message = String(payload.message || "Publish popup variants from dashboard");
     const content = String(payload.content || "");
-    const allowedPath = "popup/variants.js";
+    const campaignId = String(payload.campaignId || "high-protein");
+    const allowedPaths = new Set([
+      "popup/variants.js",
+      "popup/campaigns/anti-inflammatory.js"
+    ]);
+    const expectedPath = campaignId === "anti-inflammatory"
+      ? "popup/campaigns/anti-inflammatory.js"
+      : "popup/variants.js";
 
-    if (publishPath !== allowedPath || !content) {
-      send(response, 400, JSON.stringify({ ok: false, error: "Publish request must include popup/variants.js content." }), { "Content-Type": "application/json; charset=utf-8" });
+    if (!allowedPaths.has(publishPath) || publishPath !== expectedPath || !content) {
+      send(response, 400, JSON.stringify({ ok: false, error: "Publish request must include an approved popup campaign config." }), { "Content-Type": "application/json; charset=utf-8" });
       return;
     }
 

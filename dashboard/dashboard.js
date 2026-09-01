@@ -2,6 +2,12 @@
   "use strict";
 
   var originalConfig = window.LL_POPUP_CONFIG || { variants: [] };
+  var campaignContext = window.LL_POPUP_DASHBOARD_CAMPAIGN || {
+    id: originalConfig.campaignId || "high-protein",
+    name: originalConfig.campaignName || "High Protein Meals",
+    publishPath: "popup/variants.js"
+  };
+  var campaignKey = sanitizeKey(campaignContext.id || originalConfig.campaignId || "high-protein");
   var DRAFT_KEY = "ll_popup_dashboard_config_" + sanitizeKey(originalConfig.testId || "default");
   var ASSET_BASE_KEY = "ll_popup_dashboard_asset_base";
   var PUBLIC_ASSET_BASE_URL = "https://ajpanella.github.io/kajabi-popup-ab-tool";
@@ -11,12 +17,15 @@
   var GITHUB_OWNER_KEY = "ll_popup_dashboard_github_owner";
   var GITHUB_REPO_KEY = "ll_popup_dashboard_github_repo";
   var GITHUB_BRANCH_KEY = "ll_popup_dashboard_github_branch";
-  var GITHUB_PATH_KEY = "ll_popup_dashboard_github_path";
+  var GITHUB_PATH_KEY = "ll_popup_dashboard_github_path_" + campaignKey;
   var GITHUB_TOKEN_KEY = "ll_popup_dashboard_github_token";
   var LATEST_LIVE_VERSIONS = "__latest_live_versions";
-  var HIDDEN_HISTORY_KEY = "ll_popup_dashboard_hidden_history";
-  var HIDDEN_METRICS_KEY = "ll_popup_dashboard_hidden_metrics";
-  var IDEA_BANK_KEY = "ll_popup_dashboard_idea_bank_v1";
+  var HIDDEN_HISTORY_KEY = "ll_popup_dashboard_hidden_history_" + campaignKey;
+  var HIDDEN_METRICS_KEY = "ll_popup_dashboard_hidden_metrics_" + campaignKey;
+  var IDEA_BANK_KEY = "ll_popup_dashboard_idea_bank_v1_" + campaignKey;
+  var LEGACY_HIDDEN_HISTORY_KEY = "ll_popup_dashboard_hidden_history";
+  var LEGACY_HIDDEN_METRICS_KEY = "ll_popup_dashboard_hidden_metrics";
+  var LEGACY_IDEA_BANK_KEY = "ll_popup_dashboard_idea_bank_v1";
   var config = loadDraftConfig();
   var legacyTrackingVariantIds = [];
   initializeVariantTracking();
@@ -69,6 +78,8 @@
     publishGithub: document.getElementById("publish-github"),
     publishStatus: document.getElementById("github-publish-status"),
     webhookUrl: document.getElementById("webhook-url"),
+    campaignEnabled: document.getElementById("campaign-enabled"),
+    campaignRouteNote: document.getElementById("campaign-route-note"),
     leadMagnetMode: document.getElementById("lead-magnet-mode"),
     leadWebhookUrl: document.getElementById("lead-webhook-url"),
     proteinPlanUrl: document.getElementById("protein-plan-url"),
@@ -128,10 +139,12 @@
   els.githubOwner.value = localStorage.getItem(GITHUB_OWNER_KEY) || els.githubOwner.value || "ajpanella";
   els.githubRepo.value = localStorage.getItem(GITHUB_REPO_KEY) || els.githubRepo.value || "kajabi-popup-ab-tool";
   els.githubBranch.value = localStorage.getItem(GITHUB_BRANCH_KEY) || els.githubBranch.value || "main";
-  els.githubPath.value = localStorage.getItem(GITHUB_PATH_KEY) || els.githubPath.value || "popup/variants.js";
+  els.githubPath.value = campaignContext.publishPath || localStorage.getItem(GITHUB_PATH_KEY) || "popup/variants.js";
+  els.githubPath.readOnly = true;
   els.githubToken.value = localStorage.getItem(GITHUB_TOKEN_KEY) || "";
   if (googleDocUrl) els.docLink.href = googleDocUrl;
   if (trackingSheetUrl) els.trackingSheetLink.href = trackingSheetUrl;
+  initializeCampaignUi();
 
   renderEditors();
   renderPreviews(previewMode);
@@ -157,7 +170,7 @@
     els.compareLiveHistory.setAttribute("aria-pressed", compareFullHistoryToLive ? "true" : "false");
     updateDashboard();
   });
-  [els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
+  [els.campaignEnabled, els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
     element.addEventListener("input", onGlobalConfigInput);
   });
   els.variantMode.addEventListener("change", onVariantModeChange);
@@ -188,6 +201,34 @@
   els.importIdeas.addEventListener("click", function () { els.importIdeasFile.click(); });
   els.importIdeasFile.addEventListener("change", importIdeaBank);
   els.body.addEventListener("click", onMetricRowClick);
+
+  function initializeCampaignUi() {
+    var campaignId = campaignContext.id || originalConfig.campaignId || "high-protein";
+    Array.prototype.forEach.call(document.querySelectorAll("[data-campaign-tab]"), function (tab) {
+      var active = tab.dataset.campaignTab === campaignId;
+      tab.classList.toggle("is-active", active);
+      if (active) tab.setAttribute("aria-current", "page");
+    });
+    if (els.campaignRouteNote) {
+      els.campaignRouteNote.textContent = campaignId === "anti-inflammatory"
+        ? "Matches article slugs containing anti-inflammatory or inflammation. High-protein always takes priority when both topics appear."
+        : "Default campaign. It also takes priority whenever an article slug contains high-protein.";
+    }
+    updateCampaignStatusUi();
+    var shareLink = document.getElementById("share-live-report");
+    if (shareLink) shareLink.href = "https://ajpanella.github.io/kajabi-popup-ab-tool/share-report/?campaign=" + encodeURIComponent(campaignId);
+    document.title = (campaignContext.name || "Popup") + " - Popup Test Studio";
+  }
+
+  function updateCampaignStatusUi() {
+    var enabled = config.campaignEnabled !== false;
+    var pill = document.getElementById("campaign-status-pill");
+    if (pill) {
+      pill.textContent = enabled ? "Live" : "Off";
+      pill.classList.toggle("is-off", !enabled);
+    }
+    document.body.classList.toggle("is-campaign-disabled", !enabled);
+  }
   els.savedColors.addEventListener("input", onPaletteInput);
   els.savedColors.addEventListener("click", onPaletteClick);
   els.assetBaseUrl.addEventListener("input", function () {
@@ -359,7 +400,7 @@
 
   function loadIdeaBank() {
     try {
-      var stored = JSON.parse(localStorage.getItem(IDEA_BANK_KEY)) || [];
+      var stored = JSON.parse(campaignStorageValue(IDEA_BANK_KEY, LEGACY_IDEA_BANK_KEY)) || [];
       return Array.isArray(stored) ? stored.map(normalizeIdea).filter(function (idea) { return idea.text; }) : [];
     } catch (error) {
       return [];
@@ -569,6 +610,8 @@
     els.variantMode.value = currentVariantMode();
     updateTrafficSummary();
     els.webhookUrl.value = config.webhookUrl || "";
+    els.campaignEnabled.checked = config.campaignEnabled !== false;
+    updateCampaignStatusUi();
     els.leadMagnetMode.value = config.leadMagnetMode || "";
     els.leadWebhookUrl.value = config.leadWebhookUrl || "";
     els.proteinPlanUrl.value = config.proteinPlanUrl || "";
@@ -624,6 +667,10 @@
   }
 
   function onGlobalConfigInput() {
+    config.campaignId = campaignContext.id || config.campaignId || "high-protein";
+    config.campaignName = campaignContext.name || config.campaignName || "High Protein Meals";
+    config.campaignEnabled = els.campaignEnabled.checked;
+    updateCampaignStatusUi();
     config.webhookUrl = els.webhookUrl.value.trim();
     config.formMode = "zapier";
     config.leadMagnetMode = els.leadMagnetMode.value;
@@ -2275,7 +2322,7 @@
 
   function getHiddenMetricKeys() {
     try {
-      var value = JSON.parse(localStorage.getItem(HIDDEN_METRICS_KEY)) || [];
+      var value = JSON.parse(campaignStorageValue(HIDDEN_METRICS_KEY, LEGACY_HIDDEN_METRICS_KEY)) || [];
       return Array.isArray(value) ? value : [];
     } catch (error) {
       return [];
@@ -3266,6 +3313,9 @@
   }
 
   function generateVariantsJs() {
+    config.campaignId = campaignContext.id || config.campaignId || "high-protein";
+    config.campaignName = campaignContext.name || config.campaignName || "High Protein Meals";
+    config.campaignEnabled = config.campaignEnabled !== false;
     return "(function () {\n  window.LL_POPUP_CONFIG = " + JSON.stringify(config, null, 2) + ";\n})();\n";
   }
 
@@ -3274,7 +3324,7 @@
     var url = URL.createObjectURL(blob);
     var link = document.createElement("a");
     link.href = url;
-    link.download = "variants.js";
+    link.download = campaignContext.id === "anti-inflammatory" ? "anti-inflammatory.js" : "variants.js";
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -3293,7 +3343,7 @@
     var owner = els.githubOwner.value.trim();
     var repo = els.githubRepo.value.trim();
     var branch = els.githubBranch.value.trim() || "main";
-    var path = els.githubPath.value.trim() || "popup/variants.js";
+    var path = els.githubPath.value.trim() || campaignContext.publishPath || "popup/variants.js";
     var token = els.githubToken.value.trim();
     var message = els.githubMessage.value.trim() || "Publish popup variants from dashboard";
 
@@ -3302,6 +3352,11 @@
 
     if (!owner || !repo || !path) {
       setPublishStatus("Add repository owner, repository name, and publish path before publishing.", "error");
+      return;
+    }
+
+    if (campaignContext.publishPath && path !== campaignContext.publishPath) {
+      setPublishStatus("This campaign must publish to " + campaignContext.publishPath + ".", "error");
       return;
     }
 
@@ -3359,7 +3414,7 @@
         var commitSha = result.commit && result.commit.sha ? result.commit.sha.slice(0, 7) : "published";
         promotePublishedConfig();
         showCurrentLiveVersions();
-        setPublishStatus(versionMessage + "Published popup/variants.js to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
+        setPublishStatus(versionMessage + "Published " + path + " to GitHub (" + commitSha + "). GitHub Pages may take 1-2 minutes to refresh.", "success");
       })
       .catch(function (error) {
         setPublishStatus(error.message, "error");
@@ -3534,6 +3589,7 @@
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         path: path,
+        campaignId: campaignContext.id || config.campaignId || "high-protein",
         message: message,
         content: generateVariantsJs()
       })
@@ -3549,7 +3605,7 @@
         });
       })
       .then(function (body) {
-        var note = body.status === "unchanged" ? "No file changes were needed." : "Published popup/variants.js to GitHub.";
+        var note = body.status === "unchanged" ? "No file changes were needed." : "Published " + path + " to GitHub.";
         promotePublishedConfig();
         showCurrentLiveVersions();
         setPublishStatus((versionMessage || "") + note + " GitHub Pages may take 1-2 minutes to refresh.", "success");
@@ -3619,6 +3675,7 @@
   function buildDashboardPayload(eventType, variant) {
     return {
       timestamp: new Date().toISOString(),
+      campaignId: config.campaignId || campaignContext.id || "high-protein",
       testId: config.testId || "",
       configVersion: getEventVariantVersion(variant),
       changeNote: config.changeNote || "",
@@ -4912,11 +4969,17 @@
 
   function getHiddenHistoryKeys() {
     try {
-      var value = JSON.parse(localStorage.getItem(HIDDEN_HISTORY_KEY)) || [];
+      var value = JSON.parse(campaignStorageValue(HIDDEN_HISTORY_KEY, LEGACY_HIDDEN_HISTORY_KEY)) || [];
       return Array.isArray(value) ? value : [];
     } catch (error) {
       return [];
     }
+  }
+
+  function campaignStorageValue(scopedKey, legacyKey) {
+    var scoped = localStorage.getItem(scopedKey);
+    if (scoped != null) return scoped;
+    return campaignKey === "high-protein" ? localStorage.getItem(legacyKey) : null;
   }
 
   function buildVariantLabel(variant) {

@@ -5,7 +5,7 @@
   "description": "Kajabi-compatible vanilla JavaScript popup split-testing tool with a read-only CSV dashboard.",
   "scripts": {
     "serve": "python3 -m http.server 3101",
-    "check": "node --check popup/popup.js && node --check popup/variants.js && node --check dashboard/dashboard.js"
+    "check": "node --check popup/campaign-router.js && node --check popup/popup-loader.js && node --check popup/popup.js && node --check popup/variants.js && node --check popup/campaigns/anti-inflammatory.js && node --check dashboard/campaign-bootstrap.js && node --check dashboard/dashboard.js && node --check share-report/report.js && node --check server.js"
   },
   "devDependencies": {}
 }

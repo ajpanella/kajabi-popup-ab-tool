@@ -4,11 +4,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
-    <title>Protein Plan Test Pulse</title>
+    <title>Popup Test Pulse</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="./styles.css?v=7">
+    <link rel="stylesheet" href="./styles.css?v=8">
   </head>
   <body>
     <header class="report-header">
@@ -17,6 +17,10 @@
         <strong>Longevity<br>Lifestyle</strong>
       </a>
       <div class="report-actions">
+        <nav class="report-campaign-tabs" aria-label="Popup campaign">
+          <a data-report-campaign="high-protein" href="?campaign=high-protein">High Protein</a>
+          <a data-report-campaign="anti-inflammatory" href="?campaign=anti-inflammatory">Anti-Inflammatory</a>
+        </nav>
         <button id="copy-report-link" type="button">Copy Link</button>
         <button id="print-report" class="report-primary-action" type="button">Print / Save PDF</button>
       </div>
@@ -26,7 +30,7 @@
       <section class="report-intro">
         <div>
           <span class="report-kicker">Live Testing Update</span>
-          <h1>Protein Plan Test Pulse</h1>
+          <h1 id="report-title">Popup Test Pulse</h1>
           <p>A quick view of the active popup test and the strongest historical approaches.</p>
         </div>
         <div class="report-freshness">
@@ -70,6 +74,7 @@
       </footer>
     </main>
 
-    <script src="./report.js?v=10"></script>
+    <script src="../popup/campaign-router.js?v=1"></script>
+    <script src="./report.js?v=11"></script>
   </body>
 </html>

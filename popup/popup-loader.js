@@ -11,8 +11,15 @@
   var cacheKey = Date.now().toString(36);
 
   loadStylesheet(baseUrl + "/popup/popup.css?v=" + cacheKey);
-  loadScript(baseUrl + "/popup/variants.js?v=" + cacheKey, function () {
-    loadScript(baseUrl + "/popup/popup.js?v=" + cacheKey);
+  loadScript(baseUrl + "/popup/campaign-router.js?v=" + cacheKey, function () {
+    var router = window.LL_POPUP_CAMPAIGN_ROUTER;
+    var campaign = router ? router.select(window.location.pathname) : { id: "high-protein", configPath: "popup/variants.js" };
+    window.LL_POPUP_SELECTED_CAMPAIGN = campaign;
+    loadScript(baseUrl + "/" + campaign.configPath + "?v=" + cacheKey, function () {
+      var config = window.LL_POPUP_CONFIG || {};
+      if (config.campaignEnabled === false) return;
+      loadScript(baseUrl + "/popup/popup.js?v=" + cacheKey);
+    });
   });
 
   function loadStylesheet(url) {
