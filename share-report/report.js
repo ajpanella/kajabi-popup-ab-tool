@@ -86,9 +86,14 @@
     if (!endpoint) return false;
     var separator = String(endpoint).indexOf("?") >= 0 ? "&" : "?";
     var url = String(endpoint) + separator + "mode=pulse&testId=" + encodeURIComponent(config.testId || "") + "&report=" + Date.now();
+    var controller = typeof AbortController === "function" ? new AbortController() : null;
+    var timeoutId = controller ? setTimeout(function () { controller.abort(); }, 60000) : null;
     try {
       els.status.textContent = "Loading compact tracking summary...";
-      var response = await fetch(url, { cache: "no-store" });
+      var response = await fetch(url, {
+        cache: "no-store",
+        signal: controller ? controller.signal : undefined
+      });
       if (!response.ok) return false;
       var text = await response.text();
       compactPayloadBytes = new Blob([text]).size;
@@ -98,6 +103,8 @@
       return true;
     } catch (error) {
       return false;
+    } finally {
+      if (timeoutId) clearTimeout(timeoutId);
     }
   }
 

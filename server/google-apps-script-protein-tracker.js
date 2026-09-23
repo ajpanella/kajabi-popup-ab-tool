@@ -149,7 +149,7 @@ function compactDashboardSnapshot(value) {
 
 function buildPulseSummary(testId) {
   var cache = CacheService.getScriptCache();
-  var cacheKey = "pulse-v2-" + (testId || "all");
+  var cacheKey = "pulse-v3-" + (testId || "all");
   var cached = cache.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
@@ -159,42 +159,49 @@ function buildPulseSummary(testId) {
   var groups = {};
 
   if (rowCount) {
-    var abc = sheet.getRange(2, 1, rowCount, 3).getValues();
-    var ef = sheet.getRange(2, 5, rowCount, 2).getDisplayValues();
-    var eventTypes = sheet.getRange(2, 8, rowCount, 1).getDisplayValues();
-    var sessionIds = sheet.getRange(2, 19, rowCount, 1).getDisplayValues();
+    // Large trackers can exceed Apps Script's per-request data limit even when the
+    // requested cell count is valid. Narrow, bounded reads keep Pulse lightweight.
+    var batchSize = 10000;
+    for (var offset = 0; offset < rowCount; offset += batchSize) {
+      var batchRows = Math.min(batchSize, rowCount - offset);
+      var startRow = offset + 2;
+      var abc = sheet.getRange(startRow, 1, batchRows, 3).getValues();
+      var ef = sheet.getRange(startRow, 5, batchRows, 2).getDisplayValues();
+      var eventTypes = sheet.getRange(startRow, 8, batchRows, 1).getDisplayValues();
+      var sessionIds = sheet.getRange(startRow, 19, batchRows, 1).getDisplayValues();
 
-    for (var i = 0; i < rowCount; i += 1) {
-      var rowTestId = String(abc[i][1] || "");
-      if (testId && rowTestId !== testId) continue;
-      var version = normalizePulseVersion(abc[i][2] || "unversioned");
-      var variant = String(ef[i][0] || "Unknown");
-      if (version === "6/30/2026" && String(ef[i][1] || "").indexOf("Flow: Single-step") >= 0) {
-        version = "6/30/2026 Single Step";
-      }
-      var key = rowTestId + "::" + version + "::" + variant;
-      if (!groups[key]) {
-        groups[key] = {
-          testId: rowTestId,
-          version: version,
-          variant: variant,
-          label: String(ef[i][1] || ""),
-          firstSeen: pulseDate(abc[i][0]),
-          snapshotRow: i + 2,
-          sessions: {},
-          actionSessions: {},
-          quizSessions: {},
-          leadSessions: {},
-          views: 0,
-          actions: 0,
-          quizEvents: 0,
-          leadEvents: 0
-        };
-      }
-      accumulatePulseGroup(groups[key], eventTypes[i][0], sessionIds[i][0]);
-      var timestamp = pulseDate(abc[i][0]);
-      if (timestamp && (!groups[key].firstSeen || timestamp < groups[key].firstSeen)) {
-        groups[key].firstSeen = timestamp;
+      for (var i = 0; i < batchRows; i += 1) {
+        var rowTestId = String(abc[i][1] || "");
+        if (testId && rowTestId !== testId) continue;
+        var version = normalizePulseVersion(abc[i][2] || "unversioned");
+        var variant = String(ef[i][0] || "Unknown");
+        if (version === "6/30/2026" && String(ef[i][1] || "").indexOf("Flow: Single-step") >= 0) {
+          version = "6/30/2026 Single Step";
+        }
+        var key = rowTestId + "::" + version + "::" + variant;
+        if (!groups[key]) {
+          groups[key] = {
+            testId: rowTestId,
+            version: version,
+            variant: variant,
+            label: String(ef[i][1] || ""),
+            firstSeen: pulseDate(abc[i][0]),
+            snapshotRow: startRow + i,
+            sessions: {},
+            actionSessions: {},
+            quizSessions: {},
+            leadSessions: {},
+            views: 0,
+            actions: 0,
+            quizEvents: 0,
+            leadEvents: 0
+          };
+        }
+        accumulatePulseGroup(groups[key], eventTypes[i][0], sessionIds[i][0]);
+        var timestamp = pulseDate(abc[i][0]);
+        if (timestamp && (!groups[key].firstSeen || timestamp < groups[key].firstSeen)) {
+          groups[key].firstSeen = timestamp;
+        }
       }
     }
   }
