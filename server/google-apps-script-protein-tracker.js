@@ -1,5 +1,9 @@
 var SPREADSHEET_ID = "1fjbkrBO5r1XaJf3x-WNT0UNjEtn0IlDlAA9e2Sza69w";
 var SHEET_NAME = "Popup Events";
+var COMPACT_SHEET_NAME = "Popup Compact Events";
+var SNAPSHOT_SHEET_NAME = "Popup Variant Snapshots";
+var PULSE_GROUP_SHEET_NAME = "Popup Pulse Summary";
+var PULSE_SESSION_SHEET_NAME = "Popup Pulse Sessions";
 var HEADERS = [
   "timestamp",
   "testId",
@@ -36,15 +40,42 @@ var HEADERS = [
   "tag"
 ];
 
+var COMPACT_HEADERS = [
+  "timestamp", "testId", "configVersion", "changeNote", "variant", "variantLabel",
+  "snapshotKey", "eventType", "pageUrl", "deviceType", "sessionId", "rawRow"
+];
+var SNAPSHOT_HEADERS = ["key", "snapshot"];
+var PULSE_GROUP_HEADERS = [
+  "key", "testId", "configVersion", "variant", "variantLabel", "changeNote",
+  "firstSeen", "lastSeen", "sessions", "quizCompletions", "leads", "snapshotKey"
+];
+var PULSE_SESSION_HEADERS = ["key", "groupKey", "sessionCounted", "quizCounted", "leadCounted"];
+
+function onOpen() {
+  SpreadsheetApp.getUi()
+    .createMenu("Popup Tracker")
+    .addItem("Rebuild fast summaries", "rebuildTrackingSummaries")
+    .addToUi();
+}
+
 function doPost(e) {
   var payload = parsePayload(e);
-  var sheet = getSheet();
-  ensureHeaders(sheet);
-
-  sheet.appendRow(HEADERS.map(function (header) {
-    if (header === "timestamp") return payload.timestamp || new Date().toISOString();
-    return payload[header] || "";
-  }));
+  var lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try {
+    var sheet = getSheet();
+    ensureHeaders(sheet);
+    var timestamp = payload.timestamp || new Date().toISOString();
+    payload.timestamp = timestamp;
+    sheet.appendRow(HEADERS.map(function (header) {
+      if (header === "timestamp") return timestamp;
+      return payload[header] || "";
+    }));
+    var rawRow = sheet.getLastRow();
+    updateFastTrackingSheets(payload, rawRow);
+  } finally {
+    lock.releaseLock();
+  }
 
   return textResponse("ok");
 }
@@ -60,13 +91,10 @@ function doGet(e) {
 }
 
 function buildDashboardData(testId) {
-  var sheet = getSheet();
-  ensureHeaders(sheet);
+  var sheet = getSupportSheet(COMPACT_SHEET_NAME, COMPACT_HEADERS);
   var rowCount = Math.max(0, sheet.getLastRow() - 1);
-  var fields = ["timestamp", "testId", "configVersion", "changeNote", "variant", "variantLabel", "snapshotKey", "eventType", "pageUrl", "deviceType", "sessionId"];
+  var fields = COMPACT_HEADERS.slice();
   var rows = [];
-  var snapshotRows = {};
-  var snapshots = {};
   var dictionary = [];
   var dictionaryIndexes = {};
 
@@ -80,51 +108,21 @@ function buildDashboardData(testId) {
     return index;
   }
 
-  if (rowCount) {
-    var af = sheet.getRange(2, 1, rowCount, 6).getValues();
-    var hi = sheet.getRange(2, 8, rowCount, 2).getDisplayValues();
-    var deviceTypes = sheet.getRange(2, 12, rowCount, 1).getDisplayValues();
-    var sessionIds = sheet.getRange(2, 19, rowCount, 1).getDisplayValues();
-
-    for (var i = 0; i < rowCount; i += 1) {
-      var rowTestId = String(af[i][1] || "");
-      if (testId && rowTestId !== testId) continue;
-      var version = normalizePulseVersion(af[i][2] || "unversioned");
-      var variant = String(af[i][4] || "Unknown");
-      var label = String(af[i][5] || "");
-      if (version === "6/30/2026" && label.indexOf("Flow: Single-step") >= 0) {
-        version = "6/30/2026 Single Step";
-      }
-      var snapshotKey = rowTestId + "::" + version + "::" + variant;
-      if (!snapshotRows[snapshotKey]) snapshotRows[snapshotKey] = i + 2;
-      var timestamp = pulseDate(af[i][0]);
-      rows.push([
-        timestamp ? timestamp.toISOString() : String(af[i][0] || ""),
-        rowTestId,
-        version,
-        String(af[i][3] || ""),
-        variant,
-        label,
-        snapshotKey,
-        String(hi[i][0] || ""),
-        String(hi[i][1] || ""),
-        String(deviceTypes[i][0] || ""),
-        String(sessionIds[i][0] || "")
-      ].map(encodeValue));
+  var batchSize = 10000;
+  for (var offset = 0; offset < rowCount; offset += batchSize) {
+    var batchRows = Math.min(batchSize, rowCount - offset);
+    var values = sheet.getSheetValues(offset + 2, 1, batchRows, COMPACT_HEADERS.length);
+    for (var i = 0; i < values.length; i += 1) {
+      if (testId && String(values[i][1] || "") !== testId) continue;
+      rows.push(values[i].map(encodeValue));
     }
   }
 
-  var snapshotKeys = Object.keys(snapshotRows);
-  var ranges = snapshotKeys.length
-    ? sheet.getRangeList(snapshotKeys.map(function (key) { return "G" + snapshotRows[key]; })).getRanges()
-    : [];
-  snapshotKeys.forEach(function (key, index) {
-    snapshots[key] = compactDashboardSnapshot(ranges[index] ? ranges[index].getDisplayValue() : "");
-  });
+  var snapshots = readSnapshotMap();
 
   return {
     ok: true,
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedAt: new Date().toISOString(),
     rowsProcessed: rowCount,
     sourceBytes: 0,
@@ -149,100 +147,323 @@ function compactDashboardSnapshot(value) {
 
 function buildPulseSummary(testId) {
   var cache = CacheService.getScriptCache();
-  var cacheKey = "pulse-v4-" + (testId || "all");
+  var cacheKey = "pulse-summary-v1-" + (testId || "all");
   var cached = cache.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
-  var sheet = getSheet();
-  ensureHeaders(sheet);
+  var sheet = getSupportSheet(PULSE_GROUP_SHEET_NAME, PULSE_GROUP_HEADERS);
   var rowCount = Math.max(0, sheet.getLastRow() - 1);
-  var groups = {};
-
-  if (rowCount) {
-    // Large trackers can exceed Apps Script's per-request data limit even when the
-    // requested cell count is valid. Narrow, bounded reads keep Pulse lightweight.
-    var batchSize = 40000;
-    for (var offset = 0; offset < rowCount; offset += batchSize) {
-      var batchRows = Math.min(batchSize, rowCount - offset);
-      var startRow = offset + 2;
-      var abc = sheet.getSheetValues(startRow, 1, batchRows, 3);
-      var ef = sheet.getSheetValues(startRow, 5, batchRows, 2);
-      var eventTypes = sheet.getSheetValues(startRow, 8, batchRows, 1);
-      var sessionIds = sheet.getSheetValues(startRow, 19, batchRows, 1);
-
-      for (var i = 0; i < batchRows; i += 1) {
-        var rowTestId = String(abc[i][1] || "");
-        if (testId && rowTestId !== testId) continue;
-        var version = normalizePulseVersion(abc[i][2] || "unversioned");
-        var variant = String(ef[i][0] || "Unknown");
-        if (version === "6/30/2026" && String(ef[i][1] || "").indexOf("Flow: Single-step") >= 0) {
-          version = "6/30/2026 Single Step";
-        }
-        var key = rowTestId + "::" + version + "::" + variant;
-        if (!groups[key]) {
-          groups[key] = {
-            testId: rowTestId,
-            version: version,
-            variant: variant,
-            label: String(ef[i][1] || ""),
-            firstSeen: pulseDate(abc[i][0]),
-            snapshotRow: startRow + i,
-            sessions: {},
-            actionSessions: {},
-            quizSessions: {},
-            leadSessions: {},
-            views: 0,
-            actions: 0,
-            quizEvents: 0,
-            leadEvents: 0
-          };
-        }
-        accumulatePulseGroup(groups[key], eventTypes[i][0], sessionIds[i][0]);
-        var timestamp = pulseDate(abc[i][0]);
-        if (timestamp && (!groups[key].firstSeen || timestamp < groups[key].firstSeen)) {
-          groups[key].firstSeen = timestamp;
-        }
-      }
-    }
-  }
-
-  var groupKeys = Object.keys(groups);
-  var snapshotRanges = groupKeys.length
-    ? sheet.getRangeList(groupKeys.map(function (key) { return "G" + groups[key].snapshotRow; })).getRanges()
-    : [];
-  var results = groupKeys.map(function (key, index) {
-    var group = groups[key];
-    Object.keys(group.actionSessions).forEach(function (sessionId) {
-      group.sessions[sessionId] = true;
-    });
-    var sessions = Object.keys(group.sessions).length || Math.max(group.views, group.actions, group.leadEvents);
-    var quizCompletions = Object.keys(group.quizSessions).length || group.quizEvents;
-    var leads = Object.keys(group.leadSessions).length || group.leadEvents;
-    var snapshotValue = snapshotRanges[index] ? snapshotRanges[index].getDisplayValue() : "";
+  var values = rowCount ? sheet.getSheetValues(2, 1, rowCount, PULSE_GROUP_HEADERS.length) : [];
+  var snapshots = readSnapshotMap();
+  var results = values.filter(function (row) {
+    return !testId || String(row[1] || "") === testId;
+  }).map(function (row) {
     return {
-      testId: group.testId,
-      version: group.version,
-      variant: group.variant,
-      label: group.label,
-      firstSeen: group.firstSeen ? group.firstSeen.toISOString() : "",
-      sessions: sessions,
-      quizCompletions: quizCompletions,
-      leads: leads,
-      snapshot: compactPulseSnapshot(snapshotValue)
+      testId: String(row[1] || ""),
+      version: String(row[2] || "unversioned"),
+      variant: String(row[3] || "Unknown"),
+      label: String(row[4] || ""),
+      firstSeen: isoDate(row[6]),
+      sessions: Number(row[8] || 0),
+      quizCompletions: Number(row[9] || 0),
+      leads: Number(row[10] || 0),
+      snapshot: compactPulseSnapshot(snapshots[String(row[11] || row[0] || "")])
     };
   });
 
   var response = {
     ok: true,
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedAt: new Date().toISOString(),
-    rowsProcessed: rowCount,
+    rowsProcessed: Math.max(0, getSheet().getLastRow() - 1),
     testId: testId,
     groups: results
   };
   var serialized = JSON.stringify(response);
-  if (serialized.length < 95000) cache.put(cacheKey, serialized, 300);
+  if (serialized.length < 95000) cache.put(cacheKey, serialized, 30);
   return response;
+}
+
+function updateFastTrackingSheets(payload, rawRow) {
+  var meta = trackingMeta(payload, rawRow);
+  var compactSheet = getSupportSheet(COMPACT_SHEET_NAME, COMPACT_HEADERS);
+  if (!findValueRow(compactSheet, COMPACT_HEADERS.length, String(rawRow))) {
+    compactSheet.appendRow([
+      meta.timestamp, meta.testId, meta.version, meta.changeNote, meta.variant, meta.label,
+      meta.groupKey, meta.eventType, meta.pageUrl, meta.deviceType, meta.sessionId, rawRow
+    ]);
+  }
+  storeVariantSnapshot(meta.groupKey, payload.variantSnapshot || "");
+  updatePulseState(meta);
+  clearTrackingCaches(meta.testId);
+}
+
+function trackingMeta(payload, rawRow) {
+  var testId = String(payload.testId || "");
+  var label = String(payload.variantLabel || "");
+  var version = normalizePulseVersion(payload.configVersion || "unversioned");
+  if (version === "6/30/2026" && label.indexOf("Flow: Single-step") >= 0) {
+    version = "6/30/2026 Single Step";
+  }
+  var variant = String(payload.variant || "Unknown");
+  return {
+    timestamp: isoDate(payload.timestamp) || new Date().toISOString(),
+    testId: testId,
+    version: version,
+    changeNote: String(payload.changeNote || ""),
+    variant: variant,
+    label: label,
+    groupKey: [testId, version, variant].join("::"),
+    eventType: normalizePulseEvent(payload.eventType || ""),
+    pageUrl: String(payload.pageUrl || ""),
+    deviceType: String(payload.deviceType || ""),
+    sessionId: String(payload.sessionId || ""),
+    pulseSessionId: String(payload.sessionId || "") || "event-row-" + rawRow,
+    rawRow: rawRow
+  };
+}
+
+function storeVariantSnapshot(key, value) {
+  if (!value) return;
+  var sheet = getSupportSheet(SNAPSHOT_SHEET_NAME, SNAPSHOT_HEADERS);
+  if (findKeyRow(sheet, key)) return;
+  var compact = compactDashboardSnapshot(value);
+  sheet.appendRow([key, compact ? JSON.stringify(compact) : String(value)]);
+}
+
+function updatePulseState(meta) {
+  var sessionSheet = getSupportSheet(PULSE_SESSION_SHEET_NAME, PULSE_SESSION_HEADERS);
+  var sessionKey = meta.groupKey + "::" + meta.pulseSessionId;
+  var sessionRow = findKeyRow(sessionSheet, sessionKey);
+  var sessionValues = sessionRow
+    ? sessionSheet.getRange(sessionRow, 1, 1, PULSE_SESSION_HEADERS.length).getValues()[0]
+    : [sessionKey, meta.groupKey, false, false, false];
+  var countedSession = sessionValues[2] === true || String(sessionValues[2]).toLowerCase() === "true";
+  var countedQuiz = sessionValues[3] === true || String(sessionValues[3]).toLowerCase() === "true";
+  var countedLead = sessionValues[4] === true || String(sessionValues[4]).toLowerCase() === "true";
+  var countsAsSession = [
+    "popup_view", "popup_quiz_submit", "popup_submit_attempt", "popup_lead_submit", "kajabi_form_submitted"
+  ].indexOf(meta.eventType) >= 0;
+  var sessionDelta = countsAsSession && !countedSession ? 1 : 0;
+  var quizDelta = meta.eventType === "popup_quiz_submit" && !countedQuiz ? 1 : 0;
+  var leadDelta = (meta.eventType === "popup_lead_submit" || meta.eventType === "kajabi_form_submitted") && !countedLead ? 1 : 0;
+
+  sessionValues[2] = countedSession || countsAsSession;
+  sessionValues[3] = countedQuiz || meta.eventType === "popup_quiz_submit";
+  sessionValues[4] = countedLead || meta.eventType === "popup_lead_submit" || meta.eventType === "kajabi_form_submitted";
+  if (sessionRow) sessionSheet.getRange(sessionRow, 1, 1, PULSE_SESSION_HEADERS.length).setValues([sessionValues]);
+  else sessionSheet.appendRow(sessionValues);
+
+  var groupSheet = getSupportSheet(PULSE_GROUP_SHEET_NAME, PULSE_GROUP_HEADERS);
+  var groupRow = findKeyRow(groupSheet, meta.groupKey);
+  var groupValues = groupRow
+    ? groupSheet.getRange(groupRow, 1, 1, PULSE_GROUP_HEADERS.length).getValues()[0]
+    : [meta.groupKey, meta.testId, meta.version, meta.variant, meta.label, meta.changeNote, meta.timestamp, meta.timestamp, 0, 0, 0, meta.groupKey];
+  if (meta.label) groupValues[4] = meta.label;
+  if (meta.changeNote) groupValues[5] = meta.changeNote;
+  if (!groupValues[6] || meta.timestamp < isoDate(groupValues[6])) groupValues[6] = meta.timestamp;
+  if (!groupValues[7] || meta.timestamp > isoDate(groupValues[7])) groupValues[7] = meta.timestamp;
+  groupValues[8] = Number(groupValues[8] || 0) + sessionDelta;
+  groupValues[9] = Number(groupValues[9] || 0) + quizDelta;
+  groupValues[10] = Number(groupValues[10] || 0) + leadDelta;
+  if (groupRow) groupSheet.getRange(groupRow, 1, 1, PULSE_GROUP_HEADERS.length).setValues([groupValues]);
+  else groupSheet.appendRow(groupValues);
+}
+
+function rebuildTrackingSummaries() {
+  var rawSheet = getSheet();
+  ensureHeaders(rawSheet);
+  var initialLastRow = rawSheet.getLastRow();
+  var rowCount = Math.max(0, initialLastRow - 1);
+  var compactSheet = resetSupportSheet(COMPACT_SHEET_NAME, COMPACT_HEADERS);
+  var snapshotSheet = resetSupportSheet(SNAPSHOT_SHEET_NAME, SNAPSHOT_HEADERS);
+  var groupSheet = resetSupportSheet(PULSE_GROUP_SHEET_NAME, PULSE_GROUP_HEADERS);
+  var sessionSheet = resetSupportSheet(PULSE_SESSION_SHEET_NAME, PULSE_SESSION_HEADERS);
+  var groups = {};
+  var snapshotRows = {};
+  var batchSize = 20000;
+
+  for (var offset = 0; offset < rowCount; offset += batchSize) {
+    var batchRows = Math.min(batchSize, rowCount - offset);
+    var startRow = offset + 2;
+    var af = rawSheet.getSheetValues(startRow, 1, batchRows, 6);
+    var hi = rawSheet.getSheetValues(startRow, 8, batchRows, 2);
+    var deviceTypes = rawSheet.getSheetValues(startRow, 12, batchRows, 1);
+    var sessionIds = rawSheet.getSheetValues(startRow, 19, batchRows, 1);
+    var compactRows = [];
+
+    for (var i = 0; i < batchRows; i += 1) {
+      var rawRow = startRow + i;
+      var payload = {
+        timestamp: af[i][0], testId: af[i][1], configVersion: af[i][2], changeNote: af[i][3],
+        variant: af[i][4], variantLabel: af[i][5], eventType: hi[i][0], pageUrl: hi[i][1],
+        deviceType: deviceTypes[i][0], sessionId: sessionIds[i][0]
+      };
+      var meta = trackingMeta(payload, rawRow);
+      compactRows.push([
+        meta.timestamp, meta.testId, meta.version, meta.changeNote, meta.variant, meta.label,
+        meta.groupKey, meta.eventType, meta.pageUrl, meta.deviceType, meta.sessionId, rawRow
+      ]);
+      if (!snapshotRows[meta.groupKey]) snapshotRows[meta.groupKey] = rawRow;
+      if (!groups[meta.groupKey]) {
+        groups[meta.groupKey] = {
+          meta: meta,
+          firstSeen: pulseDate(meta.timestamp),
+          lastSeen: pulseDate(meta.timestamp),
+          sessions: {}, actionSessions: {}, quizSessions: {}, leadSessions: {},
+          views: 0, actions: 0, quizEvents: 0, leadEvents: 0
+        };
+      }
+      var group = groups[meta.groupKey];
+      if (meta.label) group.meta.label = meta.label;
+      if (meta.changeNote) group.meta.changeNote = meta.changeNote;
+      accumulatePulseGroup(group, meta.eventType, meta.sessionId);
+      var timestamp = pulseDate(meta.timestamp);
+      if (timestamp && (!group.firstSeen || timestamp < group.firstSeen)) group.firstSeen = timestamp;
+      if (timestamp && (!group.lastSeen || timestamp > group.lastSeen)) group.lastSeen = timestamp;
+    }
+    writeRows(compactSheet, compactRows);
+  }
+
+  var snapshots = readRawSnapshots(rawSheet, snapshotRows);
+  var snapshotOutput = Object.keys(snapshots).map(function (key) {
+    var compact = compactDashboardSnapshot(snapshots[key]);
+    return [key, compact ? JSON.stringify(compact) : String(snapshots[key] || "")];
+  });
+  writeRows(snapshotSheet, snapshotOutput);
+
+  var groupOutput = [];
+  var sessionOutput = [];
+  Object.keys(groups).forEach(function (key) {
+    var group = groups[key];
+    Object.keys(group.actionSessions).forEach(function (sessionId) { group.sessions[sessionId] = true; });
+    var sessions = Object.keys(group.sessions);
+    var quizSessions = Object.keys(group.quizSessions);
+    var leadSessions = Object.keys(group.leadSessions);
+    var sessionUnion = {};
+    sessions.concat(quizSessions, leadSessions).forEach(function (sessionId) { sessionUnion[sessionId] = true; });
+    Object.keys(sessionUnion).forEach(function (sessionId) {
+      sessionOutput.push([
+        key + "::" + sessionId,
+        key,
+        Boolean(group.sessions[sessionId]),
+        Boolean(group.quizSessions[sessionId]),
+        Boolean(group.leadSessions[sessionId])
+      ]);
+    });
+    groupOutput.push([
+      key, group.meta.testId, group.meta.version, group.meta.variant, group.meta.label, group.meta.changeNote,
+      group.firstSeen ? group.firstSeen.toISOString() : "",
+      group.lastSeen ? group.lastSeen.toISOString() : "",
+      sessions.length || Math.max(group.views, group.actions, group.leadEvents),
+      quizSessions.length || group.quizEvents,
+      leadSessions.length || group.leadEvents,
+      key
+    ]);
+  });
+  writeRows(groupSheet, groupOutput);
+  writeRows(sessionSheet, sessionOutput);
+
+  var currentLastRow = rawSheet.getLastRow();
+  for (var catchUpRow = initialLastRow + 1; catchUpRow <= currentLastRow; catchUpRow += 1) {
+    updateFastTrackingSheets(payloadFromRawRow(rawSheet, catchUpRow), catchUpRow);
+  }
+  clearTrackingCaches("");
+  PropertiesService.getScriptProperties().setProperty("TRACKING_SUMMARY_READY_AT", new Date().toISOString());
+  return "Rebuilt fast summaries for " + rowCount + " existing events.";
+}
+
+function payloadFromRawRow(sheet, rowNumber) {
+  var values = sheet.getRange(rowNumber, 1, 1, HEADERS.length).getValues()[0];
+  return HEADERS.reduce(function (payload, header, index) {
+    payload[header] = values[index];
+    return payload;
+  }, {});
+}
+
+function readRawSnapshots(sheet, snapshotRows) {
+  var result = {};
+  var keys = Object.keys(snapshotRows);
+  var batchSize = 100;
+  for (var offset = 0; offset < keys.length; offset += batchSize) {
+    var batch = keys.slice(offset, offset + batchSize);
+    var ranges = sheet.getRangeList(batch.map(function (key) { return "G" + snapshotRows[key]; })).getRanges();
+    batch.forEach(function (key, index) {
+      result[key] = ranges[index] ? ranges[index].getDisplayValue() : "";
+    });
+  }
+  return result;
+}
+
+function readSnapshotMap() {
+  var sheet = getSupportSheet(SNAPSHOT_SHEET_NAME, SNAPSHOT_HEADERS);
+  var rowCount = Math.max(0, sheet.getLastRow() - 1);
+  var values = rowCount ? sheet.getSheetValues(2, 1, rowCount, SNAPSHOT_HEADERS.length) : [];
+  return values.reduce(function (map, row) {
+    var value = String(row[1] || "");
+    try { map[String(row[0] || "")] = JSON.parse(value); }
+    catch (error) { map[String(row[0] || "")] = value; }
+    return map;
+  }, {});
+}
+
+function getSupportSheet(name, headers) {
+  var spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
+  var sheet = spreadsheet.getSheetByName(name) || spreadsheet.insertSheet(name);
+  ensureSheetHeaders(sheet, headers);
+  try { if (!sheet.isSheetHidden()) sheet.hideSheet(); } catch (error) {}
+  return sheet;
+}
+
+function resetSupportSheet(name, headers) {
+  var sheet = getSupportSheet(name, headers);
+  sheet.clearContents();
+  sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+  sheet.setFrozenRows(1);
+  return sheet;
+}
+
+function ensureSheetHeaders(sheet, headers) {
+  var current = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
+  var mismatch = headers.some(function (header, index) { return current[index] !== header; });
+  if (mismatch) {
+    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+    sheet.setFrozenRows(1);
+  }
+}
+
+function writeRows(sheet, rows) {
+  if (!rows.length) return;
+  var batchSize = 5000;
+  for (var offset = 0; offset < rows.length; offset += batchSize) {
+    var batch = rows.slice(offset, offset + batchSize);
+    sheet.getRange(sheet.getLastRow() + 1, 1, batch.length, batch[0].length).setValues(batch);
+  }
+}
+
+function findKeyRow(sheet, key) {
+  return findValueRow(sheet, 1, key);
+}
+
+function findValueRow(sheet, column, value) {
+  var rowCount = Math.max(0, sheet.getLastRow() - 1);
+  if (!rowCount) return 0;
+  var match = sheet.getRange(2, column, rowCount, 1)
+    .createTextFinder(String(value))
+    .matchEntireCell(true)
+    .findNext();
+  return match ? match.getRow() : 0;
+}
+
+function clearTrackingCaches(testId) {
+  var cache = CacheService.getScriptCache();
+  if (testId) cache.remove("pulse-summary-v1-" + testId);
+  cache.remove("pulse-summary-v1-all");
+}
+
+function isoDate(value) {
+  var date = pulseDate(value);
+  return date ? date.toISOString() : String(value || "");
 }
 
 function accumulatePulseGroup(group, rawType, rawSessionId) {
@@ -293,7 +514,7 @@ function pulseDate(value) {
 function compactPulseSnapshot(value) {
   if (!value) return null;
   try {
-    var source = JSON.parse(value);
+    var source = typeof value === "string" ? JSON.parse(value) : value;
     var compact = pickPulseFields(source, [
       "headline", "headlineHtml", "subheadline", "subheadlineHtml", "buttonText", "imageUrl",
       "accentColor", "brandAccentColor", "backgroundColor", "textColor", "width", "fontFamily",

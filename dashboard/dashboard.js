@@ -487,12 +487,12 @@
   function loadCompactTrackingData(csvUrl) {
     var testId = config.testId || originalConfig.testId || "";
     var sources = [];
-    if (/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
-      sources.push("/api/tracking-data?url=" + encodeURIComponent(csvUrl) + "&testId=" + encodeURIComponent(testId));
-    }
     var webhookUrl = String(config.webhookUrl || originalConfig.webhookUrl || "").trim();
     if (webhookUrl) {
       sources.push(webhookUrl + (webhookUrl.indexOf("?") >= 0 ? "&" : "?") + "mode=dashboard&testId=" + encodeURIComponent(testId) + "&refresh=" + Date.now());
+    }
+    if (/^(localhost|127\.0\.0\.1)$/.test(window.location.hostname)) {
+      sources.push("/api/tracking-data?url=" + encodeURIComponent(csvUrl) + "&testId=" + encodeURIComponent(testId));
     }
     if (!sources.length) return Promise.reject(new Error("Add the tracking webhook URL before loading data."));
 
@@ -500,7 +500,7 @@
       if (index >= sources.length) {
         return Promise.reject(priorError || new Error("The compact tracking feed is unavailable. Redeploy the latest Apps Script tracker, then refresh."));
       }
-      return fetch(sources[index], { cache: "no-store" }).then(function (response) {
+      return fetchWithTimeout(sources[index], 60000).then(function (response) {
         if (!response.ok) throw new Error("Compact tracking feed returned HTTP " + response.status + ".");
         var transferBytes = Number(response.headers.get("X-Tracking-Bytes") || 0);
         return response.json().then(function (payload) {
@@ -522,6 +522,15 @@
       });
     };
     return attempt(0);
+  }
+
+  function fetchWithTimeout(url, timeoutMs) {
+    if (typeof AbortController !== "function") return fetch(url, { cache: "no-store" });
+    var controller = new AbortController();
+    var timeoutId = setTimeout(function () { controller.abort(); }, timeoutMs);
+    return fetch(url, { cache: "no-store", signal: controller.signal }).finally(function () {
+      clearTimeout(timeoutId);
+    });
   }
 
   function decodeCompactTrackingRows(payload) {

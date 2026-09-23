@@ -64,9 +64,10 @@ tag
 2. Paste the contents of `server/google-apps-script-protein-tracker.js`.
 3. Deploy as a Web App.
 4. Set access to allow anonymous requests if the popup will post directly from public blog pages.
-5. Copy the Web App URL into `webhookUrl` in `popup/variants.js`.
+5. Run `rebuildTrackingSummaries` once from the Apps Script editor to backfill the fast tracking sheets.
+6. Copy the Web App URL into `webhookUrl` in `popup/variants.js`.
 
-The same Web App URL also serves the compact Test Pulse summary at `?mode=pulse`. The public pulse report uses this anonymous aggregate instead of downloading the full event CSV. The summary is cached for five minutes and contains no names, emails, quiz answers, page URLs, or user agents.
+The same Web App URL serves the compact Test Pulse summary at `?mode=pulse` and the Test Studio feed at `?mode=dashboard`. The script maintains hidden compact-event, session, snapshot, and variant-summary sheets as events arrive. Normal report loads never rescan or download the raw event log. The public Pulse response contains no names, emails, quiz answers, page URLs, or user agents.
 
 ## 4. Add the popup to Kajabi blog articles
 
@@ -128,9 +129,9 @@ Changing `configVersion` also starts a fresh 30-day variant assignment for that 
 
 The dashboard's `Save Draft + Log Version` button records a `variant_save_test` row with a readable `variantLabel`, such as CTA text, colors, width, font, text alignment, image status, and quiz-flow details. Use it before publishing a new version so the Sheet has a marker for exactly what changed.
 
-## 6. Publish data for the dashboard
+## 6. Dashboard tracking data
 
-In Google Sheets, choose `File > Share > Publish to web`, then publish the `Popup Events` sheet as CSV.
+The dashboard uses the Apps Script compact feed first. The published CSV remains configured only as a legacy fallback and audit export; normal dashboard loads do not download it.
 
 Open the dashboard with:
 
