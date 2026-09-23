@@ -149,7 +149,7 @@ function compactDashboardSnapshot(value) {
 
 function buildPulseSummary(testId) {
   var cache = CacheService.getScriptCache();
-  var cacheKey = "pulse-v3-" + (testId || "all");
+  var cacheKey = "pulse-v4-" + (testId || "all");
   var cached = cache.get(cacheKey);
   if (cached) return JSON.parse(cached);
 
@@ -161,14 +161,14 @@ function buildPulseSummary(testId) {
   if (rowCount) {
     // Large trackers can exceed Apps Script's per-request data limit even when the
     // requested cell count is valid. Narrow, bounded reads keep Pulse lightweight.
-    var batchSize = 10000;
+    var batchSize = 40000;
     for (var offset = 0; offset < rowCount; offset += batchSize) {
       var batchRows = Math.min(batchSize, rowCount - offset);
       var startRow = offset + 2;
-      var abc = sheet.getRange(startRow, 1, batchRows, 3).getValues();
-      var ef = sheet.getRange(startRow, 5, batchRows, 2).getDisplayValues();
-      var eventTypes = sheet.getRange(startRow, 8, batchRows, 1).getDisplayValues();
-      var sessionIds = sheet.getRange(startRow, 19, batchRows, 1).getDisplayValues();
+      var abc = sheet.getSheetValues(startRow, 1, batchRows, 3);
+      var ef = sheet.getSheetValues(startRow, 5, batchRows, 2);
+      var eventTypes = sheet.getSheetValues(startRow, 8, batchRows, 1);
+      var sessionIds = sheet.getSheetValues(startRow, 19, batchRows, 1);
 
       for (var i = 0; i < batchRows; i += 1) {
         var rowTestId = String(abc[i][1] || "");

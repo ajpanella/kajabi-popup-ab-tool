@@ -87,7 +87,7 @@
     var separator = String(endpoint).indexOf("?") >= 0 ? "&" : "?";
     var url = String(endpoint) + separator + "mode=pulse&testId=" + encodeURIComponent(config.testId || "") + "&report=" + Date.now();
     var controller = typeof AbortController === "function" ? new AbortController() : null;
-    var timeoutId = controller ? setTimeout(function () { controller.abort(); }, 60000) : null;
+    var timeoutId = controller ? setTimeout(function () { controller.abort(); }, 120000) : null;
     try {
       els.status.textContent = "Loading compact tracking summary...";
       var response = await fetch(url, {
