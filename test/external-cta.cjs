@@ -58,6 +58,7 @@ async function popupTest() {
         const emitted = [];
         await page.exposeFunction('recordBeacon', body => emitted.push(new URLSearchParams(body).get('eventType')));
         await page.route('**/*', route => {
+          if (route.request().url().endsWith('/andrew-inflammation-protocols.png')) return route.fulfill({contentType:'image/png',body:fs.readFileSync(path.join(root,'popup/assets/uploads/andrew-inflammation-protocols.png'))});
           if (route.request().url().includes('urlgeni.us')) navigated = true;
           return route.fulfill({status:200,contentType:'text/html',body:'<html><body>Test destination</body></html>'});
         });
@@ -72,6 +73,7 @@ async function popupTest() {
         await page.locator('.ll-popup-root').waitFor();
         assert.equal(await page.locator('.ll-popup-root input').count(),0);
         assert.equal(await page.locator('.ll-popup-headline').textContent(),variant.headline);
+        if (variant.imageUrl) await page.waitForFunction(()=>document.querySelector('.ll-popup-image').naturalWidth > 0);
         const box = await page.locator('.ll-popup-modal').boundingBox();
         assert(box.x>=0 && box.x+box.width<=width+1, 'popup fits horizontally');
         await page.screenshot({path:path.join(root,'outputs',`youtube-${variant.id}-${width}.png`)});
@@ -99,6 +101,7 @@ async function reportingTest() {
     const errors=[]; page.on('pageerror',error=>errors.push(error.message));
     await page.route('**/*',route=>{
       const url=new URL(route.request().url());
+      if(url.pathname.endsWith('/andrew-inflammation-protocols.png')) return route.fulfill({contentType:'image/png',body:fs.readFileSync(path.join(root,'popup/assets/uploads/andrew-inflammation-protocols.png'))});
       if(url.hostname==='script.google.com') {
         const data = url.searchParams.get('mode')==='pulse'
           ? {ok:true,schemaVersion:3,groups:config.variants.map(v=>({testId:config.testId,version:v.trackingVersion,variant:v.id,sessions:2,ctaClicks:1,leads:0,quizCompletions:0,snapshot:v}))}

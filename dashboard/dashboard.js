@@ -5558,6 +5558,19 @@
   function loadDraftConfig() {
     try {
       var draft = JSON.parse(localStorage.getItem(DRAFT_KEY)) || null;
+      if (draft && originalConfig.dashboardMediaRevision && draft.dashboardMediaRevision !== originalConfig.dashboardMediaRevision) {
+        (draft.variants || []).forEach(function (variant) {
+          var published = (originalConfig.variants || []).find(function (item) { return item.id === variant.id; });
+          if (!published) return;
+          variant.imageUrl = published.imageUrl;
+          (variant.flowSteps || []).forEach(function (step) {
+            var source = (published.flowSteps || []).find(function (item) { return item.id === step.id; });
+            if (source) step.imageUrl = source.imageUrl;
+          });
+        });
+        draft.dashboardMediaRevision = originalConfig.dashboardMediaRevision;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      }
       var resetToken = originalConfig.dashboardDraftResetToken || "";
       if (draft && resetToken && draft.dashboardDraftResetToken !== resetToken) {
         draft = cloneConfig(originalConfig);
