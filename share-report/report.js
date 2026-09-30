@@ -268,7 +268,7 @@
     var firstStepContent = preview.firstStepType === "question" && preview.choices.length
       ? "<div class=\"popup-miniature-question\">" + escapeHtml(preview.questionLabel) + "</div><div class=\"popup-miniature-choices\">" + preview.choices.map(function (choice) { return "<span>" + escapeHtml(choice) + "</span>"; }).join("") + "</div>"
       : "<div class=\"popup-miniature-input\">" + escapeHtml(preview.emailPlaceholder) + "</div><div class=\"popup-miniature-button\">" + escapeHtml(preview.buttonText) + "</div>";
-    if (preview.firstStepType === "link") firstStepContent = "<div class=\"popup-miniature-button\" style=\"font-size:" + Math.max(12, Math.min(28, Number(variant.buttonFontSize) || 20)) + "px\">" + escapeHtml(preview.buttonText) + "</div>";
+    if (preview.firstStepType === "link") firstStepContent = "<div class=\"popup-miniature-button\" style=\"font-size:" + Math.max(12, Math.min(28, Number(variant.buttonFontSize) || 20)) + "px\">" + renderYoutubeButton(preview.buttonText, "link") + "</div>";
     return [
       "<article class=\"variant-report-card" + (isLeader ? " is-current-leader" : "") + "\">",
       isLeader ? "<span class=\"current-leader-flag\">Current leader</span>" : "",
@@ -914,5 +914,10 @@
 
   function escapeHtmlAttr(value) {
     return escapeHtml(value).replace(/`/g, "&#96;");
+  }
+  function renderYoutubeButton(text, type) {
+    var label = escapeHtml(text);
+    if (type !== "link" || !/youtube/i.test(text)) return label;
+    return "<span style=\"display:inline-flex;align-items:center;justify-content:center;font-size:.86em;line-height:1.2\"><span>" + label + "</span><svg aria-hidden=\"true\" viewBox=\"0 0 24 17\" width=\"29\" height=\"21\" style=\"flex:none;vertical-align:middle;margin-left:10px\" fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M23.5 2.7A3 3 0 0 0 21.4.6C19.5 0 12 0 12 0S4.5 0 2.6.6A3 3 0 0 0 .5 2.7C0 4.6 0 8.5 0 8.5s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 17 12 17 12 17s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8ZM9.6 12.1V4.9l6.3 3.6-6.3 3.6Z\"/></svg></span>";
   }
 })();

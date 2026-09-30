@@ -2983,7 +2983,7 @@
       else if (step.type === "message" || step.type === "link") content = "";
       else content = "<fieldset><legend>" + escapeHtml(step.questionLabel || step.name) + "</legend>" + renderFlowPreviewControl(step) + "</fieldset>";
       var hide = step.type === "question" && step.answerStyle === "ranges" && step.autoAdvance !== false;
-      return "<form class=\"ll-popup-zapier-form ll-popup-protein-form" + (step.type === "question" ? " ll-popup-multi-question" : "") + "\">" + content + (hide ? "" : "<button type=\"submit\">" + escapeHtml(step.buttonText || "Continue") + "</button>") + "</form>";
+      return "<form class=\"ll-popup-zapier-form ll-popup-protein-form" + (step.type === "question" ? " ll-popup-multi-question" : "") + "\">" + content + (hide ? "" : "<button type=\"submit\">" + renderYoutubeButton(step.buttonText || "Continue", step.type) + "</button>") + "</form>";
     }
 
     function renderFlowPreviewControl(step) {
@@ -5760,5 +5760,10 @@
 
   function escapeHtmlAttr(value) {
     return escapeHtml(value).replace(/`/g, "&#096;");
+  }
+  function renderYoutubeButton(text, type) {
+    var label = escapeHtml(text);
+    if (type !== "link" || !/youtube/i.test(text)) return label;
+    return "<span style=\"display:inline-flex;align-items:center;justify-content:center;font-size:.86em;line-height:1.2\"><span>" + label + "</span><svg aria-hidden=\"true\" viewBox=\"0 0 24 17\" width=\"29\" height=\"21\" style=\"flex:none;vertical-align:middle;margin-left:10px\" fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M23.5 2.7A3 3 0 0 0 21.4.6C19.5 0 12 0 12 0S4.5 0 2.6.6A3 3 0 0 0 .5 2.7C0 4.6 0 8.5 0 8.5s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 17 12 17 12 17s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8ZM9.6 12.1V4.9l6.3 3.6-6.3 3.6Z\"/></svg></span>";
   }
 })();

@@ -557,7 +557,7 @@
     }
 
     function renderFlowStepForm(step) {
-      if (step.type === "message" || step.type === "link") return "<form class=\"ll-popup-zapier-form\" data-step=\"" + step.type + "\"><button type=\"submit\">" + escapeHtml(step.buttonText || (currentIndex < steps.length - 1 ? "Continue" : "Finish")) + "</button></form>";
+      if (step.type === "message" || step.type === "link") return "<form class=\"ll-popup-zapier-form\" data-step=\"" + step.type + "\"><button type=\"submit\">" + renderYoutubeButton(step.buttonText || (currentIndex < steps.length - 1 ? "Continue" : "Finish"), step.type) + "</button></form>";
       var content = "";
       if (step.type === "lead") {
         var fields = step.fields || [];
@@ -1411,5 +1411,10 @@
 
   function writeJson(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
+  }
+  function renderYoutubeButton(text, type) {
+    var label = escapeHtml(text);
+    if (type !== "link" || !/youtube/i.test(text)) return label;
+    return "<span style=\"display:inline-flex;align-items:center;justify-content:center;font-size:.86em;line-height:1.2\"><span>" + label + "</span><svg aria-hidden=\"true\" viewBox=\"0 0 24 17\" width=\"29\" height=\"21\" style=\"flex:none;vertical-align:middle;margin-left:10px\" fill=\"currentColor\"><path fill-rule=\"evenodd\" d=\"M23.5 2.7A3 3 0 0 0 21.4.6C19.5 0 12 0 12 0S4.5 0 2.6.6A3 3 0 0 0 .5 2.7C0 4.6 0 8.5 0 8.5s0 3.9.5 5.8a3 3 0 0 0 2.1 2.1C4.5 17 12 17 12 17s7.5 0 9.4-.6a3 3 0 0 0 2.1-2.1c.5-1.9.5-5.8.5-5.8s0-3.9-.5-5.8ZM9.6 12.1V4.9l6.3 3.6-6.3 3.6Z\"/></svg></span>";
   }
 })();
