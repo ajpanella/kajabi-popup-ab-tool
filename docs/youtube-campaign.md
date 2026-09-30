@@ -10,7 +10,9 @@ All use the same 20-second delay, layout, and Subscribe on YouTube button.
 The destination is https://urlgeni.us/youtube/channel/InflammationProtocols.
 There is no email collection, reminder tab, or timed repeat popup.
 
-The campaign is paused pending deployment of the updated tracker.
+The campaign was activated September 30, 2026 after live schema-3 tracking
+verification: two clicks in one viewed session produced one CTA conversion
+and zero leads. The protein summary remained available with 26 groups.
 
 ## Tracker deployment
 

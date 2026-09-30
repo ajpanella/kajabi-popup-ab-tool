@@ -5558,6 +5558,12 @@
   function loadDraftConfig() {
     try {
       var draft = JSON.parse(localStorage.getItem(DRAFT_KEY)) || null;
+      if (draft && originalConfig.dashboardActivationRevision && draft.dashboardActivationRevision !== originalConfig.dashboardActivationRevision) {
+        draft.campaignEnabled = originalConfig.campaignEnabled;
+        draft.publishedAt = originalConfig.publishedAt;
+        draft.dashboardActivationRevision = originalConfig.dashboardActivationRevision;
+        localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      }
       if (draft && originalConfig.dashboardMediaRevision && draft.dashboardMediaRevision !== originalConfig.dashboardMediaRevision) {
         (draft.variants || []).forEach(function (variant) {
           var published = (originalConfig.variants || []).find(function (item) { return item.id === variant.id; });
