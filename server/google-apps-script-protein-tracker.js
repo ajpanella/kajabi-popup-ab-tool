@@ -47,9 +47,9 @@ var COMPACT_HEADERS = [
 var SNAPSHOT_HEADERS = ["key", "snapshot"];
 var PULSE_GROUP_HEADERS = [
   "key", "testId", "configVersion", "variant", "variantLabel", "changeNote",
-  "firstSeen", "lastSeen", "sessions", "quizCompletions", "leads", "snapshotKey"
+  "firstSeen", "lastSeen", "sessions", "quizCompletions", "leads", "snapshotKey", "ctaClicks"
 ];
-var PULSE_SESSION_HEADERS = ["key", "groupKey", "sessionCounted", "quizCounted", "leadCounted"];
+var PULSE_SESSION_HEADERS = ["key", "groupKey", "sessionCounted", "quizCounted", "leadCounted", "ctaCounted"];
 
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -167,13 +167,14 @@ function buildPulseSummary(testId) {
       sessions: Number(row[8] || 0),
       quizCompletions: Number(row[9] || 0),
       leads: Number(row[10] || 0),
+      ctaClicks: Number(row[12] || 0),
       snapshot: compactPulseSnapshot(snapshots[String(row[11] || row[0] || "")])
     };
   });
 
   var response = {
     ok: true,
-    schemaVersion: 2,
+    schemaVersion: 3,
     generatedAt: new Date().toISOString(),
     rowsProcessed: Math.max(0, getSheet().getLastRow() - 1),
     testId: testId,
@@ -241,16 +242,19 @@ function updatePulseState(meta) {
   var countedSession = sessionValues[2] === true || String(sessionValues[2]).toLowerCase() === "true";
   var countedQuiz = sessionValues[3] === true || String(sessionValues[3]).toLowerCase() === "true";
   var countedLead = sessionValues[4] === true || String(sessionValues[4]).toLowerCase() === "true";
+  var countedCta = sessionValues[5] === true || String(sessionValues[5]).toLowerCase() === "true";
   var countsAsSession = [
     "popup_view", "popup_quiz_submit", "popup_submit_attempt", "popup_lead_submit", "kajabi_form_submitted"
   ].indexOf(meta.eventType) >= 0;
   var sessionDelta = countsAsSession && !countedSession ? 1 : 0;
+  var ctaDelta = (countedSession || countsAsSession) && (countedCta || meta.eventType === "popup_cta_click") && !(countedSession && countedCta) ? 1 : 0;
   var quizDelta = meta.eventType === "popup_quiz_submit" && !countedQuiz ? 1 : 0;
   var leadDelta = (meta.eventType === "popup_lead_submit" || meta.eventType === "kajabi_form_submitted") && !countedLead ? 1 : 0;
 
   sessionValues[2] = countedSession || countsAsSession;
   sessionValues[3] = countedQuiz || meta.eventType === "popup_quiz_submit";
   sessionValues[4] = countedLead || meta.eventType === "popup_lead_submit" || meta.eventType === "kajabi_form_submitted";
+  sessionValues[5] = countedCta || meta.eventType === "popup_cta_click";
   if (sessionRow) sessionSheet.getRange(sessionRow, 1, 1, PULSE_SESSION_HEADERS.length).setValues([sessionValues]);
   else sessionSheet.appendRow(sessionValues);
 
@@ -266,6 +270,7 @@ function updatePulseState(meta) {
   groupValues[8] = Number(groupValues[8] || 0) + sessionDelta;
   groupValues[9] = Number(groupValues[9] || 0) + quizDelta;
   groupValues[10] = Number(groupValues[10] || 0) + leadDelta;
+  groupValues[12] = Number(groupValues[12] || 0) + ctaDelta;
   if (groupRow) groupSheet.getRange(groupRow, 1, 1, PULSE_GROUP_HEADERS.length).setValues([groupValues]);
   else groupSheet.appendRow(groupValues);
 }
@@ -310,7 +315,7 @@ function rebuildTrackingSummaries() {
           meta: meta,
           firstSeen: pulseDate(meta.timestamp),
           lastSeen: pulseDate(meta.timestamp),
-          sessions: {}, actionSessions: {}, quizSessions: {}, leadSessions: {},
+          sessions: {}, actionSessions: {}, quizSessions: {}, leadSessions: {}, ctaSessions: {},
           views: 0, actions: 0, quizEvents: 0, leadEvents: 0
         };
       }
@@ -318,6 +323,7 @@ function rebuildTrackingSummaries() {
       if (meta.label) group.meta.label = meta.label;
       if (meta.changeNote) group.meta.changeNote = meta.changeNote;
       accumulatePulseGroup(group, meta.eventType, meta.sessionId);
+      if (meta.eventType === "popup_cta_click") group.ctaSessions[meta.pulseSessionId] = true;
       var timestamp = pulseDate(meta.timestamp);
       if (timestamp && (!group.firstSeen || timestamp < group.firstSeen)) group.firstSeen = timestamp;
       if (timestamp && (!group.lastSeen || timestamp > group.lastSeen)) group.lastSeen = timestamp;
@@ -341,14 +347,15 @@ function rebuildTrackingSummaries() {
     var quizSessions = Object.keys(group.quizSessions);
     var leadSessions = Object.keys(group.leadSessions);
     var sessionUnion = {};
-    sessions.concat(quizSessions, leadSessions).forEach(function (sessionId) { sessionUnion[sessionId] = true; });
+    sessions.concat(quizSessions, leadSessions, Object.keys(group.ctaSessions)).forEach(function (sessionId) { sessionUnion[sessionId] = true; });
     Object.keys(sessionUnion).forEach(function (sessionId) {
       sessionOutput.push([
         key + "::" + sessionId,
         key,
         Boolean(group.sessions[sessionId]),
         Boolean(group.quizSessions[sessionId]),
-        Boolean(group.leadSessions[sessionId])
+        Boolean(group.leadSessions[sessionId]),
+        Boolean(group.ctaSessions[sessionId])
       ]);
     });
     groupOutput.push([
@@ -358,7 +365,8 @@ function rebuildTrackingSummaries() {
       sessions.length || Math.max(group.views, group.actions, group.leadEvents),
       quizSessions.length || group.quizEvents,
       leadSessions.length || group.leadEvents,
-      key
+      key,
+      Object.keys(group.ctaSessions).filter(function (id) { return group.sessions[id]; }).length
     ]);
   });
   writeRows(groupSheet, groupOutput);
@@ -424,6 +432,7 @@ function resetSupportSheet(name, headers) {
 }
 
 function ensureSheetHeaders(sheet, headers) {
+  if (sheet.getMaxColumns() < headers.length) sheet.insertColumnsAfter(sheet.getMaxColumns(), headers.length - sheet.getMaxColumns());
   var current = sheet.getRange(1, 1, 1, headers.length).getValues()[0];
   var mismatch = headers.some(function (header, index) { return current[index] !== header; });
   if (mismatch) {

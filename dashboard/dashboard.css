@@ -3823,3 +3823,16 @@ tbody tr:hover td {
     width: auto;
   }
 }
+/* URL campaigns have one conversion action and no quiz or form submission. */
+.is-external-click-campaign .dash-metrics > article:nth-child(2),
+.is-external-click-campaign .studio-overview-metrics > article:nth-child(2),
+.is-external-click-campaign [data-workspace-panel="analyze"] th:nth-child(7),
+.is-external-click-campaign [data-workspace-panel="analyze"] th:nth-child(8),
+.is-external-click-campaign [data-workspace-panel="analyze"] th:nth-child(9),
+.is-external-click-campaign [data-workspace-panel="analyze"] th:nth-child(10),
+.is-external-click-campaign #performance-body td:nth-child(7),
+.is-external-click-campaign #performance-body td:nth-child(8),
+.is-external-click-campaign #performance-body td:nth-child(9),
+.is-external-click-campaign #performance-body td:nth-child(10) { display: none; }
+.is-external-click-campaign .studio-metrics,
+.is-external-click-campaign .studio-overview-metrics { grid-template-columns: repeat(3, minmax(0, 1fr)); }

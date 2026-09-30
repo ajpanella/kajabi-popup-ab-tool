@@ -36,6 +36,11 @@
     try {
       await loadFreshConfig();
       config = window.LL_POPUP_CONFIG || { variants: [] };
+      if (config.conversionGoal === "external_click") {
+        document.querySelectorAll("p").forEach(function (element) {
+          if (element.textContent.indexOf("Step 1: visitor") >= 0) element.textContent = "YouTube CTR = unique clicking sessions / unique popup-viewing sessions. Clicks do not confirm subscriptions.";
+        });
+      }
       updateCampaignStatusUi();
       if (!config.trackingCsvUrl) throw new Error("The tracking source is not configured.");
       initializeAggregates();
@@ -47,6 +52,14 @@
       renderCurrentVariants();
       renderHistoricalLeaderboard();
       renderPreviousTests();
+      if (config.conversionGoal === "external_click") {
+        document.querySelectorAll(".leader-stat span, #previous-test-history th, #previous-test-history td").forEach(function (element) {
+          if (element.textContent === "Leads") element.textContent = "YouTube clicks";
+          if (element.textContent === "CVR") element.textContent = "YouTube CTR";
+          if (element.dataset.label === "Leads") element.dataset.label = "YouTube clicks";
+          if (element.dataset.label === "CVR") element.dataset.label = "YouTube CTR";
+        });
+      }
       renderReadyState();
     } catch (error) {
       renderError(error);
@@ -99,9 +112,15 @@
       compactPayloadBytes = new Blob([text]).size;
       var summary = JSON.parse(text);
       if (!summary || summary.ok !== true || !Array.isArray(summary.groups)) return false;
+      if (config.conversionGoal === "external_click" && Number(summary.schemaVersion) < 3) {
+        var updateError = new Error("YouTube click tracking needs the updated Apps Script deployment. The campaign is paused until setup is complete.");
+        updateError.trackerUpdateRequired = true;
+        throw updateError;
+      }
       applyCompactPulseSummary(summary);
       return true;
     } catch (error) {
+      if (error.trackerUpdateRequired) throw error;
       return false;
     } finally {
       if (timeoutId) clearTimeout(timeoutId);
@@ -120,7 +139,7 @@
       item.summary = {
         sessions: Number(group.sessions || 0),
         quizCompletions: Number(group.quizCompletions || 0),
-        leads: Number(group.leads || 0)
+        leads: Number((config.conversionGoal === "external_click" ? group.ctaClicks : group.leads) || 0)
       };
       historyGroups[key] = item;
 
@@ -249,6 +268,7 @@
     var firstStepContent = preview.firstStepType === "question" && preview.choices.length
       ? "<div class=\"popup-miniature-question\">" + escapeHtml(preview.questionLabel) + "</div><div class=\"popup-miniature-choices\">" + preview.choices.map(function (choice) { return "<span>" + escapeHtml(choice) + "</span>"; }).join("") + "</div>"
       : "<div class=\"popup-miniature-input\">" + escapeHtml(preview.emailPlaceholder) + "</div><div class=\"popup-miniature-button\">" + escapeHtml(preview.buttonText) + "</div>";
+    if (preview.firstStepType === "link") firstStepContent = "<div class=\"popup-miniature-button\">" + escapeHtml(preview.buttonText) + "</div>";
     return [
       "<article class=\"variant-report-card" + (isLeader ? " is-current-leader" : "") + "\">",
       isLeader ? "<span class=\"current-leader-flag\">Current leader</span>" : "",
@@ -258,7 +278,7 @@
       "<div class=\"popup-miniature-copy\"><h3>" + escapeHtml(preview.headline) + "</h3><p>" + escapeHtml(preview.subheadline) + "</p></div>",
       "<div class=\"popup-miniature-form\">" + progress + firstStepContent + "</div>",
       "</div>",
-      "<div class=\"variant-report-stats\"><div><span>Unique sessions</span><strong>" + formatNumber(metric.sessions) + "</strong></div><div><span>Step 1 CVR</span><strong>" + formatOptionalPercent(step1Cvr) + "</strong></div><div><span>Step 2 CVR</span><strong>" + formatOptionalPercent(step2Cvr) + "</strong></div><div><span>Leads</span><strong>" + formatNumber(metric.leads) + "</strong></div><div><span>Overall CVR</span><strong>" + formatPercent(metric.cvr) + "</strong></div></div>",
+      config.conversionGoal === "external_click" ? "<div class=\"variant-report-stats\" style=\"grid-template-columns:repeat(3,minmax(0,1fr))\"><div><span>Unique sessions</span><strong>" + formatNumber(metric.sessions) + "</strong></div><div><span>YouTube clicks</span><strong>" + formatNumber(metric.leads) + "</strong></div><div><span>YouTube CTR</span><strong>" + formatPercent(metric.cvr) + "</strong></div></div>" : "<div class=\"variant-report-stats\"><div><span>Unique sessions</span><strong>" + formatNumber(metric.sessions) + "</strong></div><div><span>Step 1 CVR</span><strong>" + formatOptionalPercent(step1Cvr) + "</strong></div><div><span>Step 2 CVR</span><strong>" + formatOptionalPercent(step2Cvr) + "</strong></div><div><span>Leads</span><strong>" + formatNumber(metric.leads) + "</strong></div><div><span>Overall CVR</span><strong>" + formatPercent(metric.cvr) + "</strong></div></div>",
       "</article>"
     ].join("");
   }
@@ -557,7 +577,7 @@
     var preview = variantPreview(snapshot);
     var quiz = snapshot.proteinQuiz || {};
     var parts = [];
-    parts.push(flowType(snapshot) === "single" ? "Email-only" : flowType(snapshot) === "multi" ? "Multi-step" : "Quiz-first");
+    parts.push(preview.firstStepType === "link" ? "YouTube invitation" : flowType(snapshot) === "single" ? "Email-only" : flowType(snapshot) === "multi" ? "Multi-step" : "Quiz-first");
     if (quiz.progressEnabled || preview.progressEnabled) parts.push("Progress bar");
     if (quiz.showFirstName === false) parts.push("No first name");
     parts.push(preview.imageUrl ? imageType(preview.imageUrl) : "No image");

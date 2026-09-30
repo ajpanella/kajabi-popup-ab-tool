@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../popup/popup.css?v=35">
-    <link rel="stylesheet" href="./dashboard.css?v=65">
+    <link rel="stylesheet" href="./dashboard.css?v=66">
     <link rel="stylesheet" href="./workspace.css?v=9">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/campaign-router.js?v=1"></script>
@@ -187,7 +187,8 @@
           <section><h3>Version</h3><label>New publish version<input id="config-version" type="text" placeholder="v1"></label><label>Change note<input id="change-note" type="text" placeholder="What changed in this version?"></label></section>
         </div>
         <div class="studio-settings-panel" data-settings-panel="delivery">
-          <section><h3>Lead delivery</h3><label>Lead magnet mode<select id="lead-magnet-mode"><option value="">Standard opt-in</option><option value="protein_plan">Protein plan quiz</option></select></label><label>Destination URL<input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/personalized-protein-plan"></label></section>
+          <section><h3>Conversion goal</h3><label>Measure<select id="conversion-goal"><option value="lead">Email leads</option><option value="external_click">YouTube clicks</option></select></label></section>
+          <section><h3>Lead delivery</h3><label>Lead magnet mode<select id="lead-magnet-mode"><option value="">Standard opt-in</option><option value="protein_plan">Flow builder / protein plan</option></select></label><label>Destination URL<input id="protein-plan-url" type="url" placeholder="https://www.longevitylifestyle.me/personalized-protein-plan"></label></section>
           <section><h3>Connections</h3><label>Lead webhook URL<input id="lead-webhook-url" type="url" placeholder="Zapier Catch Hook URL"></label><label>Tracking webhook URL<input id="webhook-url" type="url" placeholder="Google Apps Script Web App URL"></label><div class="studio-connection-state"><i data-lucide="circle-check"></i> Delivery and tracking settings are preserved in this draft.</div></section>
         </div>
         <div class="studio-settings-panel" data-settings-panel="publishing">
@@ -204,7 +205,7 @@
     <div id="studio-settings-scrim" class="studio-settings-scrim"></div>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./dashboard.js?v=122"></script>
+    <script src="./dashboard.js?v=123"></script>
     <script src="./workspace.js?v=5"></script>
   </body>
 </html>

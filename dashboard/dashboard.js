@@ -81,6 +81,7 @@
     campaignEnabled: document.getElementById("campaign-enabled"),
     campaignRouteNote: document.getElementById("campaign-route-note"),
     leadMagnetMode: document.getElementById("lead-magnet-mode"),
+    conversionGoal: document.getElementById("conversion-goal"),
     leadWebhookUrl: document.getElementById("lead-webhook-url"),
     proteinPlanUrl: document.getElementById("protein-plan-url"),
     delaySeconds: document.getElementById("delay-seconds"),
@@ -170,7 +171,7 @@
     els.compareLiveHistory.setAttribute("aria-pressed", compareFullHistoryToLive ? "true" : "false");
     updateDashboard();
   });
-  [els.campaignEnabled, els.webhookUrl, els.leadMagnetMode, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
+  [els.campaignEnabled, els.webhookUrl, els.leadMagnetMode, els.conversionGoal, els.leadWebhookUrl, els.proteinPlanUrl, els.delaySeconds, els.scrollDepth, els.configVersion, els.changeNote].forEach(function (element) {
     element.addEventListener("input", onGlobalConfigInput);
   });
   els.variantMode.addEventListener("change", onVariantModeChange);
@@ -605,6 +606,10 @@
     }, { total: 0, views: 0, quiz: 0, leads: 0, submitAttempts: 0 });
 
     els.csvLoadStatus.classList.remove("is-error");
+    if (config.conversionGoal === "external_click") {
+      els.csvLoadStatus.textContent = "Loaded " + formatNumber(counts.total) + " rows | " + formatNumber(counts.views) + " views | " + formatNumber(counts.leads) + " YouTube click events";
+      return;
+    }
     els.csvLoadStatus.textContent = [
       "Loaded " + formatNumber(counts.total) + " rows",
       formatNumber(counts.views) + " views",
@@ -622,6 +627,7 @@
     els.campaignEnabled.checked = config.campaignEnabled !== false;
     updateCampaignStatusUi();
     els.leadMagnetMode.value = config.leadMagnetMode || "";
+    els.conversionGoal.value = config.conversionGoal || "lead";
     els.leadWebhookUrl.value = config.leadWebhookUrl || "";
     els.proteinPlanUrl.value = config.proteinPlanUrl || "";
     var delayMs = Number(config.triggers && config.triggers.delayMs);
@@ -683,6 +689,7 @@
     config.webhookUrl = els.webhookUrl.value.trim();
     config.formMode = "zapier";
     config.leadMagnetMode = els.leadMagnetMode.value;
+    config.conversionGoal = els.conversionGoal.value;
     config.leadWebhookUrl = els.leadWebhookUrl.value.trim();
     config.proteinPlanUrl = els.proteinPlanUrl.value.trim();
     config.triggers = config.triggers || {};
@@ -1385,6 +1392,7 @@
   }
 
   function flowStepTypeLabel(step) {
+    if (step.type === "link") return "Visit external URL";
     if (step.type === "lead") return "Lead form";
     if (step.type === "questions") return "3 questions";
     if (step.type === "message") return "Message";
@@ -1397,7 +1405,7 @@
     var questionOptions = [{label:"Calculator: Target weight",value:"targetWeight"},{label:"Calculator: Strength training days",value:"strengthDays"},{label:"Calculator: Age",value:"age"},{label:"Custom answer",value:"custom"}];
     var setupControls = [
       editorInput(path + "name", variantIndex, "Internal step name", step.name || "", "text"),
-      editorOptionSelect(path + "type", variantIndex, "Step type", step.type, [{label:"Single question",value:"question"},{label:"Combined questions",value:"questions"},{label:"Lead form",value:"lead"},{label:"Message / result",value:"message"}]),
+      editorOptionSelect(path + "type", variantIndex, "Step type", step.type, [{label:"Single question",value:"question"},{label:"Combined questions",value:"questions"},{label:"Lead form",value:"lead"},{label:"Visit external URL",value:"link"},{label:"Message / result",value:"message"}]),
       editorCheckbox(path + "enabled", variantIndex, "Step enabled", step.enabled !== false)
     ].join("");
     var contentControls = [
@@ -1413,6 +1421,7 @@
       editorInput(path + "progressColor", variantIndex, "Progress color", step.progressColor || variant.brandAccentColor || "#06b00b", "color")
     ].join("");
     var responseControls = [];
+    if (step.type === "link") responseControls.push(editorInput(path + "destinationUrl", variantIndex, "Destination URL", step.destinationUrl || "", "url"));
     if (step.type === "question") {
       responseControls.push(editorOptionSelect(path + "field", variantIndex, "Answer destination", step.field, questionOptions));
       responseControls.push("<p class=\"dash-field-mapping-note\">Choose a calculator field only when this answer should populate that exact protein-plan input. Use Custom answer for goals, preferences, or any other research question.</p>");
@@ -1829,6 +1838,7 @@
     renderRecommendations(metrics);
     renderVariationHistory(historyFiltered);
     renderFullVariantHistory(fullHistoryFiltered);
+    if (config.conversionGoal === "external_click") updateMetricLabels(true);
   }
 
   function applyFilters(data) {
@@ -1957,10 +1967,11 @@
     var result = Object.keys(byVariant).sort().map(function (key) {
       var item = byVariant[key];
       item.actionSessions.forEach(function (sessionId) {
+        if (config.conversionGoal === "external_click") return;
         if (!item.sessions.has(sessionId)) item.sessions.add(sessionId);
       });
       var inferredViews = Math.max(item.views, item.sessions.size, item.quizSubmits, item.leads, item.submits);
-      var sessionCount = item.sessions.size || inferredViews;
+      var sessionCount = config.conversionGoal === "external_click" ? item.sessions.size : (item.sessions.size || inferredViews);
       var fullSubmissions = uniqueFullSubmissionCount(item);
       var fullConversionRate = rate(fullSubmissions, sessionCount);
       return {
@@ -2106,6 +2117,8 @@
 
   function eventType(row) {
     var raw = String(row && row.eventType || "").trim().toLowerCase();
+    // Reuse the conversion accumulator for URL campaigns; raw events remain distinct.
+    if (config.conversionGoal === "external_click" && raw === "popup_cta_click") return "popup_lead_submit";
     var normalized = raw.replace(/[^a-z0-9]/g, "");
     var aliases = {
       popupview: "popup_view",
@@ -2154,6 +2167,20 @@
   }
 
   function updateMetricLabels(allSingleStep) {
+    document.body.classList.toggle("is-external-click-campaign", config.conversionGoal === "external_click");
+    document.querySelectorAll("[data-lead-metric-label]").forEach(function (element) {
+      element.textContent = element.dataset.leadMetricLabel;
+    });
+    if (config.conversionGoal === "external_click") {
+      document.querySelectorAll("th, th button, dt, .dash-stat > span, .studio-overview-metrics span, .studio-overview-metrics small, .dash-stat small, label, h2, p").forEach(function (element) {
+        if (element.children.length) return;
+        var labels = {"Leads":"YouTube clicks", "CVR":"YouTube CTR", "Full CVR":"YouTube CTR", "Unique lead sessions":"Unique clicking sessions", "Unique sessions to leads":"Unique sessions to YouTube clicks", "Unique sessions → leads":"Unique sessions → YouTube clicks", "Conversion is calculated from unique visitor sessions to unique lead sessions.":"YouTube CTR is unique clicking sessions divided by unique popup-viewing sessions. Clicks do not confirm subscriptions."};
+        if (labels[element.textContent.trim()]) {
+          element.dataset.leadMetricLabel = element.textContent.trim();
+          element.textContent = labels[element.textContent.trim()];
+        }
+      });
+    }
     var quizLabel = document.getElementById("stat-quiz-label");
     var clicksHeading = document.getElementById("metric-clicks-heading");
     var clickRateHeading = document.getElementById("metric-click-rate-heading");
@@ -2391,7 +2418,7 @@
     });
     var conversionDatasets = [
       {
-        label: "Full CVR",
+        label: config.conversionGoal === "external_click" ? "YouTube CTR" : "Full CVR",
         data: metrics.map(function (item) { return Math.round(item.cvr * 1000) / 10; }),
         backgroundColor: "#06b00b"
       }
@@ -2403,7 +2430,7 @@
         backgroundColor: "#2563eb"
       });
     }
-    conversionDatasets.push(
+    if (config.conversionGoal !== "external_click") conversionDatasets.push(
       {
         label: "Click-through rate",
         data: metrics.map(function (item) { return Math.round(item.clickRate * 1000) / 10; }),
@@ -2428,7 +2455,7 @@
     }
     eventDatasets.push(
       {
-        label: "Leads",
+        label: config.conversionGoal === "external_click" ? "YouTube clicks" : "Leads",
         data: metrics.map(function (item) { return item.fullSubmissions; }),
         backgroundColor: "#06b00b"
       }
@@ -2953,7 +2980,7 @@
         if (fields.indexOf("name") >= 0) content += "<label><span>" + escapeHtml(step.firstNameLabel || "First name") + "</span><input placeholder=\"" + escapeHtmlAttr(step.firstNamePlaceholder || "First Name") + "\"></label>";
         if (fields.indexOf("email") >= 0) content += "<label><span>" + escapeHtml(step.emailLabel || "Email") + "</span><input type=\"email\" placeholder=\"" + escapeHtmlAttr(step.emailPlaceholder || "Email") + "\"></label>";
       } else if (step.type === "questions") content = "<label><span>" + escapeHtml(step.targetWeightLabel || "Target weight in lbs") + "</span><input placeholder=\"" + escapeHtmlAttr(step.targetWeightPlaceholder || "155") + "\"></label><label><span>" + escapeHtml(step.strengthDaysLabel || "Strength training days") + "</span><select><option>" + escapeHtml(step.strengthDaysPlaceholder || "Select days") + "</option></select></label><label><span>" + escapeHtml(step.ageLabel || "Age") + "</span><input placeholder=\"" + escapeHtmlAttr(step.agePlaceholder || "48") + "\"></label>";
-      else if (step.type === "message") content = "";
+      else if (step.type === "message" || step.type === "link") content = "";
       else content = "<fieldset><legend>" + escapeHtml(step.questionLabel || step.name) + "</legend>" + renderFlowPreviewControl(step) + "</fieldset>";
       var hide = step.type === "question" && step.answerStyle === "ranges" && step.autoAdvance !== false;
       return "<form class=\"ll-popup-zapier-form ll-popup-protein-form" + (step.type === "question" ? " ll-popup-multi-question" : "") + "\">" + content + (hide ? "" : "<button type=\"submit\">" + escapeHtml(step.buttonText || "Continue") + "</button>") + "</form>";
@@ -3358,6 +3385,13 @@
 
     saveGitHubPublishSettings();
     setPublishStatus("Preparing publish...", "");
+    var invalidLink = (config.variants || []).some(function (variant) {
+      return (variant.flowSteps || []).some(function (step) {
+        if (step.enabled === false || step.type !== "link") return false;
+        try { return !/^https?:$/.test(new URL(step.destinationUrl).protocol); } catch (error) { return true; }
+      });
+    });
+    if (invalidLink) { setPublishStatus("Add a valid https:// destination to every URL step before publishing.", "error"); return; }
 
     if (!owner || !repo || !path) {
       setPublishStatus("Add repository owner, repository name, and publish path before publishing.", "error");
@@ -3839,7 +3873,7 @@
         item.views += 1;
         if (row.sessionId) item.sessions.add(row.sessionId);
       }
-      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") {
+      if (eventType(row) === "popup_lead_submit" || eventType(row) === "kajabi_form_submitted") {
         item.leads += 1;
         if (row.sessionId) item.leadSessions.add(row.sessionId);
       }
@@ -3848,7 +3882,7 @@
     return Object.keys(groups).map(function (key) {
       var item = groups[key];
       item.uniqueVisitors = item.sessions.size || item.views;
-      item.uniqueLeads = item.leadSessions.size || item.leads;
+      item.uniqueLeads = config.conversionGoal === "external_click" ? uniqueFullSubmissionCount(item) : (item.leadSessions.size || item.leads);
       item.leadRate = rate(item.uniqueLeads, item.uniqueVisitors);
       return item;
     }).filter(function (item) {
@@ -3917,7 +3951,10 @@
       }
       if (row.eventType === "popup_form_click") item.clicks += 1;
       if (row.eventType === "popup_quiz_submit") item.quizSubmits += 1;
-      if (row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.leads += 1;
+      if (eventType(row) === "popup_lead_submit" || eventType(row) === "kajabi_form_submitted") {
+        item.leads += 1;
+        if (row.sessionId) item.leadSessions.add(row.sessionId);
+      }
       if (row.eventType === "popup_submit_attempt" || row.eventType === "popup_lead_submit" || row.eventType === "kajabi_form_submitted") item.submits += 1;
       if (row.eventType === "variant_save_test") item.saves += 1;
       if (!item.changeNote && row.changeNote) item.changeNote = row.changeNote;
@@ -3937,7 +3974,7 @@
 
     els.history.innerHTML = history.map(function (item) {
       var uniqueImpressions = item.sessions.size || item.views;
-      var fullSubmissions = item.leadSessions.size || fullSubmissionCount(item.leads, item.submits);
+      var fullSubmissions = config.conversionGoal === "external_click" ? uniqueFullSubmissionCount(item) : (item.leadSessions.size || fullSubmissionCount(item.leads, item.submits));
       var isSingleStep = item.label.indexOf("Flow: Single-step") >= 0;
       return [
         "<article class=\"dash-history-card\" data-history-key=\"" + escapeHtmlAttr(item.key) + "\">",
@@ -4535,6 +4572,7 @@
       item.publishedLabel = item.firstSeen ? shortDateTime(item.firstSeen) : "";
       item.daysLabel = item.firstSeen && item.lastSeen ? String(Math.max(1, Math.ceil((item.lastSeen - item.firstSeen) / (24 * 60 * 60 * 1000)))) : "";
       item.actionSessions.forEach(function (sessionId) {
+        if (config.conversionGoal === "external_click") return;
         if (!item.sessions.has(sessionId)) item.sessions.add(sessionId);
       });
       item.views = Math.max(item.views, item.sessions.size, item.quizSubmits, item.leads, item.submits);
@@ -4658,6 +4696,7 @@
   }
 
   function fullHistorySubmissionCount(item) {
+    if (config.conversionGoal === "external_click") return Array.from(item.leadSessions || []).filter(function (id) { return item.sessions.has(id); }).length;
     if (item.leadSessions && item.leadSessions.size) return item.leadSessions.size;
     var leads = Number(item.leads || 0);
     if (leads > 0) return leads;
@@ -5666,6 +5705,7 @@
   }
 
   function uniqueFullSubmissionCount(item) {
+    if (config.conversionGoal === "external_click") return Array.from(item.leadSessions || []).filter(function (id) { return item.sessions.has(id); }).length;
     if (item.leadSessions && item.leadSessions.size) return item.leadSessions.size;
     if (Number(item.leads || 0) > 0) return Number(item.leads || 0);
     if (config.leadMagnetMode !== "protein_plan" && item.submitSessions && item.submitSessions.size) return item.submitSessions.size;

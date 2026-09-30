@@ -524,6 +524,18 @@
       if (form) {
         form.addEventListener("submit", function (event) {
           event.preventDefault();
+          if (step.type === "link") {
+            var destination;
+            try { destination = new URL(step.destinationUrl); } catch (error) { return; }
+            if (destination.protocol !== "https:" && destination.protocol !== "http:") return;
+            if (form.dataset.clicked) return;
+            form.dataset.clicked = "true";
+            // Beacon/keepalive lets the click finish sending after navigation.
+            sendLeadPayload(config.webhookUrl, buildPayload("popup_cta_click"));
+            setCooldown(config.cooldownDaysAfterSubmitAttempt || 90);
+            window.location.assign(destination.href);
+            return;
+          }
           collectFlowStepAnswers(form, step, answers);
           if (currentIndex < steps.length - 1) {
             renderStep(currentIndex + 1);
@@ -545,7 +557,7 @@
     }
 
     function renderFlowStepForm(step) {
-      if (step.type === "message") return "<form class=\"ll-popup-zapier-form\" data-step=\"message\"><button type=\"submit\">" + escapeHtml(step.buttonText || (currentIndex < steps.length - 1 ? "Continue" : "Finish")) + "</button></form>";
+      if (step.type === "message" || step.type === "link") return "<form class=\"ll-popup-zapier-form\" data-step=\"" + step.type + "\"><button type=\"submit\">" + escapeHtml(step.buttonText || (currentIndex < steps.length - 1 ? "Continue" : "Finish")) + "</button></form>";
       var content = "";
       if (step.type === "lead") {
         var fields = step.fields || [];
@@ -1038,6 +1050,8 @@
       var target = event.target;
       if (!target || !target.closest) return;
 
+      if (target.closest("form[data-step='link']")) return;
+
       if (target.closest("button, input[type='submit'], .form-btn, a")) {
         if (hasClicked) return;
         hasClicked = true;
@@ -1058,6 +1072,7 @@
     }, true);
 
     function submitAttempt(form) {
+      if (form && form.getAttribute("data-step") === "link") return;
       if (form && ["quiz", "question", "questions"].indexOf(form.getAttribute("data-step")) >= 0) return;
       if (hasAttemptedSubmit) return;
       hasAttemptedSubmit = true;
