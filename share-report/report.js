@@ -268,7 +268,7 @@
     var firstStepContent = preview.firstStepType === "question" && preview.choices.length
       ? "<div class=\"popup-miniature-question\">" + escapeHtml(preview.questionLabel) + "</div><div class=\"popup-miniature-choices\">" + preview.choices.map(function (choice) { return "<span>" + escapeHtml(choice) + "</span>"; }).join("") + "</div>"
       : "<div class=\"popup-miniature-input\">" + escapeHtml(preview.emailPlaceholder) + "</div><div class=\"popup-miniature-button\">" + escapeHtml(preview.buttonText) + "</div>";
-    if (preview.firstStepType === "link") firstStepContent = "<div class=\"popup-miniature-button\">" + escapeHtml(preview.buttonText) + "</div>";
+    if (preview.firstStepType === "link") firstStepContent = "<div class=\"popup-miniature-button\" style=\"font-size:" + Math.max(12, Math.min(28, Number(variant.buttonFontSize) || 20)) + "px\">" + escapeHtml(preview.buttonText) + "</div>";
     return [
       "<article class=\"variant-report-card" + (isLeader ? " is-current-leader" : "") + "\">",
       isLeader ? "<span class=\"current-leader-flag\">Current leader</span>" : "",
