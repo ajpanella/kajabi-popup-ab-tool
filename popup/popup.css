@@ -464,7 +464,14 @@ body.ll-popup-lock-scroll {
   outline-offset: -4px;
 }
 
+.dash-preview-stage.is-mobile .ll-youtube-button-label {
+  --youtube-label-size: 16px;
+}
+
 @media (max-width: 640px) {
+  .ll-youtube-button-label {
+    --youtube-label-size: 16px;
+  }
   .ll-popup-root {
     align-items: flex-end;
     padding: 12px;

@@ -340,6 +340,16 @@ button {
   justify-content: center;
 }
 
+.current-variant-grid.is-mobile-preview .ll-youtube-button-label {
+  --youtube-label-size: 16px;
+}
+
+@container (max-width: 420px) {
+  .ll-youtube-button-label {
+    --youtube-label-size: 16px;
+  }
+}
+
 .current-variant-grid.is-mobile-preview .popup-miniature h3 {
   font-size: 19px;
 }
