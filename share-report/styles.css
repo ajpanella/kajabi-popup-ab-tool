@@ -341,12 +341,18 @@ button {
 }
 
 .current-variant-grid.is-mobile-preview .ll-youtube-button-label {
-  --youtube-label-size: 16px;
+  --youtube-label-size: 14px;
+  --youtube-icon-width: 24px;
+  --youtube-icon-height: 17px;
+  --youtube-icon-gap: 7px;
 }
 
 @container (max-width: 420px) {
   .ll-youtube-button-label {
-    --youtube-label-size: 16px;
+    --youtube-label-size: 14px;
+    --youtube-icon-width: 24px;
+    --youtube-icon-height: 17px;
+    --youtube-icon-gap: 7px;
   }
 }
 

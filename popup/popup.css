@@ -465,12 +465,18 @@ body.ll-popup-lock-scroll {
 }
 
 .dash-preview-stage.is-mobile .ll-youtube-button-label {
-  --youtube-label-size: 16px;
+  --youtube-label-size: 14px;
+  --youtube-icon-width: 24px;
+  --youtube-icon-height: 17px;
+  --youtube-icon-gap: 7px;
 }
 
 @media (max-width: 640px) {
   .ll-youtube-button-label {
-    --youtube-label-size: 16px;
+    --youtube-label-size: 14px;
+    --youtube-icon-width: 24px;
+    --youtube-icon-height: 17px;
+    --youtube-icon-gap: 7px;
   }
   .ll-popup-root {
     align-items: flex-end;

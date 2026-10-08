@@ -2,12 +2,20 @@
 
 The anti-inflammatory campaign has three single-screen URL invitations:
 
-- A: Inflammation (34% traffic)
-- B: Metabolic health (33% traffic)
-- C: Hormones (33% traffic)
+- A: Explore My YouTube Channel (34% traffic)
+- B: Get Simple Tips on YouTube (33% traffic)
+- C: Subscribe on YouTube (33% traffic)
 
-All use the same 20-second delay, layout, and Subscribe on YouTube button.
-The destination is https://urlgeni.us/youtube/channel/InflammationProtocols.
+The October 8, 2026 experiment varies only the button copy. All use the same
+20-second delay, collage image, layout, headline, and supporting copy:
+
+- Headline: Make Anti-Inflammatory Eating Feel Simple
+- Subheadline: Practical videos on food and everyday habits to help you build
+  a healthier routine, one manageable change at a time.
+
+The destination is https://www.youtube.com/@Longevity_EDU, without an automatic
+subscription confirmation prompt. Each variant has a fresh tracking version;
+earlier test results remain archived under the same campaign test ID.
 There is no email collection, reminder tab, or timed repeat popup.
 
 The campaign was activated September 30, 2026 after live schema-3 tracking
