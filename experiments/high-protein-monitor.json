@@ -1,49 +1,9 @@
 {
   "schemaVersion": 1,
-  "roundId": "protein-round-20261011190703000",
-  "checkedAt": "2026-10-11T19:39:28.397Z",
-  "status": "blocked",
-  "reason": "The tracker needs its one-time round-summary update.",
-  "looks": [],
+  "roundId": "protein-round-20261011201737732",
+  "checkedAt": "2026-10-11T20:17:37.732Z",
+  "status": "collecting",
+  "reason": "New owner-approved button round. Waiting for fresh round sessions.",
   "metrics": [],
-  "round": {
-    "id": "protein-round-20261011190703000",
-    "startedAt": "2026-10-11T19:07:03.000Z",
-    "controlId": "C",
-    "variable": "headline",
-    "hypothesis": "Compare meal simplicity and reduced daily guesswork against the unchanged planned-in-seconds control.",
-    "queueId": "",
-    "policy": {
-      "checkpoints": [
-        700,
-        1400,
-        2800
-      ],
-      "minDays": 7,
-      "maxDays": 28,
-      "alpha": 0.05,
-      "minRelativeLift": 0.1,
-      "minAbsoluteLift": 0.001
-    },
-    "arms": [
-      {
-        "id": "A",
-        "version": "10/8/2026 · uncomplicated-meals",
-        "label": "Without Complicated Meals",
-        "trafficSplit": 34
-      },
-      {
-        "id": "B",
-        "version": "10/8/2026 · daily-guesswork",
-        "label": "Without Daily Guesswork",
-        "trafficSplit": 33
-      },
-      {
-        "id": "C",
-        "version": "9/14/2026 · female-results-oriented-ponytail",
-        "label": "Female Results Oriented + Ponytail",
-        "trafficSplit": 33
-      }
-    ]
-  }
+  "looks": []
 }

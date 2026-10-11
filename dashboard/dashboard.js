@@ -1475,6 +1475,7 @@
       responseControls.push(editorProteinTargetPreviewSelect(path + "targetPreviewStyle", variantIndex, "Protein target display", step.targetPreviewStyle || "off"));
     }
     var actionControls = editorTextWithSize(path + "buttonText", path + "buttonFontSize", variantIndex, "Button CTA", step.buttonText || "Continue", step.buttonFontSize || variant.buttonFontSize, 16);
+    actionControls += editorCompactSizeInput(path + "buttonMobileFontSize", variantIndex, "Mobile CTA size", step.buttonMobileFontSize, 20);
     var navigationControls = [
       editorCheckbox(path + "progressEnabled", variantIndex, "Show progress bar", Boolean(step.progressEnabled)),
       editorOptionSelect(path + "progressScope", variantIndex, "Progress counts", step.progressScope || "all", [{label:"All visible steps",value:"all"},{label:"Questions only",value:"questions"}], !step.progressEnabled),
@@ -2974,7 +2975,9 @@
       setOptionalPixelVariable(root, "--ll-popup-eyebrow-size", step.eyebrowFontSize || 15, 10, 28);
       setOptionalPixelVariable(root, "--ll-popup-subheadline-size", step.subheadlineFontSize || variant.subheadlineFontSize, 12, 36);
       setOptionalPixelVariable(root, "--ll-popup-value-line-size", step.valueLineFontSize || variant.valueLineFontSize, 11, 32);
-      setOptionalPixelVariable(root, "--ll-popup-button-size", step.buttonFontSize || variant.buttonFontSize, 12, 28);
+      setOptionalPixelVariable(root, "--ll-popup-button-size", step.buttonFontSize || variant.buttonFontSize, 12, step.buttonFontSize ? 48 : 28);
+      root.style.removeProperty("--ll-popup-button-mobile-size");
+      setOptionalPixelVariable(root, "--ll-popup-button-mobile-size", step.buttonMobileFontSize, 12, 28);
       setOptionalPixelVariable(root, "--ll-popup-choice-font-size", step.choiceButtonFontSize || 16, 12, 28);
       root.style.setProperty("--ll-popup-choice-columns", step.answerLayout === "stacked" ? "1" : "2");
       root.style.setProperty("--ll-popup-choice-transform", step.choiceButtonTransform === "uppercase" ? "uppercase" : "none");

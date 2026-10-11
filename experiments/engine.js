@@ -35,6 +35,7 @@
     if (variable === "image") return /(^|\.)(imageUrl|imageAlt)$/.test(field);
     if (variable === "cta") return /(^|\.)(buttonText|leadButtonText)$/.test(field);
     if (variable === "repeat") return field === "reopenAfterCloseSeconds";
+    if (variable === "button-treatment") return field === "accentColor" || /^flowSteps\.\d+\.(buttonColor|buttonFontSize|buttonMobileFontSize)$/.test(field);
     return false;
   }
   function validateRound(config) {

@@ -508,7 +508,7 @@ body.ll-popup-lock-scroll {
     --ll-popup-headline-effective-size: clamp(24px, calc(var(--ll-popup-headline-size, 32px) * 0.78), 36px);
     --ll-popup-subheadline-effective-size: clamp(14px, calc(var(--ll-popup-subheadline-size, 17px) * 0.92), 18px);
     --ll-popup-value-line-effective-size: clamp(13px, calc(var(--ll-popup-value-line-size, 15px) * 0.92), 17px);
-    --ll-popup-button-effective-size: clamp(14px, calc(var(--ll-popup-button-size, 16px) * 0.92), 20px);
+    --ll-popup-button-effective-size: var(--ll-popup-button-mobile-size, clamp(14px, calc(var(--ll-popup-button-size, 16px) * 0.92), 20px));
   }
 }
 

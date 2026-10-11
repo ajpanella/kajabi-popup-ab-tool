@@ -267,7 +267,7 @@
       : "";
     var firstStepContent = preview.firstStepType === "question" && preview.choices.length
       ? "<div class=\"popup-miniature-question\">" + escapeHtml(preview.questionLabel) + "</div><div class=\"popup-miniature-choices\">" + preview.choices.map(function (choice) { return "<span>" + escapeHtml(choice) + "</span>"; }).join("") + "</div>"
-      : "<div class=\"popup-miniature-input\">" + escapeHtml(preview.emailPlaceholder) + "</div><div class=\"popup-miniature-button\">" + escapeHtml(preview.buttonText) + "</div>";
+      : "<div class=\"popup-miniature-input\">" + escapeHtml(preview.emailPlaceholder) + "</div><div class=\"popup-miniature-button\" style=\"--popup-cta-preview-size:" + preview.buttonPreviewSize + "px;--popup-cta-mobile-preview-size:" + preview.buttonMobilePreviewSize + "px;background:" + safeColor(preview.buttonColor, "#ea8011") + "\">" + escapeHtml(preview.buttonText) + "</div>";
     if (preview.firstStepType === "link") firstStepContent = "<div class=\"popup-miniature-button\" style=\"font-size:" + Math.max(12, Math.min(28, Number(variant.buttonFontSize) || 20)) + "px\">" + renderYoutubeButton(preview.buttonText, "link") + "</div>";
     return [
       "<article class=\"variant-report-card" + (isLeader ? " is-current-leader" : "") + "\">",
@@ -544,6 +544,9 @@
       headline: stripHtml(first.headlineHtml || variant.headlineHtml || variant.headline || quiz.leadHeadline || ""),
       subheadline: stripHtml(first.subheadlineHtml || variant.subheadlineHtml || variant.subheadline || quiz.leadSubheadline || ""),
       buttonText: lead.buttonText || quiz.leadButtonText || variant.buttonText || "Continue",
+      buttonColor: lead.buttonColor || variant.accentColor || "#ea8011",
+      buttonPreviewSize: Math.max(12, Math.min(lead.buttonFontSize ? 48 : 28, Number(lead.buttonFontSize || variant.buttonFontSize) || 16)) * 10 / 28,
+      buttonMobilePreviewSize: Math.max(12, Math.min(28, Number(lead.buttonMobileFontSize) || Math.min(20, (Number(lead.buttonFontSize || variant.buttonFontSize) || 16) * 0.92))) / 2,
       imageUrl: first.imageUrl || variant.imageUrl || "",
       emailPlaceholder: lead.emailPlaceholder || quiz.emailPlaceholder || "Email",
       progressEnabled: first.progressEnabled !== undefined ? first.progressEnabled : Boolean(quiz.progressEnabled),

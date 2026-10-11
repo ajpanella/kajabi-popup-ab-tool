@@ -546,9 +546,13 @@ button {
   padding: 7px 10px;
   color: #ffffff;
   background: var(--popup-button, var(--orange));
-  font-size: 10px;
+  font-size: var(--popup-cta-preview-size, 10px);
   font-weight: var(--button-weight, 800);
   text-align: center;
+}
+
+.current-variant-grid.is-mobile-preview .popup-miniature-button {
+  font-size: var(--popup-cta-mobile-preview-size, 10px);
 }
 
 .popup-miniature-question {

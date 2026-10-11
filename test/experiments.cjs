@@ -132,7 +132,7 @@ async function uiTests() {
     assert.equal(nextConfig.variants[0].trackingVersion,config.variants[2].trackingVersion);
     assert(nextConfig.variants[0].trackingSources.some(s=>s.variant==='C'));
     assert.notEqual(nextConfig.variants[1].trackingVersion,config.variants[1].trackingVersion);
-    assert.equal(nextConfig.experimentLog.length,1,'publish retries must not duplicate the round log');
+    assert.equal(nextConfig.experimentLog.length,(config.experimentLog || []).length + 1,'publish retries must not duplicate the round log');
     assert(!nextConfig.experimentDraft);
     await page.evaluate(c=>{delete c.experiment;localStorage.setItem('ll_popup_dashboard_config_blog-optin-v1',JSON.stringify(c));},config);
     trackingAvailable=false;

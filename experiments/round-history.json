@@ -1,1 +1,52 @@
-[]
+[
+  {
+    "schemaVersion": 1,
+    "roundId": "protein-round-20261011190703000",
+    "checkedAt": "2026-10-11T20:09:15.094Z",
+    "status": "user-replaced",
+    "reason": "Owner started a new button test before scheduled review. No statistical winner was declared.",
+    "metrics": [],
+    "looks": [],
+    "round": {
+      "id": "protein-round-20261011190703000",
+      "startedAt": "2026-10-11T19:07:03.000Z",
+      "controlId": "C",
+      "variable": "headline",
+      "hypothesis": "Compare meal simplicity and reduced daily guesswork against the unchanged planned-in-seconds control.",
+      "queueId": "",
+      "policy": {
+        "checkpoints": [
+          700,
+          1400,
+          2800
+        ],
+        "minDays": 7,
+        "maxDays": 28,
+        "alpha": 0.05,
+        "minRelativeLift": 0.1,
+        "minAbsoluteLift": 0.001
+      },
+      "arms": [
+        {
+          "id": "A",
+          "version": "10/8/2026 · uncomplicated-meals",
+          "label": "Without Complicated Meals",
+          "trafficSplit": 34
+        },
+        {
+          "id": "B",
+          "version": "10/8/2026 · daily-guesswork",
+          "label": "Without Daily Guesswork",
+          "trafficSplit": 33
+        },
+        {
+          "id": "C",
+          "version": "9/14/2026 · female-results-oriented-ponytail",
+          "label": "Female Results Oriented + Ponytail",
+          "trafficSplit": 33
+        }
+      ]
+    },
+    "archivedAt": "2026-10-11T20:17:37.732Z"
+  }
+]

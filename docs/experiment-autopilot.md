@@ -42,8 +42,13 @@ new round or reset. Missing data is blocked, never interpreted as zero conversio
   and severe allocation imbalance block decisions. The allocation check uses
   eligible sessions, before popup display.
 
-The current headline round retains C as its control without altering any copy,
-image, tracking version, or lifetime statistics. Future reviewed rounds place
+The current button-treatment round retains C as its control without altering its
+copy, image, tracking version, or lifetime statistics. A and B copy C exactly
+except for button treatment: A uses matching green and 32px desktop / 24px mobile
+white text; B keeps orange with the same larger text. A versus B isolates color;
+B versus C isolates text size. A versus C changes both, so its result must not be
+described as a pure color effect. The preceding headline round was replaced at
+the owner's request, not declared statistically complete. Future reviewed rounds place
 the retained control in A and preserve its tracking sources and version.
 
 ## Cloud Monitor
