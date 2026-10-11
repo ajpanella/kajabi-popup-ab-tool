@@ -37,7 +37,8 @@ var HEADERS = [
   "popupVariant",
   "createdAt",
   "formName",
-  "tag"
+  "tag",
+  "experimentRoundId"
 ];
 
 var COMPACT_HEADERS = [
@@ -50,6 +51,8 @@ var PULSE_GROUP_HEADERS = [
   "firstSeen", "lastSeen", "sessions", "quizCompletions", "leads", "snapshotKey", "ctaClicks"
 ];
 var PULSE_SESSION_HEADERS = ["key", "groupKey", "sessionCounted", "quizCounted", "leadCounted", "ctaCounted"];
+var ROUND_GROUP_HEADERS = ["key", "testId", "roundId", "variant", "version", "day", "eligible", "sessions", "quizCompletions", "leads", "firstSeen"];
+var ROUND_SESSION_HEADERS = ["key", "firstSeen", "eligible", "viewed", "quiz", "lead"];
 
 function onOpen() {
   SpreadsheetApp.getUi()
@@ -81,6 +84,9 @@ function doPost(e) {
 }
 
 function doGet(e) {
+  if (e && e.parameter && e.parameter.mode === "experiment") {
+    return jsonResponse(buildExperimentSummary(e.parameter.testId || "", e.parameter.roundId || ""));
+  }
   if (e && e.parameter && e.parameter.mode === "pulse") {
     return jsonResponse(buildPulseSummary(e.parameter.testId || ""));
   }
@@ -186,6 +192,7 @@ function buildPulseSummary(testId) {
 }
 
 function updateFastTrackingSheets(payload, rawRow) {
+  if (payload.eventType === "popup_eligible") { updateExperimentState(payload); return; }
   var meta = trackingMeta(payload, rawRow);
   var compactSheet = getSupportSheet(COMPACT_SHEET_NAME, COMPACT_HEADERS);
   if (!findValueRow(compactSheet, COMPACT_HEADERS.length, String(rawRow))) {
@@ -196,7 +203,67 @@ function updateFastTrackingSheets(payload, rawRow) {
   }
   storeVariantSnapshot(meta.groupKey, payload.variantSnapshot || "");
   updatePulseState(meta);
+  updateExperimentState(payload);
   clearTrackingCaches(meta.testId);
+}
+
+function updateExperimentState(payload) {
+  var roundId = String(payload.experimentRoundId || "");
+  if (!roundId || !payload.sessionId || payload.testId !== "blog-optin-v1") return;
+  var type = normalizePulseEvent(payload.eventType || "");
+  if (["popup_eligible", "popup_view", "popup_quiz_submit", "popup_lead_submit", "kajabi_form_submitted"].indexOf(type) < 0) return;
+  var now = new Date();
+  var prefix = [payload.testId, roundId, payload.variant, payload.configVersion].join("::");
+  var sessions = getSupportSheet("Popup Round Sessions", ROUND_SESSION_HEADERS);
+  var key = prefix + "::" + payload.sessionId;
+  var row = findKeyRow(sessions, key);
+  var values = row ? sessions.getRange(row, 1, 1, ROUND_SESSION_HEADERS.length).getValues()[0] : [key, now.toISOString(), false, false, false, false];
+  var first = new Date(values[1]);
+  if (!isFinite(first.getTime()) || now.getTime() - first.getTime() > 24 * 60 * 60 * 1000) return;
+  var before = values.slice(2).map(function (value) { return value === true || String(value) === "true"; });
+  var flags = before.slice();
+  if (type === "popup_eligible") flags[0] = true;
+  if (type === "popup_view") flags[1] = true;
+  if (type === "popup_quiz_submit") flags[2] = true;
+  if (type === "popup_lead_submit" || type === "kajabi_form_submitted") flags[3] = true;
+  var afterCounts = [flags[0], flags[0] && flags[1], flags[0] && flags[1] && flags[2], flags[0] && flags[1] && flags[3]];
+  var beforeCounts = [before[0], before[0] && before[1], before[0] && before[1] && before[2], before[0] && before[1] && before[3]];
+  values = [key, first.toISOString()].concat(flags);
+  if (row) sessions.getRange(row, 1, 1, ROUND_SESSION_HEADERS.length).setValues([values]);
+  else sessions.appendRow(values);
+  var day = first.toISOString().slice(0, 10);
+  var groupKey = prefix + "::" + day;
+  var sheet = getSupportSheet("Popup Round Summary", ROUND_GROUP_HEADERS);
+  var groupRow = findKeyRow(sheet, groupKey);
+  var group = groupRow ? sheet.getRange(groupRow, 1, 1, ROUND_GROUP_HEADERS.length).getValues()[0]
+    : [groupKey, payload.testId, roundId, payload.variant, payload.configVersion, day, 0, 0, 0, 0, first.toISOString()];
+  for (var i = 0; i < 4; i++) group[6 + i] = Number(group[6 + i] || 0) + Number(afterCounts[i]) - Number(beforeCounts[i]);
+  if (groupRow) sheet.getRange(groupRow, 1, 1, ROUND_GROUP_HEADERS.length).setValues([group]);
+  else sheet.appendRow(group);
+}
+
+function buildExperimentSummary(testId, roundId) {
+  var sheet = getSupportSheet("Popup Round Summary", ROUND_GROUP_HEADERS);
+  var count = Math.max(0, sheet.getLastRow() - 1);
+  var rows = count ? sheet.getSheetValues(2, 1, count, ROUND_GROUP_HEADERS.length) : [];
+  var groups = {};
+  var now = Date.now();
+  rows.forEach(function (row) {
+    if (String(row[1]) !== testId || String(row[2]) !== roundId) return;
+    var key = String(row[3]) + "::" + String(row[4]);
+    var group = groups[key] || (groups[key] = { variant: String(row[3]), version: String(row[4]), firstSeen: isoDate(row[10]),
+      eligible: 0, sessions: 0, quizCompletions: 0, leads: 0, settledEligible: 0, settledSessions: 0, settledLeads: 0 });
+    if (isoDate(row[10]) < group.firstSeen) group.firstSeen = isoDate(row[10]);
+    group.eligible += Number(row[6]); group.sessions += Number(row[7]);
+    group.quizCompletions += Number(row[8]); group.leads += Number(row[9]);
+    // A UTC cohort is immutable after its latest possible 24-hour attribution window closes.
+    var day = row[5] instanceof Date ? row[5].toISOString().slice(0, 10) : String(row[5]).slice(0, 10);
+    if (Date.parse(day + "T00:00:00Z") + 48 * 60 * 60 * 1000 <= now) {
+      group.settledEligible += Number(row[6]); group.settledSessions += Number(row[7]); group.settledLeads += Number(row[9]);
+    }
+  });
+  return { ok: true, schemaVersion: 4, testId: testId, roundId: roundId, generatedAt: new Date().toISOString(),
+    attributionHours: 24, groups: Object.keys(groups).map(function (key) { return groups[key]; }) };
 }
 
 function trackingMeta(payload, rawRow) {

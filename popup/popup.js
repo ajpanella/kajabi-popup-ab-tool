@@ -9,7 +9,7 @@
 
   var STORAGE_PREFIX = "ll_popup_" + sanitizeKey(config.testId || "default") + "_";
   var SESSION_KEY = STORAGE_PREFIX + "session_id";
-  var ASSIGNMENT_KEY = STORAGE_PREFIX + "assignment_" + sanitizeKey(config.configVersion || "v1");
+  var ASSIGNMENT_KEY = STORAGE_PREFIX + "assignment_" + sanitizeKey(config.experiment && config.experiment.id || config.configVersion || "v1");
   var COOLDOWN_KEY = STORAGE_PREFIX + "cooldown_until";
   var hasShown = false;
   var closeReopenCount = 0;
@@ -19,6 +19,7 @@
 
   if (!variant || isInCooldown()) return;
 
+  if (config.experiment && config.experiment.mode === "assisted") trackEvent("popup_eligible");
   attachTriggerListeners();
 
   function attachTriggerListeners() {
@@ -1209,11 +1210,12 @@
       timestamp: new Date().toISOString(),
       campaignId: config.campaignId || "high-protein",
       testId: config.testId || "",
+      experimentRoundId: config.experiment && config.experiment.mode === "assisted" ? config.experiment.id : "",
       configVersion: variant.trackingVersion || config.configVersion || "v1",
       changeNote: config.changeNote || "",
       variant: variant.id,
       variantLabel: getVariantLabel(),
-      variantSnapshot: getVariantSnapshot(),
+      variantSnapshot: eventType === "popup_eligible" ? "" : getVariantSnapshot(),
       eventType: eventType,
       pageUrl: window.location.href,
       pageTitle: document.title,

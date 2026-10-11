@@ -10,6 +10,7 @@
     <link rel="stylesheet" href="../popup/popup.css?v=37">
     <link rel="stylesheet" href="./dashboard.css?v=66">
     <link rel="stylesheet" href="./workspace.css?v=9">
+    <link rel="stylesheet" href="./experiments.css?v=1">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script src="../popup/campaign-router.js?v=1"></script>
     <script src="./campaign-bootstrap.js?v=1"></script>
@@ -27,6 +28,7 @@
           <button type="button" data-workspace-button="analyze"><i data-lucide="chart-no-axes-combined"></i><span>Analyze</span></button>
           <button type="button" data-workspace-button="history"><i data-lucide="history"></i><span>History</span></button>
           <button type="button" data-workspace-button="ideas"><i data-lucide="lightbulb"></i><span>Ideas</span><em id="sidebar-idea-count">0</em></button>
+          <button type="button" data-workspace-button="experiments"><i data-lucide="flask-conical"></i><span>Experiments</span></button>
         </nav>
         <button class="studio-settings-button" type="button" data-open-settings><i data-lucide="sliders-horizontal"></i><span>Settings</span></button>
         <div class="studio-connection"><span></span> Tracking connected</div>
@@ -48,6 +50,11 @@
         </header>
 
         <main class="studio-workspaces">
+          <section class="studio-workspace" data-workspace-panel="experiments" hidden>
+            <div class="studio-page-heading"><div><span class="studio-kicker">Assisted autopilot</span><h1>Experiment rounds</h1></div><button id="experiment-refresh" class="studio-secondary-command" type="button"><i data-lucide="refresh-cw"></i> Refresh</button></div>
+            <p id="experiment-status" role="status">Loading experiment...</p>
+            <div id="experiment-content"></div>
+          </section>
           <section class="studio-workspace" data-workspace-panel="overview" hidden>
             <div class="studio-page-heading">
               <div><span class="studio-kicker">Command center</span><h1>Test overview</h1><p>See what is live, what is changing, and what deserves attention next.</p></div>
@@ -205,7 +212,10 @@
     <div id="studio-settings-scrim" class="studio-settings-scrim"></div>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./dashboard.js?v=128"></script>
+    <script src="../vendor/jstat-1.9.6.min.js"></script>
+    <script src="../experiments/engine.js?v=1"></script>
+    <script src="./dashboard.js?v=129"></script>
     <script src="./workspace.js?v=5"></script>
+    <script src="./experiments.js?v=1"></script>
   </body>
 </html>

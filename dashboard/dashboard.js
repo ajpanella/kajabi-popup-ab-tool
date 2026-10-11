@@ -291,6 +291,17 @@
 
   if (defaultCsvUrl) loadCsv();
 
+  window.LLExperimentStudio = {
+    getLive: function () { return cloneConfig(originalConfig); },
+    getDraft: function () { return cloneConfig(config); },
+    getHistory: function () { return buildFullVariantHistory(rows).map(function (record) { return { snapshot: record.snapshot, version: record.configVersion, sessions: record.sessions, leads: record.fullSubmissions }; }).filter(function (r) { return r.snapshot; }); },
+    hasUnsavedChanges: function () { return config.variants.some(function (v, i) { return !originalConfig.variants[i] || variantFingerprint(v) !== variantFingerprint(originalConfig.variants[i]); }); },
+    setDraft: function (draft) {
+      config = cloneConfig(draft); saveDraftConfig(); renderEditors(); renderPreviews(previewMode); populateFilters(); updateDashboard();
+      document.dispatchEvent(new CustomEvent("ll:experiment-draft"));
+    }
+  };
+
   function addIdea(event) {
     event.preventDefault();
     var text = els.ideaText.value.trim();
@@ -3352,7 +3363,10 @@
     config.campaignId = campaignContext.id || config.campaignId || "high-protein";
     config.campaignName = campaignContext.name || config.campaignName || "High Protein Meals";
     config.campaignEnabled = config.campaignEnabled !== false;
-    return "(function () {\n  window.LL_POPUP_CONFIG = " + JSON.stringify(config, null, 2) + ";\n})();\n";
+    var published = cloneConfig(config);
+    delete published.experimentDraft;
+    delete published.experimentPause;
+    return "(function () {\n  window.LL_POPUP_CONFIG = " + JSON.stringify(published, null, 2) + ";\n})();\n";
   }
 
   function downloadConfig() {
@@ -3403,10 +3417,28 @@
       return;
     }
 
+    if (config.experimentDraft && config.experimentDraft.sourceRoundId !== (originalConfig.experiment && originalConfig.experiment.id || "")) {
+      setPublishStatus("The live round changed after these drafts were prepared. Refresh the studio and prepare drafts from the current round.", "error"); return;
+    }
+    if (originalConfig.experiment && !config.experiment && !config.experimentDraft && config.experimentPause !== originalConfig.experiment.id) {
+      setPublishStatus("Use Prepare pause in Experiments before removing active monitoring.", "error"); return;
+    }
+    if (config.experiment && !config.experimentDraft && window.LLExperiment.validateRound(config)) {
+      setPublishStatus("This edit changes the monitored round. Use Experiments to prepare the next round, or pause monitoring before publishing manual changes.", "error"); return;
+    }
     var versionMessage = prepareWinningControlForPublish();
     normalizeVariantSlotIdentities(config);
     versionMessage += ensureFreshPublishVersion();
     versionMessage += prepareVariantVersionsForPublish();
+    if (config.experimentDraft) {
+      var brief = config.experimentDraft;
+      try {
+        if (window.LLExperiment.fingerprint(config.variants[0]) !== brief.controlFingerprint) throw new Error("The retained control was edited. Restore it before publishing this round.");
+        config.experiment = window.LLExperiment.createRound(config, "A", brief.variable, brief.hypothesis, config.publishedAt, brief.queueId);
+        config.experimentLog = (config.experimentLog || []).filter(function (entry) { return entry.roundId !== brief.sourceRoundId; }).concat([{ roundId: brief.sourceRoundId, finishedAt: config.publishedAt,
+          queueId: originalConfig.experiment && originalConfig.experiment.queueId || "", nextQueueId: brief.queueId, decision: brief.decision || "manual-review", retainedVariant: brief.sourceControlId }]);
+      } catch (error) { setPublishStatus(error.message, "error"); return; }
+    }
     saveDraftConfig();
 
     if (canUseLocalPublisher()) {
@@ -3484,6 +3516,12 @@
     activeVariants().forEach(function (variant) {
       pendingPublishSourceIds[variant.id] = variant.id;
     });
+
+    if (config.experimentDraft) {
+      pendingPublishSourceIds.A = config.experimentDraft.sourceControlId;
+      return "Retaining the reviewed control and preparing two new challengers. ";
+    }
+    if (config.experiment || originalConfig.experiment) return "Reviewed control retained. ";
 
     var directPerformance = getDirectLiveVariantPerformance().filter(function (item) {
       return item.sessions > 0 && item.fullSubmissions > 0;
@@ -3665,6 +3703,8 @@
   }
 
   function promotePublishedConfig() {
+    delete config.experimentDraft;
+    delete config.experimentPause;
     originalConfig = cloneConfig(config);
     saveDraftConfig();
     renderEditors();
@@ -5588,6 +5628,10 @@
           leadWebhookUrl: draft.leadWebhookUrl || originalConfig.leadWebhookUrl || ""
         });
         localStorage.setItem(DRAFT_KEY, JSON.stringify(draft));
+      }
+      if (draft && originalConfig.experiment && !draft.experimentDraft && draft.experimentPause !== originalConfig.experiment.id) {
+        draft.experiment = cloneConfig(originalConfig.experiment);
+        draft.experimentLog = cloneConfig(originalConfig.experimentLog || []);
       }
       return ensureConfigDefaults(draft || cloneConfig(originalConfig));
     } catch (error) {
