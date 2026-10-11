@@ -34,6 +34,7 @@
   var googleDocUrl = urlParams.get("doc") || "";
   var trackingSheetUrl = urlParams.get("sheet") || "https://docs.google.com/spreadsheets/d/1fjbkrBO5r1XaJf3x-WNT0UNjEtn0IlDlAA9e2Sza69w";
   var rows = [];
+  var hasLoadedTrackingData = false;
   var charts = {};
   var previewMode = "desktop";
   var previewStep = 0;
@@ -294,7 +295,10 @@
   window.LLExperimentStudio = {
     getLive: function () { return cloneConfig(originalConfig); },
     getDraft: function () { return cloneConfig(config); },
-    getHistory: function () { return buildFullVariantHistory(rows).map(function (record) { return { snapshot: record.snapshot, version: record.configVersion, sessions: record.sessions, leads: record.fullSubmissions }; }).filter(function (r) { return r.snapshot; }); },
+    getHistory: function () {
+      if (!hasLoadedTrackingData) throw new Error("Historical tracking data has not loaded. Use Refresh Data in Analyze before preparing experiment drafts.");
+      return buildFullVariantHistory(rows).map(function (record) { return { snapshot: record.snapshot, version: record.configVersion, sessions: record.sessions, leads: record.fullSubmissions }; }).filter(function (r) { return r.snapshot; });
+    },
     hasUnsavedChanges: function () { return config.variants.some(function (v, i) { return !originalConfig.variants[i] || variantFingerprint(v) !== variantFingerprint(originalConfig.variants[i]); }); },
     setDraft: function (draft) {
       config = cloneConfig(draft); saveDraftConfig(); renderEditors(); renderPreviews(previewMode); populateFilters(); updateDashboard();
@@ -469,6 +473,7 @@
   }
 
   function loadCsv() {
+    hasLoadedTrackingData = false;
     var csvUrl = els.csvUrl.value.trim();
     if (!csvUrl) {
       renderCsvLoadStatus([], "Add a Published CSV URL first.");
@@ -480,6 +485,7 @@
     loadCompactTrackingData(csvUrl)
       .then(function (result) {
         rows = result.rows;
+        hasLoadedTrackingData = true;
         renderCsvLoadStatus(rows);
         if (els.csvLoadStatus) {
           els.csvLoadStatus.textContent += " | compact feed" + (result.transferBytes ? " (" + formatFileSize(result.transferBytes) + ")" : "");

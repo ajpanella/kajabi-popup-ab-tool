@@ -78,7 +78,7 @@ function trackerTests() {
 async function uiTests() {
   const {chromium}=require('playwright');const browser=await chromium.launch({headless:true,channel:'chrome'});
   try {
-    const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[];let published=null,failPublish=true;page.on('pageerror',e=>errors.push(e.message));
+    const page=await browser.newPage({viewport:{width:1440,height:1000}});const errors=[];let published=null,failPublish=true,trackingAvailable=true;page.on('pageerror',e=>errors.push(e.message));
     const data=summary(700,[3,3,100]);data.generatedAt=new Date().toISOString();data.groups.forEach(g=>g.firstSeen=config.experiment.startedAt);
     const review={roundId:config.experiment.id,checkedAt:new Date().toISOString(),status:'winner-review',winnerId:'C',reason:'A winner is ready for your review.',looks:[],metrics:data.groups};
     await page.route('**/*',route=>{
@@ -91,7 +91,7 @@ async function uiTests() {
         return route.fulfill({contentType:'application/json',body:JSON.stringify({sha:'test-sha',commit:{sha:'test-publish'}})});
       }
       if(url.hostname==='raw.githubusercontent.com')return route.fulfill({contentType:'application/json',body:JSON.stringify(url.pathname.endsWith('round-history.json')?[]:review)});
-      if(url.hostname==='script.google.com')return route.fulfill({contentType:'application/json',body:JSON.stringify(url.searchParams.get('mode')==='experiment'?data:{ok:true,schemaVersion:3,fields:[],rows:[],snapshots:{}})});
+      if(url.hostname==='script.google.com')return route.fulfill({status:trackingAvailable || url.searchParams.get('mode')==='experiment'?200:503,contentType:'application/json',body:JSON.stringify(url.searchParams.get('mode')==='experiment'?data:{ok:true,schemaVersion:3,fields:[],rows:[],snapshots:{}})});
       if(url.hostname!=='studio.test')return route.fulfill({contentType:'application/javascript',body:'window.Chart=class{destroy(){}};window.lucide={createIcons(){}};'});
       let p=url.pathname.replace(/^\//,'');if(p.endsWith('/'))p+='index.html';const file=path.join(root,p);
       if(!fs.existsSync(file))return route.fulfill({status:404,body:''});
@@ -135,8 +135,13 @@ async function uiTests() {
     assert.equal(nextConfig.experimentLog.length,1,'publish retries must not duplicate the round log');
     assert(!nextConfig.experimentDraft);
     await page.evaluate(c=>{delete c.experiment;localStorage.setItem('ll_popup_dashboard_config_blog-optin-v1',JSON.stringify(c));},config);
+    trackingAvailable=false;
     await page.reload();
     assert.equal(await page.evaluate(()=>window.LLExperimentStudio.getDraft().experiment.id),config.experiment.id,'old drafts cannot disable monitoring');
+    await page.getByRole('button',{name:'Experiments',exact:true}).click();
+    await page.getByText('3. Name the benefit in the button',{exact:false}).click();
+    await page.locator('[data-experiment-action="draft:cta-deliverable-01"]').click();
+    assert.match(await page.locator('#experiment-status').textContent(),/Historical tracking data has not loaded/);
     assert.deepEqual(errors,[]);
   } finally {await browser.close();}
 }
