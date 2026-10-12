@@ -1,9 +1,97 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261011201737732",
-  "checkedAt": "2026-10-11T20:17:37.732Z",
+  "checkedAt": "2026-10-12T06:08:19.271Z",
   "status": "collecting",
-  "reason": "New owner-approved button round. Waiting for fresh round sessions.",
-  "metrics": [],
-  "looks": []
+  "reason": "Collecting settled sessions for the next review.",
+  "metrics": [
+    {
+      "id": "A",
+      "label": "Green + Larger CTA",
+      "cvr": 0,
+      "variant": "A",
+      "version": "10/11/2026 · green-large-cta-b2a02975",
+      "firstSeen": "2026-10-11T20:27:21.532Z",
+      "eligible": 152,
+      "sessions": 109,
+      "quizCompletions": 0,
+      "leads": 0,
+      "settledEligible": 0,
+      "settledSessions": 0,
+      "settledLeads": 0
+    },
+    {
+      "id": "B",
+      "label": "Orange + Larger CTA",
+      "cvr": 0,
+      "variant": "B",
+      "version": "10/11/2026 · orange-large-cta-8ad6873e",
+      "firstSeen": "2026-10-11T20:22:42.762Z",
+      "eligible": 160,
+      "sessions": 124,
+      "quizCompletions": 0,
+      "leads": 0,
+      "settledEligible": 0,
+      "settledSessions": 0,
+      "settledLeads": 0
+    },
+    {
+      "id": "C",
+      "label": "Female Results Oriented + Ponytail",
+      "cvr": 0,
+      "variant": "C",
+      "version": "9/14/2026 · female-results-oriented-ponytail",
+      "firstSeen": "2026-10-11T20:30:37.408Z",
+      "eligible": 163,
+      "sessions": 124,
+      "quizCompletions": 0,
+      "leads": 0,
+      "settledEligible": 0,
+      "settledSessions": 0,
+      "settledLeads": 0
+    }
+  ],
+  "looks": [],
+  "days": 0.4066725578703704,
+  "nextCheckpoint": 700,
+  "round": {
+    "id": "protein-round-20261011201737732",
+    "startedAt": "2026-10-11T20:17:37.732Z",
+    "controlId": "C",
+    "variable": "button-treatment",
+    "hypothesis": "Compare green versus orange at the same larger text size (A vs B), and larger versus current text on orange (B vs C). Keep all copy, images, fields and timing identical to C.",
+    "queueId": "button-color-size-20261011",
+    "policy": {
+      "checkpoints": [
+        700,
+        1400,
+        2800
+      ],
+      "minDays": 7,
+      "maxDays": 28,
+      "alpha": 0.05,
+      "minRelativeLift": 0.1,
+      "minAbsoluteLift": 0.001
+    },
+    "arms": [
+      {
+        "id": "A",
+        "version": "10/11/2026 · green-large-cta-b2a02975",
+        "label": "Green + Larger CTA",
+        "trafficSplit": 34
+      },
+      {
+        "id": "B",
+        "version": "10/11/2026 · orange-large-cta-8ad6873e",
+        "label": "Orange + Larger CTA",
+        "trafficSplit": 33
+      },
+      {
+        "id": "C",
+        "version": "9/14/2026 · female-results-oriented-ponytail",
+        "label": "Female Results Oriented + Ponytail",
+        "trafficSplit": 33
+      }
+    ]
+  }
 }
