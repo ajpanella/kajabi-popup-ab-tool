@@ -1,11 +1,97 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261011201737732",
-  "checkedAt": "2026-10-18T15:58:11.405Z",
-  "status": "blocked",
-  "reason": "Tracking endpoint returned 404",
-  "looks": [],
-  "metrics": [],
+  "checkedAt": "2026-10-18T20:52:32.459Z",
+  "status": "continue",
+  "reason": "No clear winner at this checkpoint. Keep the current control.",
+  "metrics": [
+    {
+      "id": "A",
+      "label": "Green + Larger CTA",
+      "cvr": 0.003931847968545216,
+      "variant": "A",
+      "version": "10/11/2026 · green-large-cta-b2a02975",
+      "firstSeen": "2026-10-11T20:27:21.532Z",
+      "eligible": 1980,
+      "sessions": 1526,
+      "quizCompletions": 0,
+      "leads": 6,
+      "settledEligible": 1300,
+      "settledSessions": 998,
+      "settledLeads": 3
+    },
+    {
+      "id": "B",
+      "label": "Orange + Larger CTA",
+      "cvr": 0.0013003901170351106,
+      "variant": "B",
+      "version": "10/11/2026 · orange-large-cta-8ad6873e",
+      "firstSeen": "2026-10-11T20:22:42.762Z",
+      "eligible": 1959,
+      "sessions": 1538,
+      "quizCompletions": 0,
+      "leads": 2,
+      "settledEligible": 1300,
+      "settledSessions": 1001,
+      "settledLeads": 2
+    },
+    {
+      "id": "C",
+      "label": "Female Results Oriented + Ponytail",
+      "cvr": 0,
+      "variant": "C",
+      "version": "9/14/2026 · female-results-oriented-ponytail",
+      "firstSeen": "2026-10-11T20:30:37.408Z",
+      "eligible": 1922,
+      "sessions": 1498,
+      "quizCompletions": 0,
+      "leads": 0,
+      "settledEligible": 1302,
+      "settledSessions": 1018,
+      "settledLeads": 0
+    }
+  ],
+  "looks": [
+    {
+      "threshold": 700,
+      "capturedAt": "2026-10-18T20:52:32.459Z",
+      "measurements": [
+        {
+          "id": "A",
+          "sessions": 998,
+          "leads": 3,
+          "rate": 0.003006012024048096,
+          "interval": [
+            0.0002741597616015223,
+            0.011722271091919327
+          ]
+        },
+        {
+          "id": "B",
+          "sessions": 1001,
+          "leads": 2,
+          "rate": 0.001998001998001998,
+          "interval": [
+            0.00007641216178007093,
+            0.009946527373620579
+          ]
+        },
+        {
+          "id": "C",
+          "sessions": 1018,
+          "leads": 0,
+          "rate": 0,
+          "interval": [
+            0,
+            0.005765343785383602
+          ]
+        }
+      ],
+      "winnerId": null
+    }
+  ],
+  "days": 7.020714085648148,
+  "nextCheckpoint": 700,
   "round": {
     "id": "protein-round-20261011201737732",
     "startedAt": "2026-10-11T20:17:37.732Z",
