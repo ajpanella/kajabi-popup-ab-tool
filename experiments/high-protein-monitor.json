@@ -1,53 +1,53 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261011201737732",
-  "checkedAt": "2026-10-19T22:27:22.141Z",
-  "status": "collecting",
-  "reason": "Collecting settled sessions for the next review.",
+  "checkedAt": "2026-10-20T05:00:02.364Z",
+  "status": "continue",
+  "reason": "No clear winner at this checkpoint. Keep the current control.",
   "metrics": [
     {
       "id": "A",
       "label": "Green + Larger CTA",
-      "cvr": 0.003372681281618887,
+      "cvr": 0.0032502708559046588,
       "variant": "A",
       "version": "10/11/2026 · green-large-cta-b2a02975",
       "firstSeen": "2026-10-11T20:27:21.532Z",
-      "eligible": 2303,
-      "sessions": 1779,
+      "eligible": 2384,
+      "sessions": 1846,
       "quizCompletions": 0,
       "leads": 6,
-      "settledEligible": 1638,
-      "settledSessions": 1255,
-      "settledLeads": 4
+      "settledEligible": 2045,
+      "settledSessions": 1575,
+      "settledLeads": 6
     },
     {
       "id": "B",
       "label": "Orange + Larger CTA",
-      "cvr": 0.0016620498614958448,
+      "cvr": 0.0021197668256491787,
       "variant": "B",
       "version": "10/11/2026 · orange-large-cta-8ad6873e",
       "firstSeen": "2026-10-11T20:22:42.762Z",
-      "eligible": 2307,
-      "sessions": 1805,
+      "eligible": 2407,
+      "sessions": 1887,
       "quizCompletions": 0,
-      "leads": 3,
-      "settledEligible": 1614,
-      "settledSessions": 1265,
+      "leads": 4,
+      "settledEligible": 2036,
+      "settledSessions": 1599,
       "settledLeads": 2
     },
     {
       "id": "C",
       "label": "Female Results Oriented + Ponytail",
-      "cvr": 0.0005685048322910744,
+      "cvr": 0.001087547580206634,
       "variant": "C",
       "version": "9/14/2026 · female-results-oriented-ponytail",
       "firstSeen": "2026-10-11T20:30:37.408Z",
-      "eligible": 2263,
-      "sessions": 1759,
+      "eligible": 2363,
+      "sessions": 1839,
       "quizCompletions": 0,
-      "leads": 1,
-      "settledEligible": 1591,
-      "settledSessions": 1254,
+      "leads": 2,
+      "settledEligible": 1988,
+      "settledSessions": 1547,
       "settledLeads": 0
     }
   ],
@@ -88,9 +88,46 @@
         }
       ],
       "winnerId": null
+    },
+    {
+      "threshold": 1400,
+      "capturedAt": "2026-10-20T05:00:02.364Z",
+      "measurements": [
+        {
+          "id": "A",
+          "sessions": 1575,
+          "leads": 6,
+          "rate": 0.0038095238095238095,
+          "interval": [
+            0.000864265203536344,
+            0.010475881394912548
+          ]
+        },
+        {
+          "id": "B",
+          "sessions": 1599,
+          "leads": 2,
+          "rate": 0.0012507817385866166,
+          "interval": [
+            0.00004782699696195406,
+            0.006235992795415684
+          ]
+        },
+        {
+          "id": "C",
+          "sessions": 1547,
+          "leads": 0,
+          "rate": 0,
+          "interval": [
+            0,
+            0.0037976214263164866
+          ]
+        }
+      ],
+      "winnerId": null
     }
   ],
-  "days": 8.086566886574074,
+  "days": 8.359254652777778,
   "nextCheckpoint": 1400,
   "round": {
     "id": "protein-round-20261011201737732",
