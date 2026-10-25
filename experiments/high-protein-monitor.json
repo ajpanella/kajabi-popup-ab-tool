@@ -1,19 +1,19 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261011201737732",
-  "checkedAt": "2026-10-25T11:43:31.646Z",
+  "checkedAt": "2026-10-25T16:32:22.198Z",
   "status": "collecting",
   "reason": "Collecting settled sessions for the next review.",
   "metrics": [
     {
       "id": "A",
       "label": "Green + Larger CTA",
-      "cvr": 0.0022181146025878,
+      "cvr": 0.0021398002853067048,
       "variant": "A",
       "version": "10/11/2026 · green-large-cta-b2a02975",
       "firstSeen": "2026-10-11T20:27:21.532Z",
-      "eligible": 3474,
-      "sessions": 2705,
+      "eligible": 3591,
+      "sessions": 2804,
       "quizCompletions": 0,
       "leads": 6,
       "settledEligible": 3144,
@@ -23,12 +23,12 @@
     {
       "id": "B",
       "label": "Orange + Larger CTA",
-      "cvr": 0.0018587360594795538,
+      "cvr": 0.0017959770114942528,
       "variant": "B",
       "version": "10/11/2026 · orange-large-cta-8ad6873e",
       "firstSeen": "2026-10-11T20:22:42.762Z",
-      "eligible": 3414,
-      "sessions": 2690,
+      "eligible": 3530,
+      "sessions": 2784,
       "quizCompletions": 0,
       "leads": 5,
       "settledEligible": 3134,
@@ -38,14 +38,14 @@
     {
       "id": "C",
       "label": "Female Results Oriented + Ponytail",
-      "cvr": 0.0011252813203300824,
+      "cvr": 0.001444043321299639,
       "variant": "C",
       "version": "9/14/2026 · female-results-oriented-ponytail",
       "firstSeen": "2026-10-11T20:30:37.408Z",
-      "eligible": 3400,
-      "sessions": 2666,
+      "eligible": 3522,
+      "sessions": 2770,
       "quizCompletions": 0,
-      "leads": 3,
+      "leads": 4,
       "settledEligible": 3078,
       "settledSessions": 2415,
       "settledLeads": 3
@@ -127,7 +127,7 @@
       "winnerId": null
     }
   ],
-  "days": 13.639454675925926,
+  "days": 13.840039768518519,
   "nextCheckpoint": 2800,
   "round": {
     "id": "protein-round-20261011201737732",
