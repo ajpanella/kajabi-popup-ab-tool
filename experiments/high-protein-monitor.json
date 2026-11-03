@@ -1,19 +1,19 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261027140033516",
-  "checkedAt": "2026-11-03T06:57:24.168Z",
-  "status": "collecting",
-  "reason": "Collecting settled sessions for the next review.",
+  "checkedAt": "2026-11-03T19:34:49.628Z",
+  "status": "continue",
+  "reason": "No clear winner at this checkpoint. Keep the current control.",
   "metrics": [
     {
       "id": "A",
       "label": "Green + Larger CTA",
-      "cvr": 0.0007751937984496124,
+      "cvr": 0.0007272727272727272,
       "variant": "A",
       "version": "10/11/2026 · green-large-cta-b2a02975",
       "firstSeen": "2026-10-27T14:11:38.076Z",
-      "eligible": 1646,
-      "sessions": 1290,
+      "eligible": 1756,
+      "sessions": 1375,
       "quizCompletions": 0,
       "leads": 1,
       "settledEligible": 1295,
@@ -23,12 +23,12 @@
     {
       "id": "B",
       "label": "7-Day Plan CTA",
-      "cvr": 0.0007849293563579278,
+      "cvr": 0.000741839762611276,
       "variant": "B",
       "version": "10/27/2026 · 7-day-plan-cta-fbe7249c",
       "firstSeen": "2026-10-27T14:11:47.186Z",
-      "eligible": 1630,
-      "sessions": 1274,
+      "eligible": 1736,
+      "sessions": 1348,
       "quizCompletions": 0,
       "leads": 1,
       "settledEligible": 1260,
@@ -38,12 +38,12 @@
     {
       "id": "C",
       "label": "Plan + List CTA",
-      "cvr": 0.002243829468960359,
+      "cvr": 0.002136752136752137,
       "variant": "C",
       "version": "10/27/2026 · plan-list-cta-447a1601",
       "firstSeen": "2026-10-27T14:11:55.665Z",
-      "eligible": 1701,
-      "sessions": 1337,
+      "eligible": 1802,
+      "sessions": 1404,
       "quizCompletions": 0,
       "leads": 3,
       "settledEligible": 1309,
@@ -51,8 +51,46 @@
       "settledLeads": 1
     }
   ],
-  "looks": [],
-  "days": 6.698450138888889,
+  "looks": [
+    {
+      "threshold": 700,
+      "capturedAt": "2026-11-03T19:34:49.628Z",
+      "measurements": [
+        {
+          "id": "A",
+          "sessions": 1022,
+          "leads": 1,
+          "rate": 0.0009784735812133072,
+          "interval": [
+            0.0000027217604465665585,
+            0.007892029128895257
+          ]
+        },
+        {
+          "id": "B",
+          "sessions": 989,
+          "leads": 0,
+          "rate": 0,
+          "interval": [
+            0,
+            0.0059338957984473775
+          ]
+        },
+        {
+          "id": "C",
+          "sessions": 1027,
+          "leads": 1,
+          "rate": 0.0009737098344693282,
+          "interval": [
+            0.0000027085094399435354,
+            0.00785373900019207
+          ]
+        }
+      ],
+      "winnerId": null
+    }
+  ],
+  "days": 7.22443925925926,
   "nextCheckpoint": 700,
   "round": {
     "id": "protein-round-20261027140033516",
