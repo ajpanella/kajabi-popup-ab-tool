@@ -1,21 +1,21 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261027140033516",
-  "checkedAt": "2026-11-09T06:48:58.282Z",
+  "checkedAt": "2026-11-09T22:29:04.333Z",
   "status": "collecting",
   "reason": "Collecting settled sessions for the next review.",
   "metrics": [
     {
       "id": "A",
       "label": "Green + Larger CTA",
-      "cvr": 0.0012279983626688497,
+      "cvr": 0.001554605518849592,
       "variant": "A",
       "version": "10/11/2026 · green-large-cta-b2a02975",
       "firstSeen": "2026-10-27T14:11:38.076Z",
-      "eligible": 3256,
-      "sessions": 2443,
+      "eligible": 3418,
+      "sessions": 2573,
       "quizCompletions": 0,
-      "leads": 3,
+      "leads": 4,
       "settledEligible": 2708,
       "settledSessions": 2090,
       "settledLeads": 2
@@ -23,12 +23,12 @@
     {
       "id": "B",
       "label": "7-Day Plan CTA",
-      "cvr": 0.0008250825082508251,
+      "cvr": 0.00078003120124805,
       "variant": "B",
       "version": "10/27/2026 · 7-day-plan-cta-fbe7249c",
       "firstSeen": "2026-10-27T14:11:47.186Z",
-      "eligible": 3196,
-      "sessions": 2424,
+      "eligible": 3365,
+      "sessions": 2564,
       "quizCompletions": 0,
       "leads": 2,
       "settledEligible": 2727,
@@ -38,12 +38,12 @@
     {
       "id": "C",
       "label": "Plan + List CTA",
-      "cvr": 0.0016051364365971107,
+      "cvr": 0.0015432098765432098,
       "variant": "C",
       "version": "10/27/2026 · plan-list-cta-447a1601",
       "firstSeen": "2026-10-27T14:11:55.665Z",
-      "eligible": 3246,
-      "sessions": 2492,
+      "eligible": 3388,
+      "sessions": 2592,
       "quizCompletions": 0,
       "leads": 4,
       "settledEligible": 2772,
@@ -127,7 +127,7 @@
       "winnerId": null
     }
   ],
-  "days": 12.692594976851852,
+  "days": 13.345442789351852,
   "nextCheckpoint": 2800,
   "round": {
     "id": "protein-round-20261027140033516",
