@@ -1,54 +1,54 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261027140033516",
-  "checkedAt": "2026-11-11T19:41:54.783Z",
+  "checkedAt": "2026-11-12T07:22:40.809Z",
   "status": "collecting",
   "reason": "Collecting settled sessions for the next review.",
   "metrics": [
     {
       "id": "A",
       "label": "Green + Larger CTA",
-      "cvr": 0.0013703323055841042,
+      "cvr": 0.0013596193065941536,
       "variant": "A",
       "version": "10/11/2026 · green-large-cta-b2a02975",
       "firstSeen": "2026-10-27T14:11:38.076Z",
-      "eligible": 3861,
-      "sessions": 2919,
+      "eligible": 3892,
+      "sessions": 2942,
       "quizCompletions": 0,
       "leads": 4,
-      "settledEligible": 3444,
-      "settledSessions": 2593,
+      "settledEligible": 3689,
+      "settledSessions": 2785,
       "settledLeads": 4
     },
     {
       "id": "B",
       "label": "7-Day Plan CTA",
-      "cvr": 0.0010391409767925182,
+      "cvr": 0.0010252904989747095,
       "variant": "B",
       "version": "10/27/2026 · 7-day-plan-cta-fbe7249c",
       "firstSeen": "2026-10-27T14:11:47.186Z",
-      "eligible": 3763,
-      "sessions": 2887,
+      "eligible": 3811,
+      "sessions": 2926,
       "quizCompletions": 0,
       "leads": 3,
-      "settledEligible": 3386,
-      "settledSessions": 2579,
-      "settledLeads": 2
+      "settledEligible": 3601,
+      "settledSessions": 2761,
+      "settledLeads": 3
     },
     {
       "id": "C",
       "label": "Plan + List CTA",
-      "cvr": 0.002379333786539769,
+      "cvr": 0.002694509936005389,
       "variant": "C",
       "version": "10/27/2026 · plan-list-cta-447a1601",
       "firstSeen": "2026-10-27T14:11:55.665Z",
-      "eligible": 3810,
-      "sessions": 2942,
+      "eligible": 3845,
+      "sessions": 2969,
       "quizCompletions": 0,
-      "leads": 7,
-      "settledEligible": 3413,
-      "settledSessions": 2614,
-      "settledLeads": 4
+      "leads": 8,
+      "settledEligible": 3631,
+      "settledSessions": 2793,
+      "settledLeads": 5
     }
   ],
   "looks": [
@@ -127,7 +127,7 @@
       "winnerId": null
     }
   ],
-  "days": 15.229360034722223,
+  "days": 15.716003854166667,
   "nextCheckpoint": 2800,
   "round": {
     "id": "protein-round-20261027140033516",
