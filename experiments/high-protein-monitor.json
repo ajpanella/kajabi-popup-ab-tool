@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261027140033516",
-  "checkedAt": "2026-11-12T07:22:40.809Z",
+  "checkedAt": "2026-11-12T20:04:26.749Z",
   "status": "collecting",
   "reason": "Collecting settled sessions for the next review.",
   "metrics": [
@@ -127,7 +127,7 @@
       "winnerId": null
     }
   ],
-  "days": 15.716003854166667,
+  "days": 16.245007789351853,
   "nextCheckpoint": 2800,
   "round": {
     "id": "protein-round-20261027140033516",
