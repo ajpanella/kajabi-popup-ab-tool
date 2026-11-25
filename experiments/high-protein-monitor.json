@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "roundId": "protein-round-20261113150638489",
-  "checkedAt": "2026-11-25T08:48:32.752Z",
+  "checkedAt": "2026-11-25T21:48:59.269Z",
   "status": "blocked",
   "reason": "Waiting for round tracking from all three variants.",
   "metrics": [],
